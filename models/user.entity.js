@@ -1,0 +1,81 @@
+const { EntitySchema } = require("typeorm");
+const {
+  userRoleConstant,
+  matchComissionTypeConstant,
+  baseColumnsSchemaPart,
+} = require("./../config/contants");
+
+const userSchema = new EntitySchema({
+  name: "user",
+  columns: {
+    ...baseColumnsSchemaPart,
+    userName: {
+      type: "varchar",
+      nullable: false,
+      unique: true,
+    },
+    fullName: {
+      type: "varchar",
+      nullable: true,
+    },
+    password: {
+      type: "varchar",
+      nullable: false,
+    },
+    phoneNumber: {
+      type: "varchar",
+      nullable: true,
+    },
+    city: {
+      type: "varchar",
+      nullable: true,
+    },
+    allPrivilege: {
+      type: "boolean",
+      nullable: false,
+      default:false
+    },
+    addMatchPrivilege: {
+      type: "boolean",
+      nullable: false,
+      default:false
+    },
+    betFairMatchPrivilege: {
+      type: "boolean",
+      nullable: false,
+      default:false
+    },
+    bookmakerMatchPrivilege: {
+      type: "boolean",
+      nullable: false,
+      default:false
+    },
+    sessionMatchPrivilege: {
+      type: "boolean",
+      nullable: false,
+      default:false
+    },
+    delayTime: {
+      type: "int",
+      nullable: false,
+      default: 5,
+    },
+    loginAt: {
+      type: "timestamp with time zone",
+      nullable: true,
+      default: null,
+    },
+  },
+  orderBy: {
+    userName: "ASC",
+  },
+  indices: [
+    {
+      name: "user_userName", // index name should be start with the table name
+      unique: true, // Optional: Set to true if you want a unique index
+      columns: ["id", "userName"],
+    },
+  ],
+});
+
+module.exports = userSchema;

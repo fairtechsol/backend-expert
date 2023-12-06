@@ -1,0 +1,26 @@
+{
+  "internalServerError": "Internal server error",
+  "invalidData": "Invalid data",
+  "notFound": "{name} not found",
+  "invalid":"Invalid {name}",
+  "invalidId": "Given id is invalid",
+  "userNotSelect": "User not selected.",
+  "updated":"{name} updated successfully",
+  "created":"{name} created successfully",
+  
+  "auth": {
+    "loginSuccess": "Login successfully",
+    "invalidPass": "Invalid {type} password",
+    "authFailed": "Please login into your account",
+    "roleNotCorrectLogin": "Please login with correct user",
+    "logoutSuccess":"Logout successfully",
+    "passwordChanged":"Password changed successfully",
+    "unauthorize":"Unauthorized user"
+  },
+  "user" : {
+    "passwordMatch": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?)",
+    "confirmPasswordNotMatch":"Password and confirm password did not match",
+    "userExist" : "User already exist on given user name" 
+    
+  }
+}

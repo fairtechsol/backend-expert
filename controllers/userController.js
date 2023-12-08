@@ -36,20 +36,21 @@ exports.createUser = async (req, res) => {
       id,
     } = req.body;
 
-    const isUserPresent=await getUserById(id,["id"]);
-
-    if(!isUserPresent){
-      return ErrorResponse(
-        { statusCode: 404, message: { msg: "notFound",keys:{
-          name:"User"
-        } } },
-        req,
-        res
-      );
-    }
+   
 
     // If user ID is provided, update the existing user
     if (id) {
+      const isUserPresent=await getUserById(id,["id"]);
+
+      if(!isUserPresent){
+        return ErrorResponse(
+          { statusCode: 404, message: { msg: "notFound",keys:{
+            name:"User"
+          } } },
+          req,
+          res
+        );
+      }
      await updateUser(id, {
         fullName,
         phoneNumber,

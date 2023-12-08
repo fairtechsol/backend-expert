@@ -1,14 +1,10 @@
 const { EntitySchema } = require("typeorm");
-const { betStatus } = require("../config/contants");
+const { betStatus,baseColumnsSchemaPart } = require("../config/contants");
 
 const bettingSchema = new EntitySchema({
   name: "betting",
   columns: {
-    id: {
-      type: "uuid",
-      primary: true,
-      generated: "uuid",
-    },
+    ...baseColumnsSchemaPart,
     matchId: {
       type: "uuid",
       nullable: false,
@@ -22,7 +18,7 @@ const bettingSchema = new EntitySchema({
     betCondition: {
       type: "varchar",
       length: 200,
-      nullable: false,
+      nullable: true,
     },
     noRate: {
       type: "float",

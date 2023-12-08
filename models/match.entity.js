@@ -5,7 +5,7 @@ const matchSchema = new EntitySchema({
   name: "match",
   columns: {
     ...baseColumnsSchemaPart,
-    gameType: {
+    matchType: {
       type: "varchar",
       nullable: false,
       length: 50,
@@ -26,6 +26,7 @@ const matchSchema = new EntitySchema({
     marketId: {
       type: "varchar",
       nullable: false,
+      unique:true
     },
     eventId: {
       type: "varchar",
@@ -135,7 +136,7 @@ const matchSchema = new EntitySchema({
     {
       name: "match_marketId", // index name should be start with the table name
       unique: true, // Optional: Set to true if you want a unique index
-      columns: ["marketId", "gameType"],
+      columns: ["marketId", "matchType"],
     },
   ],
 });

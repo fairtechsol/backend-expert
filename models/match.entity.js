@@ -102,20 +102,12 @@ const matchSchema = new EntitySchema({
       nullable: false,
       default: false,
     },
-    manualBookMakerActive: {
-      type: "boolean",
-      nullable: false,
-      default: false,
-    },
+  
     manualSessionActive: {
       type: "boolean",
       nullable: false,
       default: false,
-    },
-    delaySecond: {
-      type: "int",
-      nullable: true,
-    },
+    }
   },
   orderBy: {
     startAt: "DESC",

@@ -1,5 +1,5 @@
 const { EntitySchema } = require("typeorm");
-const { betStatus,baseColumnsSchemaPart } = require("../config/contants");
+const { baseColumnsSchemaPart } = require("../config/contants");
 
 const bookmakerSchema = new EntitySchema({
   name: "bookmaker",
@@ -77,10 +77,11 @@ const bookmakerSchema = new EntitySchema({
       type: "float",
       nullable: true,
     },
-    betStatus: {
-      type: "enum",
-      enum: Object.values(betStatus),
-      default: betStatus.save,
+   
+    isActive: {
+      type: "boolean",
+      nullable: false,
+      default: false,
     },
   },
   relations: {

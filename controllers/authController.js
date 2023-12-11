@@ -106,7 +106,7 @@ exports.logout = async (req, res) => {
     await internalRedis.srem("expertLoginIds", user.id);
 
     // Remove the user's token from Redis using their ID as the key
-    await internalRedis.hdel(user.id, "token");
+    await internalRedis.del(user.id);
 
     return SuccessResponse(
       {

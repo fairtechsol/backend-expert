@@ -109,41 +109,11 @@
                   },
                   "sessionMatchPrivilege": {
                     "example": "any"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/updateUser": {
-      "post": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "sessionCommission": {
-                    "example": "any"
                   },
-                  "matchComissionType": {
-                    "example": "any"
-                  },
-                  "matchCommission": {
+                  "createBy": {
                     "example": "any"
                   },
                   "id": {
-                    "example": "any"
-                  },
-                  "createBy": {
                     "example": "any"
                   }
                 }
@@ -180,6 +150,87 @@
                     "example": "any"
                   },
                   "newPassword": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/match/add": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  },
+                  "matchType": {
+                    "example": "any"
+                  },
+                  "competitionId": {
+                    "example": "any"
+                  },
+                  "competitionName": {
+                    "example": "any"
+                  },
+                  "title": {
+                    "example": "any"
+                  },
+                  "marketId": {
+                    "example": "any"
+                  },
+                  "eventId": {
+                    "example": "any"
+                  },
+                  "teamA": {
+                    "example": "any"
+                  },
+                  "teamB": {
+                    "example": "any"
+                  },
+                  "teamC": {
+                    "example": "any"
+                  },
+                  "startAt": {
+                    "example": "any"
+                  },
+                  "minBet": {
+                    "example": "any"
+                  },
+                  "matchOddMaxBet": {
+                    "example": "any"
+                  },
+                  "betFairSessionMaxBet": {
+                    "example": "any"
+                  },
+                  "betFairBookmakerMaxBet": {
+                    "example": "any"
+                  },
+                  "delaySecond": {
+                    "example": "any"
+                  },
+                  "bookmakers": {
                     "example": "any"
                   }
                 }

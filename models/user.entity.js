@@ -1,7 +1,5 @@
 const { EntitySchema } = require("typeorm");
 const {
-  userRoleConstant,
-  matchComissionTypeConstant,
   baseColumnsSchemaPart,
 } = require("./../config/contants");
 
@@ -54,11 +52,6 @@ const userSchema = new EntitySchema({
       type: "boolean",
       nullable: false,
       default:false
-    },
-    delayTime: {
-      type: "int",
-      nullable: false,
-      default: 5,
     },
     loginAt: {
       type: "timestamp with time zone",

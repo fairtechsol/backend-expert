@@ -1,5 +1,11 @@
-
 module.exports.redisTimeOut = 24 * 60 * 60;
+
+module.exports.betStatus = {
+  save: "save",
+  live: "live",
+  result: "result",
+  close: "close",
+};
 
 module.exports.baseColumnsSchemaPart = {
   id: {
@@ -24,4 +30,3 @@ module.exports.baseColumnsSchemaPart = {
     deleteDate: true,
   },
 };
-

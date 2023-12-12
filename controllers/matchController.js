@@ -1,3 +1,4 @@
+const { IsNull } = require("typeorm");
 const { betStatus } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { addBetting, getBetting } = require("../services/bettingService");
@@ -9,6 +10,7 @@ const {
   addMatch,
   addBookmaker,
   updateMatch,
+  getMatch,
 } = require("../services/matchService");
 const { broadcastEvent } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -327,8 +329,30 @@ exports.createMatch = async (req, res) => {
 };
 
 
-exports.listMatch=async (req,res)=>{
-    const {query}=req;
+exports.listMatch = async (req, res) => {
+  const { query } = req;
+  const { isActive } = query;
+  const filters = {};
 
-    
-}
+  if (isActive) {
+    filters["stopAt"] = IsNull();
+  }
+
+  //   let userRedisData = await internalRedis.hgetall(user.userId);
+  const match = await getMatch(filters, [], query);
+  if (!match) {
+    return ErrorResponse(
+      {
+        statusCode: 400,
+        message: {
+          msg: "notFound",
+          keys: {
+            name: "Match",
+          },
+        },
+      },
+      req,
+      res
+    );
+  }
+};

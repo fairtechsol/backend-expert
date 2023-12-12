@@ -9,6 +9,18 @@ const doc = {
     description: "bet Fair APIs Description",
     version: "1.0.0",
   },
+  securityDefinitions: {
+    bearerAuth: {
+      type: 'apiKey',
+      name: 'Authorization',
+      in: 'header',
+    },
+  },
+  security: [
+    {
+      bearerAuth: [],
+    },
+  ],
   servers: [
     {
       url: "http://localhost:8000",

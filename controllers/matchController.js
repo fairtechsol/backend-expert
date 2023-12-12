@@ -325,3 +325,10 @@ exports.createMatch = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+
+exports.listMatch=async (req,res)=>{
+    const {query}=req;
+
+    
+}

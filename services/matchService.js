@@ -1,4 +1,5 @@
 const { AppDataSource } = require("../config/postGresConnection");
+const ApiFeature = require("../utils/apiFeatures");
 const matchSchema = require("../models/match.entity");
 const match = AppDataSource.getRepository(matchSchema);
 
@@ -44,4 +45,35 @@ exports.updateBookmaker = async (id, body) => {
 exports.addBookmaker = async (body) => {
   let insertBookmaker = await bookmaker.save(body);
   return insertBookmaker;
+};
+
+exports.getMatch = async (filters, select, query, bets) => {
+  try {
+   
+
+    // Start building the query
+    let matchQuery = new ApiFeature(
+      match
+        .createQueryBuilder()
+        .where(filters)
+        .orderBy({
+          startAt: "ASC",
+        })
+        .leftJoinAndSelect("match.bookmakers", "bookmakers")
+        .select(select),
+      query
+    )
+      .search()
+      .filter()
+      .sort()
+      .paginate()
+      .getResult();
+
+    // Execute the query and get the result along with count
+    const [transactions, count] = await transactionQuery;
+
+    return { transactions, count };
+  } catch (error) {
+    throw error;
+  }
 };

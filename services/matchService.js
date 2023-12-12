@@ -47,7 +47,7 @@ exports.addBookmaker = async (body) => {
   return insertBookmaker;
 };
 
-exports.getMatch = async (filters, select, query, bets) => {
+exports.getMatch = async (filters, select, query) => {
   try {
    
 

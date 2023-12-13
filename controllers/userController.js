@@ -3,6 +3,7 @@ const {
   addUser,
   getUserByUserName,
   updateUser,
+  getUser,
 } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
@@ -32,62 +33,8 @@ exports.createUser = async (req, res) => {
       betFairMatchPrivilege,
       bookmakerMatchPrivilege,
       sessionMatchPrivilege,
-      createBy,
-      id,
+      createBy
     } = req.body;
-
-   
-
-    // If user ID is provided, update the existing user
-    if (id) {
-      const isUserPresent=await getUserById(id,["id"]);
-
-      if(!isUserPresent){
-        return ErrorResponse(
-          { statusCode: 404, message: { msg: "notFound",keys:{
-            name:"User"
-          } } },
-          req,
-          res
-        );
-      }
-     await updateUser(id, {
-        fullName,
-        phoneNumber,
-        city,
-        allPrivilege,
-        addMatchPrivilege,
-        betFairMatchPrivilege,
-        bookmakerMatchPrivilege,
-        sessionMatchPrivilege,
-      });
-      // Send success response with the updated user data
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: {
-            msg: "updated",
-            keys: {
-              name: "User",
-            },
-          }
-        },
-        req,
-        res
-      );
-    }
-
-    // Verify the token and get the user ID
-    const userId = verifyToken(createBy);
-
-    // If token is invalid, return an error response
-    if (!userId) {
-      return ErrorResponse(
-        { statusCode: 403, message: { msg: "invalidData" } },
-        req,
-        res
-      );
-    }
 
     // Check if a user with the same username already exists
     let userExist = await getUserByUserName(userName);
@@ -108,7 +55,7 @@ exports.createUser = async (req, res) => {
       password,
       phoneNumber,
       city,
-      createBy: userId?.id,
+      createBy,
       allPrivilege,
       addMatchPrivilege,
       betFairMatchPrivilege,
@@ -144,6 +91,66 @@ exports.createUser = async (req, res) => {
 };
 
 
+exports.updateUser = async (req, res) => {
+  try {
+    // Destructuring request body for relevant user information
+    let {
+      fullName,
+      phoneNumber,
+      city,
+      createBy,
+      allPrivilege,
+      addMatchPrivilege,
+      betFairMatchPrivilege,
+      bookmakerMatchPrivilege,
+      sessionMatchPrivilege,
+      id,
+    } = req.body;
+
+      const isUserPresent=await getUser({id : id,createBy:createBy},["id"]);
+
+      if(!isUserPresent){
+        return ErrorResponse(
+          { statusCode: 404, message: { msg: "notFound",keys:{
+            name:"User"
+          } } },
+          req,
+          res
+        );
+      }
+      let updateData =  {
+        fullName  : fullName || isUserPresent.fullName,
+        phoneNumber : phoneNumber || isUserPresent.phoneNumber,
+        city : city || isUserPresent.city,
+        allPrivilege : allPrivilege ?? isUserPresent.allPrivilege,
+        addMatchPrivilege : addMatchPrivilege ?? isUserPresent.addMatchPrivilege,
+        betFairMatchPrivilege : betFairMatchPrivilege ?? isUserPresent.betFairMatchPrivilege,
+        bookmakerMatchPrivilege : bookmakerMatchPrivilege ?? isUserPresent.bookmakerMatchPrivilege,
+        sessionMatchPrivilege : sessionMatchPrivilege ?? isUserPresent.sessionMatchPrivilege,
+      }
+     await updateUser(id, updateData);
+     updateData["id"] = id
+      // Send success response with the updated user data
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: {
+            msg: "updated",
+            keys: {
+              name: "User",
+            },
+          },
+          data : updateData
+        },
+        req,
+        res
+      );
+    
+  } catch (err) {
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
 
 // Check old password against the stored password
 const checkOldPassword = async (userId, oldPassword) => {
@@ -168,7 +175,7 @@ const forceLogoutUser = async (userId, stopForceLogout) => {
 };
 
 // API endpoint for changing password
-exports.changePassword = async (req, res, next) => {
+exports.changeSelfPassword = async (req, res, next) => {
   try {
     // Destructure request body
     const { oldPassword, newPassword } = req.body;
@@ -194,6 +201,50 @@ exports.changePassword = async (req, res, next) => {
     // Update only the password if conditions are not met
     await updateUser(userId, { loginAt: new Date(), password });
     await forceLogoutUser(userId);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "auth.passwordChanged" },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    // Log any errors that occur
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+};
+
+
+exports.changePassword = async (req, res, next) => {
+  try {
+    // Destructure request body
+    let { password,confirmPassword,id,createBy} = req.body;
+
+    let user = await getUser({id : id,createBy:createBy},["id"]);
+    if(!user){
+      return ErrorResponse(
+        { statusCode: 404, message: { msg: "notFound",keys:{
+          name:"User"
+        } } },
+        req,
+        res
+      );
+    }
+    // Hash the new password
+    password = bcrypt.hashSync(password, 10);
+
+    // Update only the password if conditions are not met
+    await updateUser(id, { loginAt: new Date(), password });
+    await forceLogoutUser(id);
 
     return SuccessResponse(
       {

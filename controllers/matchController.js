@@ -26,7 +26,6 @@ exports.createMatch = async (req, res) => {
   try {
     // Extract relevant information from the request body
     const {
-      id,
       matchType,
       competitionId,
       competitionName,
@@ -41,7 +40,6 @@ exports.createMatch = async (req, res) => {
       matchOddMaxBet,
       betFairSessionMaxBet,
       betFairBookmakerMaxBet,
-      delaySecond,
       bookmakers,
     } = req.body;
 
@@ -63,134 +61,6 @@ exports.createMatch = async (req, res) => {
         res
       );
     }
-
-    // If an ID is provided, update an existing match
-    if (id) {
-      // Check if the match exists
-      const isMatchPresent = await getMatchById(id, ["id"]);
-
-      if (!isMatchPresent) {
-        return ErrorResponse(
-          {
-            statusCode: 404,
-            message: {
-              msg: "notFound",
-              keys: {
-                name: "Match",
-              },
-            },
-          },
-          req,
-          res
-        );
-      }
-
-      // Handle bookmaker updates
-      let redisBookEventName = "manualBookmaker_" + id;
-      let redisBookData = await internalRedis.hgetall(redisBookEventName);
-      const bulkBookmaker = [];
-      await Promise.all(
-        bookmakers?.map(async (item) => {
-          const { id: bookmakerId, maxBet } = item;
-
-          if (maxBet < minBet) {
-            throw {
-              statusCode: 400,
-              message: {
-                msg: "match.maxMustBeGreater",
-              },
-            };
-          }
-          if (!bookmakerId) {
-            throw {
-              statusCode: 404,
-              message: {
-                msg: "notFound",
-                keys: {
-                  name: "Bookmaker",
-                },
-              },
-            };
-          }
-
-          // Check if the bookmaker exists
-          const isBookmaker = await getBookMakerById(bookmakerId, ["id"]);
-
-          if (!isBookmaker) {
-            throw {
-              statusCode: 404,
-              message: {
-                msg: "notFound",
-                keys: {
-                  name: "Bookmaker",
-                },
-              },
-            };
-          }
-
-          // Update the bookmaker
-          await updateBookmaker(bookmakerId, {
-            minBet: minBet,
-            maxBet: maxBet,
-          });
-
-          // Retrieve and push the updated bookmaker
-          bulkBookmaker.push(await getBookMakerById(bookmakerId));
-
-          let keyName = "bookmaker_" + bookmakerId;
-          if (
-            redisBookData &&
-            Object.keys(redisBookData).length > 0 &&
-            redisBookData[keyName]
-          ) {
-            redisBookData[keyName] = JSON.parse(redisBookData[keyName]);
-            redisBookData[keyName]["minBet"] = minBet;
-            redisBookData[keyName]["maxBet"] = maxBet;
-            redisBookData[keyName] = JSON.stringify(redisBookData[keyName]);
-          }
-        }) || []
-      );
-
-      // Update Redis data if needed
-      if (redisBookData && Object.keys(redisBookData).length > 0) {
-        internalRedis.hmset(redisBookEventName, redisBookData);
-      }
-
-      // Update the existing match
-      await updateMatch(id, {
-        matchOddMinBet: minBet,
-        matchOddMaxBet,
-        betFairSessionMaxBet,
-        betFairSessionMinBet: minBet,
-        betFairBookmakerMaxBet,
-        betFairBookmakerMinBet: minBet,
-        delaySecond,
-      });
-
-      // Retrieve the updated match
-      const match = await getMatchById(id);
-
-      // Attach bookmakers to the match
-      match.bookmaker = bulkBookmaker;
-
-      //   broadcastEvent("newMatchAdded", match);
-
-      // Send success response with the updated match data
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: {
-            msg: "updated",
-            keys: {
-              name: "Match",
-            },
-          },
-        },
-        req,
-        res
-      );
-    }
-
     // If ID is not provided, it's a new match creation
 
     // Check if market ID already exists
@@ -229,7 +99,6 @@ exports.createMatch = async (req, res) => {
       betFairSessionMinBet: minBet,
       betFairBookmakerMaxBet,
       betFairBookmakerMinBet: minBet,
-      delaySecond,
       createBy: loginId,
     };
 
@@ -312,6 +181,160 @@ exports.createMatch = async (req, res) => {
         statusCode: 200,
         message: {
           msg: "created",
+          keys: {
+            name: "Match",
+          },
+        },
+        data :match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+exports.updateMatch = async (req, res) => {
+  try {
+    // Extract relevant information from the request body
+    const {
+      id,
+      minBet,
+      matchOddMaxBet,
+      betFairSessionMaxBet,
+      betFairBookmakerMaxBet,
+      bookmakers,
+    } = req.body;
+
+
+    // Check if at least one bookmaker is provided
+    if (bookmakers?.length == 0) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "match.atLeastOneBookmaker",
+          },
+        },
+        req,
+        res
+      );
+    }
+    // Check if the match exists
+    const isMatchPresent = await getMatchById(id, ["id"]);
+
+    if (!isMatchPresent) {
+      return ErrorResponse(
+        {
+          statusCode: 404,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    // Handle bookmaker updates
+    let redisBookEventName = "manualBookmaker_" + id;
+    let redisBookData = await internalRedis.hgetall(redisBookEventName);
+    const bulkBookmaker = [];
+    await Promise.all(
+      bookmakers?.map(async (item) => {
+        const { id: bookmakerId, maxBet } = item;
+
+        if (maxBet < minBet) {
+          throw {
+            statusCode: 400,
+            message: {
+              msg: "match.maxMustBeGreater",
+            },
+          };
+        }
+        if (!bookmakerId) {
+          throw {
+            statusCode: 404,
+            message: {
+              msg: "notFound",
+              keys: {
+                name: "Bookmaker",
+              },
+            },
+          };
+        }
+
+        // Check if the bookmaker exists
+        const isBookmaker = await getBookMakerById(bookmakerId, ["id"]);
+
+        if (!isBookmaker) {
+          throw {
+            statusCode: 404,
+            message: {
+              msg: "notFound",
+              keys: {
+                name: "Bookmaker",
+              },
+            },
+          };
+        }
+
+        // Update the bookmaker
+        await updateBookmaker(bookmakerId, {
+          minBet: minBet,
+          maxBet: maxBet,
+        });
+
+        // Retrieve and push the updated bookmaker
+        bulkBookmaker.push(await getBookMakerById(bookmakerId));
+
+        let keyName = "bookmaker_" + bookmakerId;
+        if (
+          redisBookData &&
+          Object.keys(redisBookData).length > 0 &&
+          redisBookData[keyName]
+        ) {
+          redisBookData[keyName] = JSON.parse(redisBookData[keyName]);
+          redisBookData[keyName]["minBet"] = minBet;
+          redisBookData[keyName]["maxBet"] = maxBet;
+          redisBookData[keyName] = JSON.stringify(redisBookData[keyName]);
+        }
+      }) || []
+    );
+
+    // Update Redis data if needed
+    if (redisBookData && Object.keys(redisBookData).length > 0) {
+      internalRedis.hmset(redisBookEventName, redisBookData);
+    }
+
+    // Update the existing match
+    await updateMatch(id, {
+      matchOddMinBet: minBet,
+      matchOddMaxBet,
+      betFairSessionMaxBet,
+      betFairSessionMinBet: minBet,
+      betFairBookmakerMaxBet,
+      betFairBookmakerMinBet: minBet,
+    });
+
+    // Retrieve the updated match
+    const match = await getMatchById(id);
+
+    // Attach bookmakers to the match
+    match.bookmaker = bulkBookmaker;
+
+    //   broadcastEvent("newMatchAdded", match);
+
+    // Send success response with the updated match data
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "updated",
           keys: {
             name: "Match",
           },

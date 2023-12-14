@@ -16,4 +16,3 @@ router.post('/admin/password',validator(ChangePassword),changePassword);
 router.post('/password',isAuthenticate,validator(ChangeSelfPassword),changeSelfPassword);
 
 module.exports = router;
-//https://3100dev.fairgame.club/fair-game-wallet/getUserBalanceDetails

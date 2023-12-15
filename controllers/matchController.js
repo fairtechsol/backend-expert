@@ -1,5 +1,5 @@
-const { IsNull } = require("typeorm");
-const { betStatus } = require("../config/contants");
+const { IsNull, In } = require("typeorm");
+const { betStatus, userRoleConstant, matchBettingType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { addBetting, getBetting } = require("../services/bettingService");
 const {
@@ -11,6 +11,7 @@ const {
   addBookmaker,
   updateMatch,
   getMatch,
+  getMatchDetails,
 } = require("../services/matchService");
 const { broadcastEvent } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -353,29 +354,119 @@ exports.updateMatch = async (req, res) => {
 
 
 exports.listMatch = async (req, res) => {
-  const { query } = req;
-  const { isActive } = query;
-  const filters = {};
+  try {
+    const { roleName } = req.user;
 
-  if (isActive) {
-    filters["stopAt"] = IsNull();
-  }
+    const { query } = req;
+    const { isActive, fields } = query;
+    const filters = {};
 
-  //   let userRedisData = await internalRedis.hgetall(user.userId);
-  const match = await getMatch(filters, [], query);
-  if (!match) {
-    return ErrorResponse(
-      {
-        statusCode: 400,
-        message: {
-          msg: "notFound",
-          keys: {
-            name: "Match",
+    if (isActive) {
+      filters["stopAt"] = IsNull();
+    }
+
+    if (roleName != userRoleConstant.expert) {
+      filters["matchBettings.type"] = matchBettingType.matchOdd;
+    } else {
+      filters["matchBettings.type"] = In([
+        matchBettingType.quickbookmaker1,
+        matchBettingType.quickbookmaker2,
+        matchBettingType.quickbookmaker3,
+      ]);
+    }
+    //   let userRedisData = await internalRedis.hgetall(user.userId);
+    const match = await getMatch(filters, fields?.split(",") || [], query);
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
           },
         },
+        req,
+        res
+      );
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match list" } },
+        data: match,
       },
       req,
       res
     );
+  } catch (err) {
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.matchDetails = async (req, res) => {
+  try {
+    const { id: matchId } = req.params;
+
+    const match = await getMatchDetails(matchId, []);
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    const categorizedMatchBettings = {
+      [matchBettingType.matchOdd]: null,
+      [matchBettingType.bookmaker]: null,
+      quickBookmaker: [],
+    };
+
+    // Iterate through matchBettings and categorize them
+    (match?.matchBettings || []).forEach((item) => {
+      switch (item?.type) {
+        case matchBettingType.matchOdd:
+          categorizedMatchBettings[matchBettingType.matchOdd] = item;
+          break;
+        case matchBettingType.bookmaker:
+          categorizedMatchBettings[matchBettingType.bookmaker] = item;
+          break;
+        case matchBettingType.quickbookmaker1:
+        case matchBettingType.quickbookmaker2:
+        case matchBettingType.quickbookmaker3:
+          categorizedMatchBettings.quickBookmaker.push(item);
+          break;
+        // Add more cases if needed
+      }
+    });
+
+    // Assign the categorized match bettings to the match object
+    Object.assign(match, categorizedMatchBettings);
+    match["sessionMatch"] = match?.sessionBettings;
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match Details" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
   }
 };

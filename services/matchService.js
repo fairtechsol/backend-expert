@@ -59,7 +59,7 @@ exports.getMatch = async (filters, select, query) => {
         .orderBy({
           startAt: "ASC",
         })
-        .leftJoinAndSelect("match.bookmakers", "bookmakers")
+        .leftJoinAndSelect("match.matchBettings", "matchBettings")
         .select(select),
       query
     )
@@ -70,10 +70,23 @@ exports.getMatch = async (filters, select, query) => {
       .getResult();
 
     // Execute the query and get the result along with count
-    const [transactions, count] = await transactionQuery;
+    const [matches, count] = await matchQuery;
 
-    return { transactions, count };
+    return { matches, count };
   } catch (error) {
     throw error;
   }
 };
+
+exports.getMatchDetails = async (id, select) => {
+    return await match.findOne({
+      where: { id:id },
+      select: select,
+      relations: {
+        matchBettings: true,
+        sessionBettings: true
+      }
+    });
+  };
+
+exports.getMatchDetails

@@ -4,12 +4,13 @@ const router = express.Router();
 const validator = require('../middleware/joi.validator');
 
 const { isAuthenticate } = require('../middleware/auth');
-const { createMatch } = require('../controllers/matchController');
-const { addMatch } = require('../validators/matchValidator');
+const { createMatch, updateMatch } = require('../controllers/matchController');
+const {  updateMatchValidate, addMatchValidate } = require('../validators/matchValidator');
 
 
 
 
-router.post('/add',isAuthenticate,validator(addMatch),createMatch);
+router.post('/add',isAuthenticate,validator(addMatchValidate),createMatch);
+router.post('/update',isAuthenticate,validator(updateMatchValidate),updateMatch);
 
 module.exports = router;

@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:8000",
+      "url": "http://localhost:6060",
       "description": "local host url "
     },
     {
@@ -52,7 +52,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -112,6 +112,54 @@
                   },
                   "createBy": {
                     "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/update": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fullName": {
+                    "example": "any"
+                  },
+                  "phoneNumber": {
+                    "example": "any"
+                  },
+                  "city": {
+                    "example": "any"
+                  },
+                  "createBy": {
+                    "example": "any"
+                  },
+                  "allPrivilege": {
+                    "example": "any"
+                  },
+                  "addMatchPrivilege": {
+                    "example": "any"
+                  },
+                  "betFairMatchPrivilege": {
+                    "example": "any"
+                  },
+                  "bookmakerMatchPrivilege": {
+                    "example": "any"
+                  },
+                  "sessionMatchPrivilege": {
+                    "example": "any"
                   },
                   "id": {
                     "example": "any"
@@ -123,12 +171,45 @@
         }
       }
     },
-    "/user/changePassword": {
+    "/user/password": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "example": "any"
+                  },
+                  "confirmPassword": {
+                    "example": "any"
+                  },
+                  "id": {
+                    "example": "any"
+                  },
+                  "createBy": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/password/self": {
       "post": {
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -164,7 +245,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"

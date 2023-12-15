@@ -46,13 +46,17 @@ module.exports.baseColumnsSchemaPart = {
 module.exports.matchBettingType = {
   matchOdd : 'matchOdd',
   bookmaker : 'bookmaker',
-  quickbookmaker : 'quickbookmaker1',
-  quickbookmaker : 'quickbookmaker2',
-  quickbookmaker : 'quickbookmaker3',
-  tiedMatch : 'tiedMatch1',
-  tiedMatch : 'tiedMatch2'
+  quickbookmaker1 : 'quickbookmaker1',
+  quickbookmaker2 : 'quickbookmaker2',
+  quickbookmaker3 : 'quickbookmaker3',
+  tiedMatch1 : 'tiedMatch1',
+  tiedMatch2 : 'tiedMatch2'
 }
 
+module.exports.intialMatchBettingsName = {
+  initialBookmaker : "Bookmaker Market",
+  initialMatchOdd : "Match Odd"
+}
 module.exports.sessionBettingType = {
   marketSession : 'marketSession',
   manualSession : 'manualSession',

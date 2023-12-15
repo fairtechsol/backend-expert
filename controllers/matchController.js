@@ -1,14 +1,13 @@
 const { IsNull, In } = require("typeorm");
-const { betStatus, userRoleConstant, matchBettingType } = require("../config/contants");
+const { betStatus, userRoleConstant, matchBettingType,intialBookmaker, intialMatchBettingsName } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
-const { addBetting, getBetting } = require("../services/bettingService");
+const { insertMatchBettings } = require("../services/matchBettingService");
 const {
   getMatchById,
   updateBookmaker,
   getBookMakerById,
   getMatchByMarketId,
   addMatch,
-  addBookmaker,
   updateMatch,
   getMatch,
   getMatchDetails,
@@ -44,6 +43,7 @@ exports.createMatch = async (req, res) => {
       betFairSessionMaxBet,
       betFairBookmakerMaxBet,
       bookmakers,
+      tiedMatch
     } = req.body;
 
     /* access work left */
@@ -96,86 +96,82 @@ exports.createMatch = async (req, res) => {
       teamB,
       teamC,
       startAt,
-      matchOddMinBet: minBet,
-      matchOddMaxBet,
       betFairSessionMaxBet,
       betFairSessionMinBet: minBet,
-      betFairBookmakerMaxBet,
-      betFairBookmakerMinBet: minBet,
-      createBy: loginId,
+      createBy: loginId
     };
 
-    // Add the new match
-    const match = await addMatch(matchData);
-
-    // Check if betting exists for the new match
-    const isBettingExist = await getBetting(
-      {
-        matchId: match.id,
-        sessionBet: false,
-      },
-      ["id"]
-    );
-
-    if (isBettingExist) {
+    let allArrays = [...bookmakers, ...tiedMatch];
+    let maxBetValues = allArrays.map(item => item.maxBet);
+    let minimumMaxBet = Math.min(...maxBetValues);
+    if(minimumMaxBet < minBet){
       return ErrorResponse(
         {
           statusCode: 400,
           message: {
-            msg: "match.betAlreadyExistForMatch",
+            msg: "match.maxMustBeGreater",
           },
         },
         req,
         res
       );
     }
+    // Add the new match
+    const match = await addMatch(matchData);
+    if (!match) {
+      return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
+    }
 
-    // Prepare betting object
-    const betObj = {
+    let matchBetting = {
       matchId: match.id,
-      sessionBet: false,
-      createBy: loginId,
-      matchType: matchType,
-      betStatus: betStatus.live,
-    };
-
-    // Add the new betting entry
-    const betting = await addBetting(betObj);
-
-    // broadcastEvent("newBetAdded", betting);
-
-    // Prepare bookmakers for the new match
-    const bulkBookmaker = [];
-    await Promise.all(
-      bookmakers?.map((item, index) => {
+      minBet: minBet
+    }
+    let matchBettings = [
+      {
+        ...matchBetting,
+        type: matchBettingType.matchOdd,
+        name: intialMatchBettingsName.initialMatchOdd,
+        maxBet: matchOddMaxBet,
+      },
+      {
+        ...matchBetting,
+        type: matchBettingType.bookmaker,
+        name: intialMatchBettingsName.initialBookmaker,
+        maxBet: betFairBookmakerMaxBet,
+      }
+    ]
+    if (tiedMatch && tiedMatch.length) {
+      tiedMatch.map((item, index) => {
         const { maxBet, marketName } = item;
-
-        if (maxBet < minBet) {
-          throw {
-            statusCode: 400,
-            message: {
-              msg: "match.maxMustBeGreater",
-            },
-          };
-        }
-
-        // Add the bookmaker
-        bulkBookmaker.push({
-          marketType: "QuickBookmaker" + index,
+        index++;
+        matchBettings.push({
           matchId: match.id,
-          matchType: matchType,
-          betId: betting.id,
-          createBy: loginId,
-          marketName: marketName,
+          type: matchBettingType["tiedMatch" + index],
+          name: marketName,
           minBet: minBet,
-          maxBet: maxBet,
-        });
-      }) || []
-    );
-
+          maxBet: maxBet
+        })
+      })
+    }
+    // Prepare bookmakers for the new match
+    bookmakers?.map((item, index) => {
+      const { maxBet, marketName } = item;
+      index++;
+      // Add the bookmaker
+      matchBettings.push({
+        type: matchBettingType["quickbookmaker" + index],
+        matchId: match.id,
+        name: marketName,
+        minBet: minBet,
+        maxBet: maxBet,
+      });
+    });
     // Attach bookmakers to the match
-    match["bookmaker"] = await addBookmaker(bulkBookmaker);
-
+    let insertedMatchBettings = await insertMatchBettings(matchBettings);
+    if (!insertedMatchBettings) {
+      return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
+    }
+    match["bookmaker"] = insertedMatchBettings.generatedMaps
     // broadcastEvent("newMatchAdded", match);
 
     // Send success response with the add match data
@@ -188,7 +184,7 @@ exports.createMatch = async (req, res) => {
             name: "Match",
           },
         },
-        data :match,
+        data: match,
       },
       req,
       res

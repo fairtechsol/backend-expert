@@ -40,4 +40,4 @@ const logger = winston.createLogger({
   ]
 });
 
-exports.LOGGER = logger
+exports.logger = logger

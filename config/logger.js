@@ -29,15 +29,51 @@ const debugTransport = new DailyRotateFile({
   maxFiles: '14d'
 });
 
+const combineTransport = new DailyRotateFile({
+  level: 'silly',
+  filename: 'logs/combine-%DATE%.log',
+  datePattern: 'YYYY-MM-DD',
+  maxFiles: '20d'
+});
+
 // Create a logger and add transports
-const logger = winston.createLogger({
+const infoLogger = winston.createLogger({
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+  transports: [
+    new winston.transports.Console(),
+    infoTransport,
+    combineTransport
+  ]
+});
+
+const errorLogger = winston.createLogger({
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
     new winston.transports.Console(),
     errorTransport,
-    infoTransport,
-    debugTransport
-    // Add other transports for different log levels as needed
+    combineTransport
   ]
 });
+
+const debugLogger = winston.createLogger({
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+  transports: [
+    new winston.transports.Console(),
+    debugTransport,
+    combineTransport
+  ]
+});
+
+const logger = {
+  info: (params) => {
+    return infoLogger.info(params);
+  },
+  error: (params) => {
+    return errorLogger.error(params);
+  },
+  debug: (params) => {
+    return debugLogger.debug(params);
+  },
+};
 
 exports.logger = logger

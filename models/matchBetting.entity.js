@@ -1,5 +1,6 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, matchBettingType, teamStatus } = require("../config/contants");
+const { ColumnNumericTransformer } = require("../services/commonService");
 
 const matchBettingSchema = new EntitySchema({
   name: "matchBetting",
@@ -21,50 +22,71 @@ const matchBettingSchema = new EntitySchema({
     },
     minBet : {
       type: 'float',
-      nullable: false
+      nullable: false,
+      default : 0,
+      check: "minBet >= 0",
+      transformer : new ColumnNumericTransformer()
     },
     maxBet : {
       type: 'float',
-      nullable: false
+      nullable: false,
+      default : 1,
+      check: "maxBet > minBet",
+      transformer : new ColumnNumericTransformer()
     },
-    backTeam_A : {
+    backTeamA : {
       type: 'float',
-      nullable: false
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
     },
-    backTeam_B : {
+    backTeamB : {
       type: 'float',
-      nullable: false
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
     },
     backTeamC : {
       type: 'float',
-      nullable: true
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
     },
-    layTeam_A : {
+    layTeamA : {
       type: 'float',
-      nullable: false
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
     },
-    layTeam_B : {
+    layTeamB : {
       type: 'float',
-      nullable: false
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
     },
-    layTeam_C : {
+    layTeamC : {
       type: 'float',
-      nullable: true
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
     },
-    statusTeam_A : {
+    statusTeamA : {
       type: 'enum',
       enum: Object.values(teamStatus),
-      nullable: false
+      nullable: false,
+      default : teamStatus.suspended
     },
-    statusTeam_B : {
+    statusTeamB : {
       type: 'enum',
       enum: Object.values(teamStatus),
-      nullable: false
+      nullable: false,
+      default : teamStatus.suspended
     },
-    statusTeam_C : {
+    statusTeamC : {
       type: 'enum',
       enum: Object.values(teamStatus),
-      nullable: true
+      nullable: true,
+      default : teamStatus.suspended
     },
     stopAt :{
       type: 'timestamp with time zone',

@@ -1,5 +1,6 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, teamStatus, sessionBettingType, betStatusType } = require("../config/contants");
+const { ColumnNumericTransformer } = require("../services/commonService");
 
 const sessionBettingSchema = new EntitySchema({
     name: "sessionBetting",
@@ -21,32 +22,45 @@ const sessionBettingSchema = new EntitySchema({
         },
         minBet : {
             type: 'float',
-            nullable: false
+            nullable: false,
+            default : 0,
+            transformer : new ColumnNumericTransformer()
         },
         maxBet : {
             type: 'float',
-            nullable: false
+            nullable: false,
+            default : 0,
+            transformer : new ColumnNumericTransformer()
         },
         yesRate : {
             type: 'float',
-            nullable: false
+            nullable: false,
+            default : 0,
+            transformer : new ColumnNumericTransformer()
         },
         noRate : {
             type: 'float',
-            nullable: false
+            nullable: false,
+            default : 0,
+            transformer : new ColumnNumericTransformer()
         },
         yesPercent : {
             type: 'float',
-            nullable: false
+            nullable: false,
+            default : 0,
+            transformer : new ColumnNumericTransformer()
         },
         noPercent : {
             type: 'float',
-            nullable: false
+            nullable: false,
+            default : 0,
+            transformer : new ColumnNumericTransformer()
         },
         status : {
             type: 'enum',
             enum: Object.values(teamStatus),
-            nullable: false
+            nullable: false,
+            default : teamStatus.suspended
         },
         selectionId : {
             type: 'varchar',
@@ -55,7 +69,8 @@ const sessionBettingSchema = new EntitySchema({
         betStatus : {
             type: 'enum',
             enum: Object.values(betStatusType),
-            nullable: false
+            nullable: false,
+            default : betStatusType.live
         },
         stopAt :{
             type: 'timestamp with time zone',

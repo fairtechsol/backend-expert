@@ -1,5 +1,6 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, betType, bettingType } = require("../config/contants");
+const { ColumnNumericTransformer } = require("../services/commonService");
 
 const betSchema = new EntitySchema({
   name: "bet",
@@ -25,18 +26,26 @@ const betSchema = new EntitySchema({
     amount : {
         type : 'float',
         nullable : false,
+        default : 0,
+        transformer : new ColumnNumericTransformer()
     },
     odds : {
         type : 'float',
         nullable : false,
+        default : 0,
+        transformer : new ColumnNumericTransformer()
     },
     winAmount : {
         type : 'float',
         nullable : false,
+        default : 0,
+        transformer : new ColumnNumericTransformer()
     },
     lossAmount : {
         type : 'float',
         nullable : false,
+        default : 0,
+        transformer : new ColumnNumericTransformer()
     },
     betType : {
         type: 'enum',
@@ -46,6 +55,8 @@ const betSchema = new EntitySchema({
     rate : {
         type : 'float',
         nullable : false,
+        default : 0,
+        transformer : new ColumnNumericTransformer()
     },
     marketType : {
         type: 'enum',

@@ -2,10 +2,14 @@ const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, betType, bettingType } = require("../config/contants");
 const { ColumnNumericTransformer } = require("../services/commonService");
 
-const betSchema = new EntitySchema({
-  name: "bet",
+const betPlacedSchema = new EntitySchema({
+  name: "betPlaced",
   columns: {
     ...baseColumnsSchemaPart,
+    userId :{
+      type: "uuid",
+      nullable: false
+    },
     matchId: {
       type: "uuid",
       nullable: false,
@@ -89,11 +93,11 @@ const betSchema = new EntitySchema({
   },
   indices: [
     {
-      name: "bet_betId", // index name should be start with the table name
+      name: "betPlaced_betId", // index name should be start with the table name
       unique: true, // Optional: Set to true if you want a unique index
       columns: ["matchId", "betId"],
     },
   ],
 });
 
-module.exports = betSchema;
+module.exports = betPlacedSchema;

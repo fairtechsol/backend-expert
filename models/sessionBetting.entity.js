@@ -24,12 +24,14 @@ const sessionBettingSchema = new EntitySchema({
             type: 'float',
             nullable: false,
             default : 0,
+            check: "minBet >= 0",
             transformer : new ColumnNumericTransformer()
         },
         maxBet : {
             type: 'float',
             nullable: false,
             default : 0,
+            check: "maxBet > minBet",
             transformer : new ColumnNumericTransformer()
         },
         yesRate : {

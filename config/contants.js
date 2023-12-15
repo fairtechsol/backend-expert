@@ -35,8 +35,11 @@ module.exports.baseColumnsSchemaPart = {
 module.exports.matchBettingType = {
   matchOdd : 'matchOdd',
   bookmaker : 'bookmaker',
-  quickbookmaker : 'quickbookmaker',
-  tiedMatch : 'tiedMatch'
+  quickbookmaker : 'quickbookmaker1',
+  quickbookmaker : 'quickbookmaker2',
+  quickbookmaker : 'quickbookmaker3',
+  tiedMatch : 'tiedMatch1',
+  tiedMatch : 'tiedMatch2'
 }
 
 module.exports.sessionBettingType = {
@@ -49,9 +52,9 @@ module.exports.teamStatus = {
   suspended : 'suspended',
   active : 'active',
   closed : 'closed',
-  ballStart : "ballStart",
-  ballStop : "ballStop",
-  ballRunning : 'ballRunning'
+  ballStart : "ball start",
+  ballStop : "ball stop",
+  ballRunning : 'ball running'
 }
 
 module.exports.betStatusType = {

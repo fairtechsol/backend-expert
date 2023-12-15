@@ -351,27 +351,15 @@ exports.updateMatch = async (req, res) => {
 
 exports.listMatch = async (req, res) => {
   try {
-    const { roleName } = req.user;
 
     const { query } = req;
-    const { isActive, fields } = query;
+    const { fields } = query;
     const filters = {};
 
-    if (isActive) {
-      filters["stopAt"] = IsNull();
-    }
 
-    if (roleName != userRoleConstant.expert) {
-      filters["matchBettings.type"] = matchBettingType.matchOdd;
-    } else {
-      filters["matchBettings.type"] = In([
-        matchBettingType.quickbookmaker1,
-        matchBettingType.quickbookmaker2,
-        matchBettingType.quickbookmaker3,
-      ]);
-    }
+    
     //   let userRedisData = await internalRedis.hgetall(user.userId);
-    const match = await getMatch(filters, fields?.split(",") || [], query);
+    const match = await getMatch(filters, fields?.split(",") || null, query);
     if (!match) {
       return ErrorResponse(
         {

@@ -89,43 +89,37 @@ module.exports.addMatchValidate = Joi.object({
 
 const updatebookmakerSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
-  maxBet: Joi.number().required()
+  maxBet: Joi.number().required(),
+  type : Joi.string().required()
 });
 
 module.exports.updateMatchValidate = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }).required(),
-  minBet: Joi.number().required().messages({
-    "number.base": "Minimum bet amount must be a number",
-    "any.required": "Minimum bet amount is required",
+  minBet: Joi.number().messages({
+    "number.base": "Minimum bet amount must be a number"
   }),
-  matchOddMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
+  matchOddMaxBet: Joi.number().greater(Joi.ref("minBet")).messages({
     "number.base": "Maximum bet odd must be a number",
     "number.greater":
-      "Maximum bet amount must be greater than minimum bet amount",
-    "any.required": "Maximum bet odd is required",
+      "Maximum bet amount must be greater than minimum bet amount"
   }),
   betFairSessionMaxBet: Joi.number()
     .greater(Joi.ref("minBet"))
-    .required()
     .messages({
       "number.base": "Maximum bet amount for BetFair session must be a number",
       "number.greater":
-        "Maximum bet amount for BetFair session must be greater than minimum bet amount",
-      "any.required": "Maximum bet amount for BetFair session is required",
+        "Maximum bet amount for BetFair session must be greater than minimum bet amount"
     }),
   betFairBookmakerMaxBet: Joi.number()
     .greater(Joi.ref("minBet"))
-    .required()
     .messages({
       "number.base":
         "Maximum bet amount for BetFair bookmaker must be a number",
       "number.greater":
-        "Maximum bet amount for BetFair bookmaker must be greater than minimum bet amount",
-      "any.required": "Maximum bet amount for BetFair bookmaker is required",
+        "Maximum bet amount for BetFair bookmaker must be greater than minimum bet amount"
     }),
-  bookmakers: Joi.array().items(updatebookmakerSchema).required().messages({
+  bookmakers: Joi.array().items(updatebookmakerSchema).messages({
     "array.base": "Bookmakers must be an array",
-    "any.required": "Bookmakers are required",
   }),
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",

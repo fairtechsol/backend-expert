@@ -1,6 +1,6 @@
 const { betStatus, matchBettingType, intialBookmaker, intialMatchBettingsName } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
-const { insertMatchBettings } = require("../services/matchBettingService");
+const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
 const {
   getMatchById,
   updateBookmaker,
@@ -93,8 +93,8 @@ exports.createMatch = async (req, res) => {
       teamB,
       teamC,
       startAt,
-      betFairSessionMaxBet,
-      betFairSessionMinBet: minBet,
+      betFairSessionMaxBet : 50,
+      betFairSessionMinBet: 100,
       createBy: loginId
     };
 
@@ -119,56 +119,56 @@ exports.createMatch = async (req, res) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
     }
 
-    let matchBetting = {
-      matchId: match.id,
-      minBet: minBet
-    }
-    let matchBettings = [
-      {
-        ...matchBetting,
-        type: matchBettingType.matchOdd,
-        name: intialMatchBettingsName.initialMatchOdd,
-        maxBet: matchOddMaxBet,
-      },
-      {
-        ...matchBetting,
-        type: matchBettingType.bookmaker,
-        name: intialMatchBettingsName.initialBookmaker,
-        maxBet: betFairBookmakerMaxBet,
-      }
-    ]
-    if (tiedMatch && tiedMatch.length) {
-      tiedMatch.map((item, index) => {
-        const { maxBet, marketName } = item;
-        index++;
-        matchBettings.push({
-          matchId: match.id,
-          type: matchBettingType["tiedMatch" + index],
-          name: marketName,
-          minBet: minBet,
-          maxBet: maxBet
-        })
-      })
-    }
-    // Prepare bookmakers for the new match
-    bookmakers?.map((item, index) => {
-      const { maxBet, marketName } = item;
-      index++;
-      // Add the bookmaker
-      matchBettings.push({
-        type: matchBettingType["quickbookmaker" + index],
-        matchId: match.id,
-        name: marketName,
-        minBet: minBet,
-        maxBet: maxBet,
-      });
-    });
-    // Attach bookmakers to the match
-    let insertedMatchBettings = await insertMatchBettings(matchBettings);
-    if (!insertedMatchBettings) {
-      return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
-    }
-    match["bookmaker"] = insertedMatchBettings.generatedMaps
+    // let matchBetting = {
+    //   matchId: match.id,
+    //   minBet: minBet
+    // }
+    // let matchBettings = [
+    //   {
+    //     ...matchBetting,
+    //     type: matchBettingType.matchOdd,
+    //     name: intialMatchBettingsName.initialMatchOdd,
+    //     maxBet: matchOddMaxBet,
+    //   },
+    //   {
+    //     ...matchBetting,
+    //     type: matchBettingType.bookmaker,
+    //     name: intialMatchBettingsName.initialBookmaker,
+    //     maxBet: betFairBookmakerMaxBet,
+    //   }
+    // ]
+    // if (tiedMatch && tiedMatch.length) {
+    //   tiedMatch.map((item, index) => {
+    //     const { maxBet, marketName } = item;
+    //     index++;
+    //     matchBettings.push({
+    //       matchId: match.id,
+    //       type: matchBettingType["tiedMatch" + index],
+    //       name: marketName,
+    //       minBet: minBet,
+    //       maxBet: maxBet
+    //     })
+    //   })
+    // }
+    // // Prepare bookmakers for the new match
+    // bookmakers?.map((item, index) => {
+    //   const { maxBet, marketName } = item;
+    //   index++;
+    //   // Add the bookmaker
+    //   matchBettings.push({
+    //     type: matchBettingType["quickbookmaker" + index],
+    //     matchId: match.id,
+    //     name: marketName,
+    //     minBet: minBet,
+    //     maxBet: maxBet,
+    //   });
+    // });
+    // // Attach bookmakers to the match
+    // let insertedMatchBettings = await insertMatchBettings(matchBettings);
+    // if (!insertedMatchBettings) {
+    //   return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
+    // }
+    // match["bookmaker"] = insertedMatchBettings.generatedMaps
     // broadcastEvent("newMatchAdded", match);
 
     // Send success response with the add match data
@@ -201,6 +201,7 @@ exports.updateMatch = async (req, res) => {
       betFairSessionMaxBet,
       betFairBookmakerMaxBet,
       bookmakers,
+      tiedMatch
     } = req.body;
 
 
@@ -218,9 +219,9 @@ exports.updateMatch = async (req, res) => {
       );
     }
     // Check if the match exists
-    const isMatchPresent = await getMatchById(id, ["id"]);
+    let match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
 
-    if (!isMatchPresent) {
+    if (!match) {
       return ErrorResponse(
         {
           statusCode: 404,
@@ -235,93 +236,115 @@ exports.updateMatch = async (req, res) => {
         res
       );
     }
+    let matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
+    
 
-    // Handle bookmaker updates
-    let redisBookEventName = "manualBookmaker_" + id;
-    let redisBookData = await internalRedis.hgetall(redisBookEventName);
-    const bulkBookmaker = [];
-    await Promise.all(
-      bookmakers?.map(async (item) => {
-        const { id: bookmakerId, maxBet } = item;
+    // // Handle bookmaker updates
+    // let redisBookEventName = "manualBookmaker_" + id;
+    // let redisBookData = await internalRedis.hgetall(redisBookEventName);
+    // const bulkBookmaker = [];
+    // // await Promise.all(
+    // //   bookmakers?.map(async (item) => {
+    // //     const { id: bookmakerId, maxBet } = item;
 
-        if (maxBet < minBet) {
-          throw {
-            statusCode: 400,
-            message: {
-              msg: "match.maxMustBeGreater",
-            },
-          };
-        }
-        if (!bookmakerId) {
-          throw {
-            statusCode: 404,
-            message: {
-              msg: "notFound",
-              keys: {
-                name: "Bookmaker",
-              },
-            },
-          };
-        }
+    // //     if (maxBet < minBet) {
+    // //       throw {
+    // //         statusCode: 400,
+    // //         message: {
+    // //           msg: "match.maxMustBeGreater",
+    // //         },
+    // //       };
+    // //     }
+    // //     if (!bookmakerId) {
+    // //       throw {
+    // //         statusCode: 404,
+    // //         message: {
+    // //           msg: "notFound",
+    // //           keys: {
+    // //             name: "Bookmaker",
+    // //           },
+    // //         },
+    // //       };
+    // //     }
 
-        // Check if the bookmaker exists
-        const isBookmaker = await getBookMakerById(bookmakerId, ["id"]);
+    // //     // Check if the bookmaker exists
+    // //     const isBookmaker = await getBookMakerById(bookmakerId, ["id"]);
 
-        if (!isBookmaker) {
-          throw {
-            statusCode: 404,
-            message: {
-              msg: "notFound",
-              keys: {
-                name: "Bookmaker",
-              },
-            },
-          };
-        }
+    // //     if (!isBookmaker) {
+    // //       throw {
+    // //         statusCode: 404,
+    // //         message: {
+    // //           msg: "notFound",
+    // //           keys: {
+    // //             name: "Bookmaker",
+    // //           },
+    // //         },
+    // //       };
+    // //     }
 
-        // Update the bookmaker
-        await updateBookmaker(bookmakerId, {
-          minBet: minBet,
-          maxBet: maxBet,
-        });
+    // //     // Update the bookmaker
+    // //     await updateBookmaker(bookmakerId, {
+    // //       minBet: minBet,
+    // //       maxBet: maxBet,
+    // //     });
 
-        // Retrieve and push the updated bookmaker
-        bulkBookmaker.push(await getBookMakerById(bookmakerId));
+    // //     // Retrieve and push the updated bookmaker
+    // //     bulkBookmaker.push(await getBookMakerById(bookmakerId));
 
-        let keyName = "bookmaker_" + bookmakerId;
-        if (
-          redisBookData &&
-          Object.keys(redisBookData).length > 0 &&
-          redisBookData[keyName]
-        ) {
-          redisBookData[keyName] = JSON.parse(redisBookData[keyName]);
-          redisBookData[keyName]["minBet"] = minBet;
-          redisBookData[keyName]["maxBet"] = maxBet;
-          redisBookData[keyName] = JSON.stringify(redisBookData[keyName]);
-        }
-      }) || []
-    );
+    // //     let keyName = "bookmaker_" + bookmakerId;
+    // //     if (
+    // //       redisBookData &&
+    // //       Object.keys(redisBookData).length > 0 &&
+    // //       redisBookData[keyName]
+    // //     ) {
+    // //       redisBookData[keyName] = JSON.parse(redisBookData[keyName]);
+    // //       redisBookData[keyName]["minBet"] = minBet;
+    // //       redisBookData[keyName]["maxBet"] = maxBet;
+    // //       redisBookData[keyName] = JSON.stringify(redisBookData[keyName]);
+    // //     }
+    // //   }) || []
+    // // );
 
-    // Update Redis data if needed
-    if (redisBookData && Object.keys(redisBookData).length > 0) {
-      internalRedis.hmset(redisBookEventName, redisBookData);
+    // // Update Redis data if needed
+    // if (redisBookData && Object.keys(redisBookData).length > 0) {
+    //   internalRedis.hmset(redisBookEventName, redisBookData);
+    // }
+
+    
+    const updatePromises = [];
+
+    if (minBet) {
+      await updateMatchBetting({ matchId: id }, { minBet });
+      await updateMatch(id, { betFairSessionMinBet: minBet });
     }
 
-    // Update the existing match
-    await updateMatch(id, {
-      matchOddMinBet: minBet,
-      matchOddMaxBet,
-      betFairSessionMaxBet,
-      betFairSessionMinBet: minBet,
-      betFairBookmakerMaxBet,
-      betFairBookmakerMinBet: minBet,
-    });
+    if (matchOddMaxBet) {
+      await updateMatchBetting({ matchId: id, type: matchBettingType.matchOdd }, { maxBet: matchOddMaxBet });
+    }
 
-    // Retrieve the updated match
-    const match = await getMatchById(id);
+    if (betFairSessionMaxBet) {
+      await updateMatch(id, { betFairSessionMaxBet });
+    }
 
-    // Attach bookmakers to the match
-    match.bookmaker = bulkBookmaker;
+    if (betFairBookmakerMaxBet) {
+      await updateMatchBetting({ matchId: id, type: matchBettingType.bookmaker }, { maxBet: betFairBookmakerMaxBet });
+    }
+
+    if (bookmakers && bookmakers.length) {
+      await Promise.all[bookmakers.map(item => updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item.maxBet }))];
+    }
+
+    if (tiedMatch && tiedMatch.length) {
+      await Promise.all[tiedMatch.map(item => updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item.maxBet }))];
+    }
+
+    // await Promise.all(updatePromises);
+
+    match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
+    matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
+
+    // Attach bookmaker data to the match object
+    match["bookmaker"] = matchBatting;
 
     //   broadcastEvent("newMatchAdded", match);
 
@@ -335,6 +358,7 @@ exports.updateMatch = async (req, res) => {
             name: "Match",
           },
         },
+        data : match
       },
       req,
       res

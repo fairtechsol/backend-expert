@@ -12,8 +12,7 @@ const betPlacedSchema = new EntitySchema({
     },
     matchId: {
       type: "uuid",
-      nullable: false,
-      unique: true,
+      nullable: false
     },
     betId : {
         type : 'uuid',
@@ -93,9 +92,8 @@ const betPlacedSchema = new EntitySchema({
   },
   indices: [
     {
-      name: "betPlaced_betId", // index name should be start with the table name
-      unique: true, // Optional: Set to true if you want a unique index
-      columns: ["matchId", "betId"],
+      name: "betPlaced_betId_userId", // index name should be start with the table name
+      columns: ["matchId", "betId","userId"],
     },
   ],
 });

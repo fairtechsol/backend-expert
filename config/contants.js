@@ -30,3 +30,48 @@ module.exports.baseColumnsSchemaPart = {
     deleteDate: true,
   },
 };
+
+
+module.exports.matchBettingType = {
+  matchOdd : 'matchOdd',
+  bookmaker : 'bookmaker',
+  quickbookmaker : 'quickbookmaker1',
+  quickbookmaker : 'quickbookmaker2',
+  quickbookmaker : 'quickbookmaker3',
+  tiedMatch : 'tiedMatch1',
+  tiedMatch : 'tiedMatch2'
+}
+
+module.exports.sessionBettingType = {
+  marketSession : 'marketSession',
+  manualSession : 'manualSession',
+  overByOver : 'overByover',
+  ballByBall : 'ballByBall'
+}
+module.exports.teamStatus = {
+  suspended : 'suspended',
+  active : 'active',
+  closed : 'closed',
+  ballStart : "ball start",
+  ballStop : "ball stop",
+  ballRunning : 'ball running'
+}
+
+module.exports.betStatusType = {
+  save:'save',
+  live : 'live',
+  result : 'result',
+  close : 'close'
+}
+
+module.exports.betType = {
+  back : 'back',
+  lay : 'lay',
+  yes : 'yes',
+  no : 'no'
+}
+
+module.exports.bettingType = {
+session : 'session',
+match : 'match'
+}

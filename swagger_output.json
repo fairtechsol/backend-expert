@@ -23,6 +23,15 @@
     "/auth/login": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -52,6 +61,13 @@
         "description": "",
         "parameters": [
           {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "authorization",
             "in": "header",
             "schema": {
@@ -69,6 +85,15 @@
     "/user/add": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -123,6 +148,15 @@
     "/user/update": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -171,9 +205,18 @@
         }
       }
     },
-    "/user/password": {
+    "/user/admin/password": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -204,10 +247,17 @@
         }
       }
     },
-    "/user/password/self": {
+    "/user/password": {
       "post": {
         "description": "",
         "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "authorization",
             "in": "header",
@@ -245,6 +295,13 @@
         "description": "",
         "parameters": [
           {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "authorization",
             "in": "header",
             "schema": {
@@ -263,9 +320,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "example": "any"
-                  },
                   "matchType": {
                     "example": "any"
                   },
@@ -308,7 +362,59 @@
                   "betFairBookmakerMaxBet": {
                     "example": "any"
                   },
-                  "delaySecond": {
+                  "bookmakers": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/match/update": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  },
+                  "minBet": {
+                    "example": "any"
+                  },
+                  "matchOddMaxBet": {
+                    "example": "any"
+                  },
+                  "betFairSessionMaxBet": {
+                    "example": "any"
+                  },
+                  "betFairBookmakerMaxBet": {
                     "example": "any"
                   },
                   "bookmakers": {

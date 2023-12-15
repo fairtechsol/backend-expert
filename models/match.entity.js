@@ -55,72 +55,24 @@ const matchSchema = new EntitySchema({
       type: "timestamp with time zone",
       nullable: true,
     },
-
-    matchOddMinBet: {
-      type: "float",
-      nullable: false,
-      default: 0,
-    },
-    matchOddMaxBet: {
-      type: "float",
-      nullable: false,
-      default: 0,
-    },
-    betFairSessionMinBet: {
-      type: "float",
-      nullable: false,
-      default: 0,
-    },
-    betFairSessionMaxBet: {
-      type: "float",
-      nullable: false,
-      default: 0,
-    },
-    betFairBookmakerMinBet: {
-      type: "float",
-      nullable: false,
-      default: 0,
-    },
-    betFairBookmakerMaxBet: {
-      type: "float",
-      nullable: false,
-      default: 0,
-    },
-
-    apiMatchOddActive: {
-      type: "boolean",
-      nullable: false,
-      default: false,
-    },
-    apiBookMakerActive: {
-      type: "boolean",
-      nullable: false,
-      default: false,
-    },
-    apiSessionActive: {
-      type: "boolean",
-      nullable: false,
-      default: false,
-    },
-  
-    manualSessionActive: {
-      type: "boolean",
-      nullable: false,
-      default: false,
-    }
   },
   orderBy: {
     startAt: "DESC",
   },
   relations: {
-    bookmakers: {
+    matchBettings: {
       type: "one-to-many",
-      target: "bookmaker",
+      target: "matchBetting",
       inverseSide: "match",
     },
-    bettings:{
+    sessionBettings:{
       type: "one-to-many",
-      target: "betting",
+      target: "sessionBetting",
+      inverseSide: "match",
+    },
+    betPlaceds:{
+      type: "one-to-many",
+      target: "betPlaced",
       inverseSide: "match",
     }
   },

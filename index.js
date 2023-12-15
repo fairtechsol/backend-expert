@@ -10,6 +10,7 @@ const swaggerDocument = require("./swagger_output.json");
 const error = require("./utils/error.js");
 const i18n = require("./config/i18n");
 const setI18Language = require("./middleware/setI18Language.js");
+const { LOGGER } = require("./config/logger.js");
 
 /**
  * Enable Cross-Origin Resource Sharing (CORS)

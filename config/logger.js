@@ -40,7 +40,6 @@ const combineTransport = new DailyRotateFile({
 const infoLogger = winston.createLogger({
   format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
-    new winston.transports.Console(),
     infoTransport,
     combineTransport
   ]
@@ -49,7 +48,6 @@ const infoLogger = winston.createLogger({
 const errorLogger = winston.createLogger({
   format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
-    new winston.transports.Console(),
     errorTransport,
     combineTransport
   ]
@@ -58,11 +56,16 @@ const errorLogger = winston.createLogger({
 const debugLogger = winston.createLogger({
   format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
-    new winston.transports.Console(),
     debugTransport,
     combineTransport
   ]
 });
+if (process.env.NODE_ENV != 'prod') {
+  infoLogger.add(new winston.transports.Console());
+  errorLogger.add(new winston.transports.Console());
+  debugLogger.add(new winston.transports.Console());
+}
+
 
 const logger = {
   info: (params) => {

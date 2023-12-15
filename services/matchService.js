@@ -4,7 +4,7 @@ const matchSchema = require("../models/match.entity");
 const match = AppDataSource.getRepository(matchSchema);
 
 // bookmaker
-const bookmakerSchema = require("../models/bookmaker.entity");
+const bookmakerSchema = require("../models/matchBetting.entity");
 const bookmaker = AppDataSource.getRepository(bookmakerSchema);
 
 exports.getMatchById = async (id, select) => {

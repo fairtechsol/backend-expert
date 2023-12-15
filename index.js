@@ -30,6 +30,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(i18n.init);
 app.use(setI18Language);
 
+app.use((req, res, next) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const body = JSON.stringify(req.body);
+  const query = JSON.stringify(req.query);
+  const params = JSON.stringify(req.params);
+  LOGGER.debug(`Request [From:${ip}] ${req.path} ||  ${req.method} || query : ${query} || params : ${params} || body : ${body}`);
+  next();
+});
 // Routes
 app.use("/", route);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));

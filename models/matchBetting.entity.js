@@ -1,0 +1,115 @@
+const { EntitySchema } = require("typeorm");
+const { baseColumnsSchemaPart, matchBettingType, teamStatus } = require("../config/contants");
+const { ColumnNumericTransformer } = require("../services/commonService");
+
+const matchBettingSchema = new EntitySchema({
+  name: "matchBetting",
+  columns: {
+    ...baseColumnsSchemaPart,
+    matchId: {
+      type: "uuid",
+      nullable: false,
+      unique: true,
+    },
+    type : {
+      type: 'enum',
+      enum: Object.values(matchBettingType),
+      nullable: false
+    },
+    name : {
+      type: 'varchar',
+      nullable: false
+    },
+    minBet : {
+      type: 'float',
+      nullable: false,
+      default : 0,
+      check: "minBet >= 0",
+      transformer : new ColumnNumericTransformer()
+    },
+    maxBet : {
+      type: 'float',
+      nullable: false,
+      default : 1,
+      check: "maxBet > minBet",
+      transformer : new ColumnNumericTransformer()
+    },
+    backTeamA : {
+      type: 'float',
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
+    },
+    backTeamB : {
+      type: 'float',
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
+    },
+    backTeamC : {
+      type: 'float',
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
+    },
+    layTeamA : {
+      type: 'float',
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
+    },
+    layTeamB : {
+      type: 'float',
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
+    },
+    layTeamC : {
+      type: 'float',
+      nullable: false,
+      default : 0,
+      transformer : new ColumnNumericTransformer()
+    },
+    statusTeamA : {
+      type: 'enum',
+      enum: Object.values(teamStatus),
+      nullable: false,
+      default : teamStatus.suspended
+    },
+    statusTeamB : {
+      type: 'enum',
+      enum: Object.values(teamStatus),
+      nullable: false,
+      default : teamStatus.suspended
+    },
+    statusTeamC : {
+      type: 'enum',
+      enum: Object.values(teamStatus),
+      nullable: true,
+      default : teamStatus.suspended
+    },
+    stopAt :{
+      type: 'timestamp with time zone',
+      nullable: true
+    }
+  },
+  relations: {
+    match: {
+      type: "many-to-one",
+      target: "match",
+      joinColumn: {
+        name: "matchId",
+        referencedColumnName: "id",
+      },
+    },
+  },
+  indices: [
+    {
+      name: "matchBeting_name", // index name should be start with the table name
+      unique: true, // Optional: Set to true if you want a unique index
+      columns: ["matchId", "name"],
+    },
+  ],
+});
+
+module.exports = matchBettingSchema;

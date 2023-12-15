@@ -59,18 +59,18 @@ const matchSchema = new EntitySchema({
   orderBy: {
     startAt: "DESC",
   },
-  // relations: {
-  //   bookmakers: {
-  //     type: "one-to-many",
-  //     target: "bookmaker",
-  //     inverseSide: "match",
-  //   },
-  //   bettings:{
-  //     type: "one-to-many",
-  //     target: "betting",
-  //     inverseSide: "match",
-  //   }
-  // },
+  relations: {
+    matchBettings: {
+      type: "one-to-many",
+      target: "matchBetting",
+      inverseSide: "match",
+    },
+    sessionBettings:{
+      type: "one-to-many",
+      target: "sessionBetting",
+      inverseSide: "match",
+    }
+  },
   indices: [
     {
       name: "match_marketId", // index name should be start with the table name

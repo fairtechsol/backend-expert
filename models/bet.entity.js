@@ -78,7 +78,7 @@ const betSchema = new EntitySchema({
   },
   indices: [
     {
-      name: "bets_betId", // index name should be start with the table name
+      name: "bet_betId", // index name should be start with the table name
       unique: true, // Optional: Set to true if you want a unique index
       columns: ["matchId", "betId"],
     },

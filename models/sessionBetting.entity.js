@@ -2,7 +2,7 @@ const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, teamStatus, sessionBettingType, betStatusType } = require("../config/contants");
 
 const sessionBettingSchema = new EntitySchema({
-    name: "sessioneting",
+    name: "sessionBetting",
     columns: {
         ...baseColumnsSchemaPart,
         matchId: {

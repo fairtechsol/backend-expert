@@ -9,7 +9,6 @@ const sessionBettingSchema = new EntitySchema({
         matchId: {
             type: "uuid",
             nullable: false,
-            unique: true,
         },
         type: {
             type: 'enum',
@@ -68,7 +67,7 @@ const sessionBettingSchema = new EntitySchema({
             type: 'varchar',
             nullable: false
         },
-        betStatus : {
+        activeStatus : {
             type: 'enum',
             enum: Object.values(betStatusType),
             nullable: false,

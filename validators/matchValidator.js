@@ -1,7 +1,6 @@
 const Joi = require("joi");
 
 const bookmakerSchema = Joi.object({
-  id: Joi.string().guid({ version: 'uuidv4' }),
   maxBet: Joi.number().required(),
   marketName: Joi.string().required(),
 });
@@ -79,6 +78,9 @@ module.exports.addMatchValidate = Joi.object({
   bookmakers: Joi.array().items(bookmakerSchema).required().messages({
     "array.base": "Bookmakers must be an array",
     "any.required": "Bookmakers are required",
+  }),
+  tiedMatch: Joi.array().items(bookmakerSchema).messages({
+    "array.base": "Tied match must be an array",
   }),
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",

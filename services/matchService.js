@@ -30,18 +30,3 @@ exports.addMatch = async (body) => {
   return insertMatch;
 };
 
-exports.getBookMakerById = async (id, select) => {
-  return await bookmaker.findOne({
-    where: { id },
-    select: select,
-  });
-};
-
-exports.updateBookmaker = async (id, body) => {
-  let updateBookmaker = await bookmaker.update(id, body);
-  return updateBookmaker;
-};
-exports.addBookmaker = async (body) => {
-  let insertBookmaker = await bookmaker.save(body);
-  return insertBookmaker;
-};

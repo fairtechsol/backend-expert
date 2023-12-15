@@ -42,6 +42,10 @@ module.exports.matchBettingType = {
   tiedMatch2 : 'tiedMatch2'
 }
 
+module.exports.intialMatchBettingsName = {
+  initialBookmaker : "Bookmaker Market",
+  initialMatchOdd : "Match Odd"
+}
 module.exports.sessionBettingType = {
   marketSession : 'marketSession',
   manualSession : 'manualSession',

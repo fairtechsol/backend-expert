@@ -1,5 +1,6 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart } = require("../config/contants");
+const { ColumnNumericTransformer } = require("../services/commonService");
 
 const matchSchema = new EntitySchema({
   name: "match",
@@ -46,6 +47,20 @@ const matchSchema = new EntitySchema({
       type: "varchar",
       nullable: true,
       length: 100,
+    },
+    betFairSessionMinBet : {
+      type: 'float',
+      nullable: false,
+      default : 0,
+      check: "betFairSessionMinBet >= 0",
+      transformer : new ColumnNumericTransformer()
+    },
+    betFairSessionMaxBet : {
+      type: 'float',
+      nullable: false,
+      default : 1,
+      check: "betFairSessionMaxBet > betFairSessionMinBet",
+      transformer : new ColumnNumericTransformer()
     },
     startAt: {
       type: "timestamp with time zone",

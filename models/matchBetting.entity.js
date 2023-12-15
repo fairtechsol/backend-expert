@@ -1,5 +1,5 @@
 const { EntitySchema } = require("typeorm");
-const { baseColumnsSchemaPart, matchBettingType, teamStatus } = require("../config/contants");
+const { baseColumnsSchemaPart, matchBettingType, teamStatus, betStatusType } = require("../config/contants");
 const { ColumnNumericTransformer } = require("../services/commonService");
 
 const matchBettingSchema = new EntitySchema({
@@ -8,8 +8,7 @@ const matchBettingSchema = new EntitySchema({
     ...baseColumnsSchemaPart,
     matchId: {
       type: "uuid",
-      nullable: false,
-      unique: true,
+      nullable: false
     },
     type : {
       type: 'enum',
@@ -87,6 +86,12 @@ const matchBettingSchema = new EntitySchema({
       enum: Object.values(teamStatus),
       nullable: true,
       default : teamStatus.suspended
+    },
+    activeStatus : {
+      type: 'enum',
+      enum: Object.values(betStatusType),
+      nullable: false,
+      default : betStatusType.live
     },
     stopAt :{
       type: 'timestamp with time zone',

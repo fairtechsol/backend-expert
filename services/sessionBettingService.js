@@ -23,8 +23,15 @@ exports.getSessionBetting = async (where, select) => {
   });
 };
 
-exports.getSessionBattingByMatchId = async (id, select) => {
+exports.getSessionBettings = async (where, select) => {
   return await SessionBetting.find({
+    where:  where,
+    select: select,
+  });
+};
+
+exports.getSessionBattingByMatchId = async (id, select) => {
+  return await SessionBetting.findOne({
     where:  {matchId : id},
     select: select,
   });

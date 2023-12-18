@@ -1,5 +1,5 @@
 
-const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBetting } = require("../services/sessionBettingService");
+const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBetting, getSessionBettings } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService");
 const { sessionBettingType, teamStatus } = require("../config/contants");
@@ -129,3 +129,38 @@ exports.addSession = async (req,res) =>{
       return ErrorResponse(error, req, res);
     }
   }
+
+exports.getSessions = async (req,res) =>{
+    try {
+        let crieteria = {}
+        if(req.query.id){
+            crieteria.id = req.query.id
+        }
+        if(req.query.matchId){
+            crieteria.matchId = req.query.matchId
+        }
+        if(req.query.type){
+            crieteria.type = req.query.type
+        }
+        let session = await getSessionBettings(crieteria,["id","matchId","type","name","minBet","maxBet","yesRate","noRate","yesPercent","noPercent","selectionId","status"])
+        if(!session){
+        return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Session"}}},req,res);
+        }
+        return SuccessResponse(
+        {
+            statusCode: 200,
+            message: {
+            msg: "success",
+            keys: {
+                name: "Session",
+            },
+            },
+            data : session
+        },
+        req,
+        res
+        );
+    } catch (error) {
+        return ErrorResponse(error, req, res);
+    }
+}

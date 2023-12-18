@@ -14,16 +14,16 @@ exports.addSession = async (req,res) =>{
       
       const user = await getUserById(loginId,["allPrivilege","sessionMatchPrivilege","betFairMatchPrivilege"]);
       if(!user){
-        return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User",},},},req,res);
+        return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
       }
       let match = await getMatchById(matchId,["id","createBy","betFairSessionMinBet","betFairSessionMaxBet"])
       if(!match){
-        return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match",},},},req,res);
+        return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match"}}},req,res);
       }
       if(match.createBy != loginId){
         if(!user.allPrivilege){
           if(!user.sessionMatchPrivilege && !user.betFairMatchPrivilege){
-            return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User",},},},req,res);
+            return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User"}}},req,res);
           }
         }
       }

@@ -23,14 +23,12 @@ const matchBettingSchema = new EntitySchema({
       type: 'float',
       nullable: false,
       default : 0,
-      check: "minBet >= 0",
       transformer : new ColumnNumericTransformer()
     },
     maxBet : {
       type: 'float',
       nullable: false,
       default : 1,
-      check: "maxBet > minBet",
       transformer : new ColumnNumericTransformer()
     },
     backTeamA : {
@@ -115,6 +113,13 @@ const matchBettingSchema = new EntitySchema({
       columns: ["matchId", "name"],
     },
   ],
+  checks : [{
+    name: "matchBetting_minBet",
+    expression: `"minBet" >= 0`
+  },{
+    name: "matchBetting_maxBet",
+    expression: `"maxBet" > "minBet"`
+  }]
 });
 
 module.exports = matchBettingSchema;

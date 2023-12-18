@@ -1,5 +1,6 @@
 const { matchBettingType,intialBookmaker, intialMatchBettingsName } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
+const { logger } = require("../config/logger");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
 const {
   getMatchById,
@@ -50,6 +51,9 @@ exports.createMatch = async (req, res) => {
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
+
+    logger.info({message:`Match added by user ${loginId} with market id: ${marketId}`});
+
     // Check if at least one bookmaker is provided
     if (bookmakers?.length == 0) {
       return ErrorResponse(
@@ -68,6 +72,12 @@ exports.createMatch = async (req, res) => {
     // Check if market ID already exists
     const isMarketIdPresent = await getMatchByMarketId(marketId);
     if (isMarketIdPresent) {
+        logger.error({
+            error: `Match already exist for market id: ${marketId}`,
+            stack: err.stack,
+            message: err.message
+          });
+
       return ErrorResponse(
         {
           statusCode: 400,
@@ -104,6 +114,7 @@ exports.createMatch = async (req, res) => {
     let maxBetValues = allArrays.map(item => item.maxBet);
     let minimumMaxBet = Math.min(...maxBetValues);
     if(minimumMaxBet < minBet){
+ 
       return ErrorResponse(
         {
           statusCode: 400,
@@ -118,6 +129,12 @@ exports.createMatch = async (req, res) => {
     // Add the new match
     const match = await addMatch(matchData);
     if (!match) {
+        logger.error({
+            error: `Match add fail for market id: ${marketId}`,
+            stack: err.stack,
+            message: err.message
+          });
+
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
     }
 
@@ -168,9 +185,16 @@ exports.createMatch = async (req, res) => {
     // Attach bookmakers to the match
     let insertedMatchBettings = await insertMatchBettings(matchBettings);
     if (!insertedMatchBettings) {
+        logger.error({
+            error: `Match quick bookmaker add fail for quick bookmaker`,
+            matchBettings:matchBettings,
+            stack: err.stack,
+            message: err.message
+          });
+
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
     }
-    match["bookmaker"] = insertedMatchBettings.generatedMaps
+    match["bookmaker"] = insertedMatchBettings.generatedMaps;
     // broadcastEvent("newMatchAdded", match);
 
     // Send success response with the add match data
@@ -189,6 +213,11 @@ exports.createMatch = async (req, res) => {
       res
     );
   } catch (err) {
+    logger.error({
+        error: `Error at add match for the expert.`,
+        stack: err.stack,
+        message: err.message
+      });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -224,6 +253,11 @@ exports.updateMatch = async (req, res) => {
     let match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
 
     if (!match) {
+        logger.error({
+            error: `Match not found for id ${id}`,
+            stack: err.stack,
+            message: err.message
+          });
       return ErrorResponse(
         {
           statusCode: 404,
@@ -240,6 +274,11 @@ exports.updateMatch = async (req, res) => {
     }
     let matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
     if(!matchBatting || !matchBatting.length){
+        logger.error({
+            error: `Match betting not found for match id ${id}`,
+            stack: err.stack,
+            message: err.message
+          });
       return ErrorResponse(
         {
           statusCode: 404,
@@ -306,6 +345,11 @@ exports.updateMatch = async (req, res) => {
       res
     );
   } catch (err) {
+    logger.error({
+        error: `Error at update match for the expert.`,
+        stack: err.stack,
+        message: err.message
+      });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -327,11 +371,11 @@ exports.listMatch = async (req, res) => {
       "sessionMatchPrivilege",
     ]);
 
-    const filters = loginUser?.addMatchPrivilege
-      ? {
-          "createBy": loginId,
-        }
-      : {};
+    const filters = loginUser?.allPrivilege||loginUser?.betFairMatchPrivilege||loginUser?.bookmakerMatchPrivilege||loginUser?.sessionMatchPrivilege
+      ? {}
+      : {
+        "createBy": loginId,
+      };
 
     //   let userRedisData = await internalRedis.hgetall(user.userId);
     const match = await getMatch(filters, fields?.split(",") || null, query);

@@ -1,6 +1,5 @@
 const socketIO = require("socket.io");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
-const { userRoleConstant } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 
 let io;

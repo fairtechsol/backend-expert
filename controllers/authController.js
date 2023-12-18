@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const { getUserByUserName } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin } = require("../services/commonService");
+const { logger } = require("../config/logger");
 
 // Function to validate a user by username and password
 const validateUser = async (userName, password) => {
@@ -39,6 +40,9 @@ exports.login = async (req, res) => {
     const user = await validateUser(userName, password);
 
     if (!user) {
+      logger.error({
+        error: `Error at the login for the expert. User not found for user: ${userName}.`
+      });
       return ErrorResponse(
         {
           statusCode: 404,
@@ -67,6 +71,9 @@ exports.login = async (req, res) => {
     if (!forceChangePassword) {
       userLoginAtUpdate(user.id);
     }
+
+  logger.info({ message: `Setting login token in redis: ${token} for user: ${user.id}` });
+    
     // setting token in redis for checking if user already loggedin
     await internalRedis.hmset(user.id, { token: token });
 
@@ -85,6 +92,12 @@ exports.login = async (req, res) => {
       res
     );
   } catch (error) {
+    logger.error({
+      error: `Error at the login for the expert.`,
+      stack: error.stack,
+      message: error.message
+    });
+
     return ErrorResponse(
       {
         statusCode: error.statusCode || 500,
@@ -117,6 +130,11 @@ exports.logout = async (req, res) => {
       res
     );
   } catch (error) {
+    logger.error({
+      error: `Error at the logout for the expert.`,
+      stack: error.stack,
+      message: error.message
+    });
     // If an error occurs during the logout process, return an error response
     return ErrorResponse(
       {

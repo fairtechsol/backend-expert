@@ -121,6 +121,9 @@ module.exports.updateMatchValidate = Joi.object({
   bookmakers: Joi.array().items(updatebookmakerSchema).messages({
     "array.base": "Bookmakers must be an array",
   }),
+  tiedMatch: Joi.array().items(updatebookmakerSchema).messages({
+    "array.base": "Tied match must be an array",
+  }),
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });

@@ -1,5 +1,4 @@
-const { IsNull, In } = require("typeorm");
-const { betStatus, userRoleConstant, matchBettingType,intialBookmaker, intialMatchBettingsName } = require("../config/contants");
+const { matchBettingType,intialBookmaker, intialMatchBettingsName } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { insertMatchBettings } = require("../services/matchBettingService");
 const {
@@ -12,7 +11,7 @@ const {
   getMatch,
   getMatchDetails,
 } = require("../services/matchService");
-const { broadcastEvent } = require("../sockets/socketManager");
+const { getUserById } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 /**
@@ -351,13 +350,25 @@ exports.updateMatch = async (req, res) => {
 
 exports.listMatch = async (req, res) => {
   try {
-
     const { query } = req;
     const { fields } = query;
-    const filters = {};
+    const { id: loginId } = req.user;
 
+    const loginUser = await getUserById(loginId, [
+      "id",
+      "allPrivilege",
+      "addMatchPrivilege",
+      "betFairMatchPrivilege",
+      "bookmakerMatchPrivilege",
+      "sessionMatchPrivilege",
+    ]);
 
-    
+    const filters = loginUser?.addMatchPrivilege
+      ? {
+          "createBy": loginId,
+        }
+      : {};
+
     //   let userRedisData = await internalRedis.hgetall(user.userId);
     const match = await getMatch(filters, fields?.split(",") || null, query);
     if (!match) {

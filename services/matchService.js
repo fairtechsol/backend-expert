@@ -55,13 +55,13 @@ exports.getMatch = async (filters, select, query) => {
     let matchQuery = new ApiFeature(
       match
         .createQueryBuilder()
+        .select(select)
         .where(filters)
         .orderBy("match.startAt", "DESC")
         .leftJoinAndSelect(
           "match.matchBettings",
           "matchBetting"
-        )
-        .select(select),
+        ).addSelect(['matchBetting.id']),
       query
     )
       .search()
@@ -112,7 +112,6 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
 
     return { matches, count };
   } catch (error) {
-    console.log(error);
     throw error;
   }
 };

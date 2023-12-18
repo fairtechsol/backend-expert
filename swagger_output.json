@@ -422,6 +422,9 @@
                   },
                   "bookmakers": {
                     "example": "any"
+                  },
+                  "tiedMatch": {
+                    "example": "any"
                   }
                 }
               }

@@ -70,6 +70,16 @@ const matchSchema = new EntitySchema({
       type: "timestamp with time zone",
       nullable: true,
     },
+    apiSessionActive: {
+      type: "boolean",
+      default: false,
+      nullable: false,
+    },
+    manualSessionActive: {
+      type: "boolean",
+      default: false,
+      nullable: false,
+    },
   },
   orderBy: {
     startAt: "DESC",
@@ -98,6 +108,13 @@ const matchSchema = new EntitySchema({
       columns: ["marketId", "matchType"],
     },
   ],
+  checks : [{
+    name: "match_betFairSessionMinBet",
+    expression: `"betFairSessionMinBet" >= 0`
+  },{
+    name: "match_betFairSessionMaxBet",
+    expression: `"betFairSessionMaxBet" > "betFairSessionMinBet"`
+  }]
 });
 
 module.exports = matchSchema;

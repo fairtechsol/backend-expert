@@ -16,7 +16,20 @@ exports.getMatchBetting = async (where, select) => {
   });
 };
 
+exports.getMatchBattingByMatchId = async (id, select) => {
+  return await MatchBetting.find({
+    where:  {matchId : id},
+    select: select,
+  });
+};
+
+
 exports.insertMatchBettings = async (data) =>{
   let insertMatchBettings  = await MatchBetting.insert(data)
   return insertMatchBettings;
 }
+
+exports.updateMatchBetting = async (where, body) => {
+  let updateMatchBetting = await MatchBetting.update(where, body);
+  return updateMatchBetting;
+};

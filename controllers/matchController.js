@@ -1,4 +1,4 @@
-const { betStatus, matchBettingType, intialBookmaker, intialMatchBettingsName } = require("../config/contants");
+const { matchBettingType,intialBookmaker, intialMatchBettingsName } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
 const {
@@ -8,8 +8,10 @@ const {
   getMatchByMarketId,
   addMatch,
   updateMatch,
+  getMatch,
+  getMatchDetails,
 } = require("../services/matchService");
-const { broadcastEvent } = require("../sockets/socketManager");
+const { getUserById } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 /**
@@ -299,6 +301,125 @@ exports.updateMatch = async (req, res) => {
           },
         },
         data : match
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+
+exports.listMatch = async (req, res) => {
+  try {
+    const { query } = req;
+    const { fields } = query;
+    const { id: loginId } = req.user;
+
+    const loginUser = await getUserById(loginId, [
+      "id",
+      "allPrivilege",
+      "addMatchPrivilege",
+      "betFairMatchPrivilege",
+      "bookmakerMatchPrivilege",
+      "sessionMatchPrivilege",
+    ]);
+
+    const filters = loginUser?.addMatchPrivilege
+      ? {
+          "createBy": loginId,
+        }
+      : {};
+
+    //   let userRedisData = await internalRedis.hgetall(user.userId);
+    const match = await getMatch(filters, fields?.split(",") || null, query);
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match list" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.matchDetails = async (req, res) => {
+  try {
+    const { id: matchId } = req.params;
+
+    const match = await getMatchDetails(matchId, []);
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    const categorizedMatchBettings = {
+      [matchBettingType.matchOdd]: null,
+      [matchBettingType.bookmaker]: null,
+      quickBookmaker: [],
+    };
+
+    // Iterate through matchBettings and categorize them
+    (match?.matchBettings || []).forEach((item) => {
+      switch (item?.type) {
+        case matchBettingType.matchOdd:
+          categorizedMatchBettings[matchBettingType.matchOdd] = item;
+          break;
+        case matchBettingType.bookmaker:
+          categorizedMatchBettings[matchBettingType.bookmaker] = item;
+          break;
+        case matchBettingType.quickbookmaker1:
+        case matchBettingType.quickbookmaker2:
+        case matchBettingType.quickbookmaker3:
+          categorizedMatchBettings.quickBookmaker.push(item);
+          break;
+        // Add more cases if needed
+      }
+    });
+
+    // Assign the categorized match bettings to the match object
+    Object.assign(match, categorizedMatchBettings);
+    match["sessionMatch"] = match?.sessionBettings;
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match Details" } },
+        data: match,
       },
       req,
       res

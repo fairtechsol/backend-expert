@@ -32,7 +32,7 @@ class ApiFeature {
   }
 
   filter() {
-    const notFilters = ["searchBy", "keyword", "sort", "page", "limit"];
+    const notFilters = ["searchBy", "keyword", "sort", "page", "limit","fields"];
     let filterObject = {};
     Object.keys(this.options)
       ?.filter((item) => !notFilters.includes(item))
@@ -105,7 +105,7 @@ class ApiFeature {
   paginate() {
     const page = this.options.page || 1;
     const limit = this.options.limit || 10;
-    const skip = (page - 1) * limit;
+    const skip = parseInt((parseInt(page) - 1) * parseInt(limit));
 
     this.query.skip(skip).take(limit);
 

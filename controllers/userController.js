@@ -35,7 +35,8 @@ exports.createUser = async (req, res) => {
       sessionMatchPrivilege,
       createBy
     } = req.body;
-
+    
+    userName = userName.toUpperCase();
     // Check if a user with the same username already exists
     let userExist = await getUserByUserName(userName);
     if (userExist){

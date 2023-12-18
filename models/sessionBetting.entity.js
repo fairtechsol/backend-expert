@@ -65,7 +65,7 @@ const sessionBettingSchema = new EntitySchema({
         },
         selectionId : {
             type: 'varchar',
-            nullable: false
+            nullable: true
         },
         activeStatus : {
             type: 'enum',
@@ -90,8 +90,7 @@ const sessionBettingSchema = new EntitySchema({
     },
     indices: [
         {
-            name: "sessionBetting_name", // index name should be start with the table name
-            unique: true, // Optional: Set to true if you want a unique index
+            name: "sessionBetting_name",// Optional: Set to true if you want a unique index
             columns: ["matchId", "name"],
         },
     ],

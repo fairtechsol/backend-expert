@@ -1,17 +1,15 @@
-const { betStatus, matchBettingType, intialBookmaker, intialMatchBettingsName } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
 const {
   getMatchById,
-  updateBookmaker,
-  getBookMakerById,
   getMatchByMarketId,
   addMatch,
   updateMatch,
 } = require("../services/matchService");
 const { broadcastEvent } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-
+const {getUserById} = require("../services/userService")
 /**
  * Create or update a match.
  *
@@ -47,6 +45,14 @@ exports.createMatch = async (req, res) => {
 
     // Extract user ID from the request object
     const { id: loginId } = req.user;
+
+    let user = await getUserById(loginId,["allPrivilege","addMatchPrivilege"])
+    if(!user){
+      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User",},},},req,res);
+    }
+    if(!user.allPrivilege || !user.addMatchPrivilege){
+      return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User",},},},req,res);
+    }
 
     // Check if at least one bookmaker is provided
     if (bookmakers?.length == 0) {
@@ -121,7 +127,8 @@ exports.createMatch = async (req, res) => {
 
     let matchBetting = {
       matchId: match.id,
-      minBet: minBet
+      minBet: minBet,
+      createBy: loginId
     }
     let matchBettings = [
       {
@@ -142,11 +149,9 @@ exports.createMatch = async (req, res) => {
         const { maxBet, marketName } = item;
         index++;
         matchBettings.push({
-          matchId: match.id,
+          ...matchBetting,
           type: matchBettingType["tiedMatch" + index],
-          name: marketName,
-          minBet: minBet,
-          maxBet: maxBet
+          name: marketName
         })
       })
     }
@@ -203,21 +208,13 @@ exports.updateMatch = async (req, res) => {
       bookmakers,
       tiedMatch
     } = req.body;
-
-
-    // Check if at least one bookmaker is provided
-    if (bookmakers?.length == 0) {
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "match.atLeastOneBookmaker",
-          },
-        },
-        req,
-        res
-      );
+    //get user data to check privilages
+    const { id: loginId, role } = req.user;
+    const user = await getUserById(loginId,["allPrivilege","addMatchPrivilege","betFairMatchPrivilege","bookmakerMatchPrivilege","sessionMatchPrivilege"]);
+    if(!user){
+      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User",},},},req,res);
     }
+
     // Check if the match exists
     let match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
 
@@ -236,6 +233,7 @@ exports.updateMatch = async (req, res) => {
         res
       );
     }
+
     let matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
     if(!matchBatting || !matchBatting.length){
       return ErrorResponse(
@@ -308,3 +306,4 @@ exports.updateMatch = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+

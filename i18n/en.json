@@ -8,7 +8,8 @@
   "updated":"{name} updated successfully",
   "created":"{name} created successfully",
   "alreadyExist":"{name} already exist",
-  
+  "required" : "{name} is required",
+  "notAuthorized" : "{name} not authorize to take this action",
   "auth": {
     "loginSuccess": "Login successfully",
     "invalidPass": "Invalid {type} password",

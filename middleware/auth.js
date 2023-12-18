@@ -1,3 +1,4 @@
+const { logger } = require("../config/logger");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
 const { ErrorResponse } = require("../utils/response");
 
@@ -52,6 +53,7 @@ exports.isAuthenticate = async (req, res, next) => {
       next();
     }
   } catch (err) {
+    logger.error(err.message)
     return ErrorResponse(
       {
         statusCode: 401,

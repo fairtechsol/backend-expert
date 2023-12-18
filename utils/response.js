@@ -1,10 +1,12 @@
 const { __mf } = require("i18n");
+const { logger } = require("../config/logger");
 
 module.exports.ErrorResponse = (errorData, req, res) => {
   errorData.statusCode = errorData.statusCode || 500;
   errorData.status = "error";
   const errorMessage = errorData.message || "Internal Server Error";
   
+  logger.error(`${JSON.stringify(errorData)}`)
   // Extracting message code and keys
   const { msg, keys } = errorMessage;
 

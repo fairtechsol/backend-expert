@@ -91,6 +91,11 @@ const matchBettingSchema = new EntitySchema({
       nullable: false,
       default : betStatusType.live
     },
+    isActive:{
+      type: "boolean",
+      default: false,
+      nullable: false,
+    },
     stopAt :{
       type: 'timestamp with time zone',
       nullable: true

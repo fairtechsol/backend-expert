@@ -5,7 +5,7 @@ const match = AppDataSource.getRepository(matchSchema);
 
 // bookmaker
 const bookmakerSchema = require("../models/matchBetting.entity");
-const { userRoleConstant, matchBettingType } = require("../config/contants");
+const {  matchBettingType } = require("../config/contants");
 const { IsNull } = require("typeorm");
 const bookmaker = AppDataSource.getRepository(bookmakerSchema);
 
@@ -61,7 +61,7 @@ exports.getMatch = async (filters, select, query) => {
         .leftJoinAndSelect(
           "match.matchBettings",
           "matchBetting"
-        ).addSelect(['matchBetting.id']),
+        ),
       query
     )
       .search()
@@ -74,7 +74,6 @@ exports.getMatch = async (filters, select, query) => {
 
     return { matches, count };
   } catch (error) {
-    console.log(error);
     throw error;
   }
 };

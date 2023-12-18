@@ -32,6 +32,7 @@ class ApiFeature {
   }
 
   filter() {
+    //add all the fields that you don't want to use as a filter
     const notFilters = ["searchBy", "keyword", "sort", "page", "limit","fields"];
     let filterObject = {};
     Object.keys(this.options)

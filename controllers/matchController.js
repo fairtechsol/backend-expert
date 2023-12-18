@@ -391,6 +391,7 @@ exports.matchDetails = async (req, res) => {
       [matchBettingType.matchOdd]: null,
       [matchBettingType.bookmaker]: null,
       quickBookmaker: [],
+      tideMatch:[]
     };
 
     // Iterate through matchBettings and categorize them
@@ -407,13 +408,17 @@ exports.matchDetails = async (req, res) => {
         case matchBettingType.quickbookmaker3:
           categorizedMatchBettings.quickBookmaker.push(item);
           break;
-        // Add more cases if needed
+        case matchBettingType.tiedMatch1:
+        case matchBettingType.tiedMatch2:
+          categorizedMatchBettings.tideMatch.push(item);
+          break;
       }
     });
 
     // Assign the categorized match bettings to the match object
     Object.assign(match, categorizedMatchBettings);
-    match["sessionMatch"] = match?.sessionBettings;
+
+    delete match.matchBettings;
 
     return SuccessResponse(
       {

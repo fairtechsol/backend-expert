@@ -104,12 +104,13 @@ class ApiFeature {
   }
 
   paginate() {
-    const page = this.options.page || 1;
-    const limit = this.options.limit || 10;
-    const skip = parseInt((parseInt(page) - 1) * parseInt(limit));
+    if(this.options.page){
+      const page = this.options.page;
+      const limit = this.options.limit || 10;
+      const skip = parseInt((parseInt(page) - 1) * parseInt(limit));
 
-    this.query.skip(skip).take(limit);
-
+      this.query.skip(skip).take(limit);
+    }
     return this;
   }
 

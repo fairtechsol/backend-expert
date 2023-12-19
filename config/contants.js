@@ -1,5 +1,16 @@
 module.exports.redisTimeOut = 24 * 60 * 60;
 
+module.exports.userRoleConstant = {
+  fairGameWallet: "fairGameWallet",
+  fairGameAdmin: "fairGameAdmin",
+  superAdmin: "superAdmin",
+  admin: "admin",
+  superMaster: "superMaster",
+  master: "master",
+  expert: "expert",
+  user: "user",
+};
+
 module.exports.betStatus = {
   save: "save",
   live: "live",

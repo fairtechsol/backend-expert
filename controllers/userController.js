@@ -4,6 +4,7 @@ const {
   getUserByUserName,
   updateUser,
   getUser,
+  getUsers,
 } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
@@ -267,3 +268,81 @@ exports.changePassword = async (req, res, next) => {
     );
   }
 };
+
+
+exports.expertList = async (req, res, next) => {
+  try {
+    let { userName, loginId, offset, limit } = req.query
+    
+if(!loginId){
+  return ErrorResponse(
+    {
+      statusCode: 403,
+      message: {msg:"auth.unauthorize"},
+    },
+    req,
+    res
+  );
+}
+
+
+    let where = {
+      createBy: loginId
+    }
+    if (userName) where.userName = ILike(`%${userName}%`);
+
+    
+    let users = await getUsers(
+      where,
+      [
+        "id",
+        "createBy",
+        "createdAt",
+        "userName",
+        "fullName",
+        "phoneNumber",
+        "city",
+        "allPrivilege",
+        "addMatchPrivilege",
+        "betFairMatchPrivilege",
+        "bookmakerMatchPrivilege",
+        "sessionMatchPrivilege",
+      ],
+      offset,
+      limit
+    );
+
+    let response = {
+      count: 0,
+      list: []
+    }
+    if (!users[1]) {
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "fetched" , keys : { name : "User list"} },
+          data: response,
+        },
+        req,
+        res
+      );
+    }
+    response.count = users[1]
+
+
+    
+
+    response.list = users[0];
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched" , keys : { name : "Expert list"}},
+        data: response,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+}

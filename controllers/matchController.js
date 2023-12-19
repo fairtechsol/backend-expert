@@ -1,13 +1,16 @@
-const { matchBettingType, intialMatchBettingsName, } = require("../config/contants");
+const { matchBettingType,intialBookmaker, intialMatchBettingsName } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
+const { logger } = require("../config/logger");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
 const {
   getMatchById,
   getMatchByMarketId,
   addMatch,
   updateMatch,
+  getMatch,
+  getMatchDetails,
 } = require("../services/matchService");
-const { broadcastEvent } = require("../sockets/socketManager");
+const { getUserById } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService")
 /**
@@ -46,6 +49,7 @@ exports.createMatch = async (req, res) => {
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
+    logger.info({message:`Match added by user ${loginId} with market id: ${marketId}`});
     let user = await getUserById(loginId,["allPrivilege","addMatchPrivilege"])
     if(!user){
       return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
@@ -63,6 +67,12 @@ exports.createMatch = async (req, res) => {
     // Check if market ID already exists
     const isMarketIdPresent = await getMatchByMarketId(marketId);
     if (isMarketIdPresent) {
+        logger.error({
+            error: `Match already exist for market id: ${marketId}`,
+            stack: err.stack,
+            message: err.message
+          });
+
       return ErrorResponse({statusCode: 400,message: {msg: "alreadyExist",keys: {name: "Match"}}},req,res);
     }
 
@@ -87,6 +97,7 @@ exports.createMatch = async (req, res) => {
     let maxBetValues = allArrays.map(item => item.maxBet);
     let minimumMaxBet = Math.min(...maxBetValues);
     if(minimumMaxBet < minBet){
+ 
       return ErrorResponse(
         {
           statusCode: 400,
@@ -101,6 +112,12 @@ exports.createMatch = async (req, res) => {
     // Add the new match
     const match = await addMatch(matchData);
     if (!match) {
+        logger.error({
+            error: `Match add fail for market id: ${marketId}`,
+            stack: err.stack,
+            message: err.message
+          });
+
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
     }
 
@@ -150,9 +167,16 @@ exports.createMatch = async (req, res) => {
     // Attach bookmakers to the match
     let insertedMatchBettings = await insertMatchBettings(matchBettings);
     if (!insertedMatchBettings) {
+        logger.error({
+            error: `Match quick bookmaker add fail for quick bookmaker`,
+            matchBettings:matchBettings,
+            stack: err.stack,
+            message: err.message
+          });
+
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
     }
-    match["bookmaker"] = insertedMatchBettings.generatedMaps
+    match["bookmaker"] = insertedMatchBettings.generatedMaps;
     // broadcastEvent("newMatchAdded", match);
 
     // Send success response with the add match data
@@ -171,6 +195,11 @@ exports.createMatch = async (req, res) => {
       res
     );
   } catch (err) {
+    logger.error({
+        error: `Error at add match for the expert.`,
+        stack: err.stack,
+        message: err.message
+      });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -198,11 +227,21 @@ exports.updateMatch = async (req, res) => {
     let match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
 
     if (!match) {
+        logger.error({
+            error: `Match not found for id ${id}`,
+            stack: err.stack,
+            message: err.message
+          });
       return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match"}}},req,res);
     }
 
     let matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
     if(!matchBatting || !matchBatting.length){
+        logger.error({
+            error: `Match betting not found for match id ${id}`,
+            stack: err.stack,
+            message: err.message
+          });
       return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match batting"}}},req,res)
     }
 
@@ -261,8 +300,136 @@ exports.updateMatch = async (req, res) => {
       res
     );
   } catch (err) {
+    logger.error({
+        error: `Error at update match for the expert.`,
+        stack: err.stack,
+        message: err.message
+      });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
 };
 
+
+exports.listMatch = async (req, res) => {
+  try {
+    const { query } = req;
+    const { fields } = query;
+    const { id: loginId } = req.user;
+
+    const loginUser = await getUserById(loginId, [
+      "id",
+      "allPrivilege",
+      "addMatchPrivilege",
+      "betFairMatchPrivilege",
+      "bookmakerMatchPrivilege",
+      "sessionMatchPrivilege",
+    ]);
+
+    const filters = loginUser?.allPrivilege||loginUser?.betFairMatchPrivilege||loginUser?.bookmakerMatchPrivilege||loginUser?.sessionMatchPrivilege
+      ? {}
+      : {
+        "createBy": loginId,
+      };
+
+    //   let userRedisData = await internalRedis.hgetall(user.userId);
+    const match = await getMatch(filters, fields?.split(",") || null, query);
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match list" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.matchDetails = async (req, res) => {
+  try {
+    const { id: matchId } = req.params;
+
+    const match = await getMatchDetails(matchId, []);
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    const categorizedMatchBettings = {
+      [matchBettingType.matchOdd]: null,
+      [matchBettingType.bookmaker]: null,
+      quickBookmaker: [],
+      tideMatch:[]
+    };
+
+    // Iterate through matchBettings and categorize them
+    (match?.matchBettings || []).forEach((item) => {
+      switch (item?.type) {
+        case matchBettingType.matchOdd:
+          categorizedMatchBettings[matchBettingType.matchOdd] = item;
+          break;
+        case matchBettingType.bookmaker:
+          categorizedMatchBettings[matchBettingType.bookmaker] = item;
+          break;
+        case matchBettingType.quickbookmaker1:
+        case matchBettingType.quickbookmaker2:
+        case matchBettingType.quickbookmaker3:
+          categorizedMatchBettings.quickBookmaker.push(item);
+          break;
+        case matchBettingType.tiedMatch1:
+        case matchBettingType.tiedMatch2:
+          categorizedMatchBettings.tideMatch.push(item);
+          break;
+      }
+    });
+
+    // Assign the categorized match bettings to the match object
+    Object.assign(match, categorizedMatchBettings);
+
+    delete match.matchBettings;
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match Details" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};

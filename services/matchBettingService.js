@@ -33,3 +33,8 @@ exports.updateMatchBetting = async (where, body) => {
   let updateMatchBetting = await MatchBetting.update(where, body);
   return updateMatchBetting;
 };
+
+exports.updateMatchBettingById = async (id, body) => {
+  let updateMatchBetting = await MatchBetting.update(id, body);
+  return updateMatchBetting;
+};

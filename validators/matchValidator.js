@@ -1,4 +1,5 @@
 const Joi = require("joi");
+const { bettingType } = require("../config/contants");
 
 const bookmakerSchema = Joi.object({
   maxBet: Joi.number().required(),
@@ -39,7 +40,7 @@ module.exports.addMatchValidate = Joi.object({
     "string.base": "Team B must be a string",
     "any.required": "Team B is required",
   }),
-  teamC: Joi.string().messages({
+  teamC: Joi.string().trim().allow("").messages({
     "string.base": "Team C must be a string",
   }),
   startAt: Joi.date().required().messages({
@@ -124,6 +125,22 @@ module.exports.updateMatchValidate = Joi.object({
   tiedMatch: Joi.array().items(updatebookmakerSchema).messages({
     "array.base": "Tied match must be an array",
   }),
+}).messages({
+  "object.base": "Invalid input. Please provide a valid object.",
+});
+
+module.exports.MatchActiveInactive = Joi.object({
+  matchId: Joi.string().guid({ version: "uuidv4" }).required(),
+  bettingId: Joi.string().guid({ version: "uuidv4" }),
+  matchBettingType: Joi.string()
+    .valid(...Object.values(bettingType))
+    .required()
+    .messages({
+      "string.base": "Match betting type must be a string",
+      "any.required": "Match betting type is required",
+    }),
+  isManualBet: Joi.boolean(),
+  isActive: Joi.boolean().required(),
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });

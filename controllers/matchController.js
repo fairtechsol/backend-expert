@@ -1,7 +1,7 @@
-const { matchBettingType,intialBookmaker, intialMatchBettingsName } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
-const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
+const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById } = require("../services/matchBettingService");
 const {
   getMatchById,
   getMatchByMarketId,
@@ -67,9 +67,7 @@ exports.createMatch = async (req, res) => {
     const isMarketIdPresent = await getMatchByMarketId(marketId);
     if (isMarketIdPresent) {
         logger.error({
-            error: `Match already exist for market id: ${marketId}`,
-            stack: err.stack,
-            message: err.message
+            error: `Match already exist for market id: ${marketId}`
           });
 
       return ErrorResponse({statusCode: 400,message: {msg: "alreadyExist",keys: {name: "Match"}}},req,res);
@@ -112,9 +110,7 @@ exports.createMatch = async (req, res) => {
     const match = await addMatch(matchData);
     if (!match) {
         logger.error({
-            error: `Match add fail for market id: ${marketId}`,
-            stack: err.stack,
-            message: err.message
+            error: `Match add fail for market id: ${marketId}`
           });
 
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
@@ -146,7 +142,8 @@ exports.createMatch = async (req, res) => {
         matchBettings.push({
           ...matchBetting,
           type: matchBettingType["tiedMatch" + index],
-          name: marketName
+          name: marketName,
+          maxBet:maxBet
         })
       })
     }
@@ -168,9 +165,7 @@ exports.createMatch = async (req, res) => {
     if (!insertedMatchBettings) {
         logger.error({
             error: `Match quick bookmaker add fail for quick bookmaker`,
-            matchBettings:matchBettings,
-            stack: err.stack,
-            message: err.message
+            matchBettings:matchBettings
           });
 
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
@@ -227,9 +222,7 @@ exports.updateMatch = async (req, res) => {
 
     if (!match) {
         logger.error({
-            error: `Match not found for id ${id}`,
-            stack: err.stack,
-            message: err.message
+            error: `Match not found for id ${id}`
           });
       return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match"}}},req,res);
     }
@@ -237,14 +230,15 @@ exports.updateMatch = async (req, res) => {
     let matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
     if(!matchBatting || !matchBatting.length){
         logger.error({
-            error: `Match betting not found for match id ${id}`,
-            stack: err.stack,
-            message: err.message
+            error: `Match betting not found for match id ${id}`
           });
       return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match batting"}}},req,res)
     }
 
     if(loginId != match.createBy && !user.allPrivilege){
+      logger.error({
+        error: `User ${loginId} don't have privilege for accessing this match ${id}`
+      });
         return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User"}}},req,res);
     }
 
@@ -266,10 +260,18 @@ exports.updateMatch = async (req, res) => {
     }
 
     if (bookmakers && bookmakers.length) {
+      logger.info({
+        message: `User ${loginId} updating bookmaker this match ${id}`,
+        bookmakers:bookmakers
+      });
       await Promise.all[bookmakers.map(item => updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item.maxBet }))];
     }
 
     if (tiedMatch && tiedMatch.length) {
+      logger.info({
+        message: `User ${loginId} updating tied match this match ${id}`,
+        tiedMatch:tiedMatch
+      });
       await Promise.all[tiedMatch.map(item => updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item.maxBet }))];
     }
 
@@ -315,6 +317,9 @@ exports.listMatch = async (req, res) => {
     const { query } = req;
     const { fields } = query;
     const { id: loginId } = req.user;
+
+
+
 
     const loginUser = await getUserById(loginId, [
       "id",
@@ -428,6 +433,95 @@ exports.matchDetails = async (req, res) => {
       res
     );
   } catch (err) {
+    logger.error({
+      error: `Error while getting match detail for match: ${req.params.id}.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+// Controller method for updating the active status of betting
+exports.matchActiveInActive = async (req, res) => {
+  try {
+    // Destructuring properties from the request body
+    const { matchId, bettingId, matchBettingType, isManualBet, isActive } =
+      req.body;
+
+    // Check if the match with the given ID exists
+    const match = await getMatchById(matchId, ["id"]);
+    if (!match) {
+      // If match is not found, return a 400 Bad Request response
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    // Update the active status based on the matchBettingType
+    if (matchBettingType == bettingType.session) {
+      // If it's a session betting type, update sessionActive accordingly
+      await updateMatch(
+        matchId,
+        isManualBet
+          ? {
+              manualSessionActive: isActive,
+            }
+          : {
+              apiSessionActive: isActive,
+            }
+      );
+    } else {
+      // If it's not a session betting type, update the active status for the specific betting ID
+      const matchBetting = await updateMatchBettingById(bettingId, {
+        isActive: isActive,
+      });
+      if (!matchBetting) {
+        // If match betting is not found, return a 400 Bad Request response
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "notFound",
+              keys: {
+                name: "Match Betting",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
+    }
+
+    // Return a success response with the updated match information
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "updated", keys: { name: "Match" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    // Log any errors that occur during the process
+    logger.error({
+      error: `Error at updating active status of betting table for match ${req.body.matchId}.`,
+      stack: err.stack,
+      message: err.message,
+    });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }

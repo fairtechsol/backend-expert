@@ -4,8 +4,6 @@ const { logger } = require("../config/logger");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
 const {
   getMatchById,
-  updateBookmaker,
-  getBookMakerById,
   getMatchByMarketId,
   addMatch,
   updateMatch,
@@ -14,7 +12,7 @@ const {
 } = require("../services/matchService");
 const { getUserById } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-
+const {getUserById} = require("../services/userService")
 /**
  * Create or update a match.
  *
@@ -51,21 +49,18 @@ exports.createMatch = async (req, res) => {
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
-
     logger.info({message:`Match added by user ${loginId} with market id: ${marketId}`});
+    let user = await getUserById(loginId,["allPrivilege","addMatchPrivilege"])
+    if(!user){
+      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
+    }
+    if(!user.allPrivilege && !user.addMatchPrivilege){
+      return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User"}}},req,res);
+    }
 
     // Check if at least one bookmaker is provided
     if (bookmakers?.length == 0) {
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "match.atLeastOneBookmaker",
-          },
-        },
-        req,
-        res
-      );
+      return ErrorResponse({statusCode: 400,message: {msg: "match.atLeastOneBookmaker"}},req,res);
     }
     // If ID is not provided, it's a new match creation
 
@@ -78,19 +73,7 @@ exports.createMatch = async (req, res) => {
             message: err.message
           });
 
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "alreadyExist",
-            keys: {
-              name: "Match",
-            },
-          },
-        },
-        req,
-        res
-      );
+      return ErrorResponse({statusCode: 400,message: {msg: "alreadyExist",keys: {name: "Match"}}},req,res);
     }
 
     // Prepare match data for a new match
@@ -140,7 +123,8 @@ exports.createMatch = async (req, res) => {
 
     let matchBetting = {
       matchId: match.id,
-      minBet: minBet
+      minBet: minBet,
+      createBy: loginId
     }
     let matchBettings = [
       {
@@ -161,11 +145,9 @@ exports.createMatch = async (req, res) => {
         const { maxBet, marketName } = item;
         index++;
         matchBettings.push({
-          matchId: match.id,
+          ...matchBetting,
           type: matchBettingType["tiedMatch" + index],
-          name: marketName,
-          minBet: minBet,
-          maxBet: maxBet
+          name: marketName
         })
       })
     }
@@ -234,21 +216,13 @@ exports.updateMatch = async (req, res) => {
       bookmakers,
       tiedMatch
     } = req.body;
-
-
-    // Check if at least one bookmaker is provided
-    if (bookmakers?.length == 0) {
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "match.atLeastOneBookmaker",
-          },
-        },
-        req,
-        res
-      );
+    //get user data to check privilages
+    const { id: loginId, role } = req.user;
+    const user = await getUserById(loginId,["allPrivilege","addMatchPrivilege","betFairMatchPrivilege","bookmakerMatchPrivilege","sessionMatchPrivilege"]);
+    if(!user){
+      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
     }
+
     // Check if the match exists
     let match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
 
@@ -258,20 +232,9 @@ exports.updateMatch = async (req, res) => {
             stack: err.stack,
             message: err.message
           });
-      return ErrorResponse(
-        {
-          statusCode: 404,
-          message: {
-            msg: "notFound",
-            keys: {
-              name: "Match",
-            },
-          },
-        },
-        req,
-        res
-      );
+      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match"}}},req,res);
     }
+
     let matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
     if(!matchBatting || !matchBatting.length){
         logger.error({
@@ -279,19 +242,11 @@ exports.updateMatch = async (req, res) => {
             stack: err.stack,
             message: err.message
           });
-      return ErrorResponse(
-        {
-          statusCode: 404,
-          message: {
-            msg: "notFound",
-            keys: {
-              name: "Match batting",
-            },
-          },
-        },
-        req,
-        res
-      );
+      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match batting"}}},req,res)
+    }
+
+    if(loginId != match.createBy && !user.allPrivilege){
+        return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User"}}},req,res);
     }
 
     if (minBet) {

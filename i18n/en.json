@@ -5,10 +5,13 @@
   "invalid":"Invalid {name}.",
   "invalidId": "Given id is invalid.",
   "userNotSelect": "User not selected.",
+  
   "updated":"{name} updated successfully.",
   "created":"{name} created successfully.",
   "alreadyExist":"{name} already exist.",
   "fetched" : "{name} fetch successfully.",
+  "required" : "{name} is required.",
+  "notAuthorized" : "{name} not authorize to take this action.",
   
   "auth": {
     "loginSuccess": "Login successfully.",

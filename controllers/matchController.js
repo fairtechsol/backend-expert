@@ -12,7 +12,6 @@ const {
 } = require("../services/matchService");
 const { getUserById } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const {getUserById} = require("../services/userService")
 /**
  * Create or update a match.
  *

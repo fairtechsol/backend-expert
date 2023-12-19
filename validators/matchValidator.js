@@ -40,7 +40,7 @@ module.exports.addMatchValidate = Joi.object({
     "string.base": "Team B must be a string",
     "any.required": "Team B is required",
   }),
-  teamC: Joi.string().messages({
+  teamC: Joi.string().trim().allow("").messages({
     "string.base": "Team C must be a string",
   }),
   startAt: Joi.date().required().messages({

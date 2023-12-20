@@ -31,6 +31,27 @@ const updateSessionMatchRedis = async (matchId, sessionId, data) => {
     .exec();
 };
 
+/**
+ * Updates session match data in Redis.
+ *
+ * @param {string} matchId - The ID of the match.
+ * @param {Object} data - The data to be updated in the session.
+ * @returns {Promise<void>} - A Promise that resolves when the update is complete.
+ */
+const settingAllSessionMatchRedis=async (matchId,data)=>{
+  logger.info({
+    message: `updating data in redis for session of match ${matchId}`,
+    data: data
+  });
+
+   // Use a Redis pipeline for atomicity and efficiency
+   await internalRedis
+   .pipeline()
+   .hset(`${matchId}_session`, data)
+   .expire(`${matchId}_session`, 3600) // Set a TTL of 3600 seconds (1 hour) for the key
+   .exec();
+}
+
 
 /**
  * Retrieves session data from Redis based on match and session IDs.
@@ -60,7 +81,7 @@ const getAllSessionRedis = async (matchId) => {
   const sessionData = await internalRedis.hgetall(`${matchId}_session`);
 
   // Return the session data as an object or null if no data is found
-  return sessionData ?? null;
+  return Object.keys(sessionData)?.length == 0 ? null : sessionData;
 };
 
 
@@ -125,10 +146,9 @@ exports.addSession = async (req,res) =>{
         return ErrorResponse({statusCode: 400,message: {msg: "match.sessionAddFail" }},req,res);
       }
 
-      const { createdAt, updatedAt, deletedAt, ...sessionRedisData } = session;
 
      
-      await updateSessionMatchRedis(matchId,session?.id,sessionRedisData);
+      await updateSessionMatchRedis(matchId,session?.id,session);
 
 
       return SuccessResponse(
@@ -194,10 +214,9 @@ exports.addSession = async (req,res) =>{
       }
       
      
-      const { createdAt, updatedAt, deletedAt, ...sessionRedisData } = session;
 
      
-      await updateSessionMatchRedis(session?.matchId,session?.id,{...sessionRedisData,...sessionData});
+      await updateSessionMatchRedis(session?.matchId,session?.id,{...session,...sessionData});
       
       return SuccessResponse(
         {
@@ -228,32 +247,14 @@ exports.getSessions = async (req, res) => {
     const {matchId}=req.params;
     const { id: sessionId } = req.query;
     let session;
-    const select = [
-      "id",
-      "matchId",
-      "type",
-      "name",
-      "minBet",
-      "maxBet",
-      "yesRate",
-      "noRate",
-      "yesPercent",
-      "noPercent",
-      "selectionId",
-      "status",
-      "createBy",
-      "stopAt",
-      "activeStatus",
-      "isManual"      
-    ];
-
+    
     if (!sessionId) {
       const redisMatchData = await getAllSessionRedis(matchId);
 
       if (redisMatchData) {
         session = Object.values(redisMatchData);
       } else {
-        session = await getSessionBettings({ matchId }, select);
+        session = await getSessionBettings({ matchId });
         if (!session) {
           return ErrorResponse(
             {
@@ -264,13 +265,13 @@ exports.getSessions = async (req, res) => {
             res
           );
         }
+        let result = {};
         for (let index = 0; index < session?.length; index++) {
-          await updateSessionMatchRedis(
-            matchId,
-            session?.[index]?.id,
-            session[index]
-          );
+          session[index]=JSON.stringify(session?.[index]);
+          result[session?.[index]?.id] = session?.[index];
+
         }
+        await settingAllSessionMatchRedis(matchId, result);
       }
     } else {
       const redisMatchData = await getSessionFromRedis(matchId, sessionId);
@@ -278,7 +279,7 @@ exports.getSessions = async (req, res) => {
       if (redisMatchData) {
         session = redisMatchData;
       } else {
-        session = await getSessionBettingById(sessionId, select);
+        session = await getSessionBettingById(sessionId);
         if (!session) {
           return ErrorResponse(
             {

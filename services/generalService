@@ -1,0 +1,19 @@
+const { AppDataSource } = require("../config/postGresConnection");
+const systemTableSchema = require("../models/systemTable.entity");
+const systemTableRepo = AppDataSource.getRepository(systemTableSchema);
+
+exports.addNotification = async (value, userId) => {
+    const notification = {};
+    notification.createBy = userId;
+    notification.type = 'notification';
+    let notificationExist = await systemTableRepo.findOneBy({ type: 'notification' });
+    if (notificationExist) {
+        notification.id = notificationExist.id;
+    }
+    notification.value = value;
+    return await systemTableRepo.save(notification);
+}
+
+exports.getNotification = async () => {
+    return await systemTableRepo.findOneBy({ type: 'notification' });
+}

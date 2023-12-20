@@ -1,7 +1,6 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, matchBettingType, teamStatus, betStatusType } = require("../config/contants");
 const { ColumnNumericTransformer } = require("../services/commonService");
-const e = require("express");
 
 const matchBettingSchema = new EntitySchema({
   name: "matchBetting",

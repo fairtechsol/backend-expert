@@ -77,7 +77,11 @@ const sessionBettingSchema = new EntitySchema({
             type: 'timestamp with time zone',
             nullable: true
         },
-        isManuall: {
+        result: {
+          type: "varchar",
+          nullable: true
+        },
+        isManual: {
           type: "boolean",
           nullable: false,
           default: true

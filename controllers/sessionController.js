@@ -244,6 +244,7 @@ exports.getSessions = async (req, res) => {
       "createBy",
       "stopAt",
       "activeStatus",
+      "isManual"      
     ];
 
     if (!sessionId) {

@@ -104,7 +104,7 @@ const matchBettingSchema = new EntitySchema({
       type: "varchar",
       nullable: true
     },
-    isManuall: {
+    isManual: {
       type: "boolean",
       nullable: false,
       default: true

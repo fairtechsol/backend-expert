@@ -6,7 +6,7 @@ exports.addNotification = async (value, userId) => {
     const notification = {};
     notification.createBy = userId;
     notification.type = 'notification';
-    var notificationExist = await systemTableRepo.findOneBy({ type: 'notification' });
+    let notificationExist = await systemTableRepo.findOneBy({ type: 'notification' });
     if (notificationExist) {
         notification.id = notificationExist.id;
     }

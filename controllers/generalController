@@ -13,9 +13,7 @@ exports.addNotification = async (req, res) => {
             {
                 statusCode: 200,
                 message: { msg: "updated", keys: "Notification" },
-                data: {
-                    data
-                },
+                data
             },
             req,
             res

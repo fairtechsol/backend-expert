@@ -5,7 +5,7 @@ let expiry = 3600;
 exports.addMatchInCache = async (matchId,data) =>{
     let matchKey =`${matchId}_match`;
     let payload = {
-        id: data.id,
+        id: JSON.stringify(data.id),
         matchType : JSON.stringify(data.matchType),
         competitionId : JSON.stringify(data.competitionId),
         competitionName : JSON.stringify(data.competitionName),
@@ -38,7 +38,7 @@ exports.updateMatchInCache = async (matchId,data) =>{
     let matchKey =`${matchId}_match`;
     let match = await internalRedis.hgetall(matchKey);
     let payload = {
-        id : match.id,
+        id : JSON.stringify(match.id),
         matchType : data.matchType || match.matchType,
         competitionId : data.competitionId || match.competitionId,
         competitionName : data.competitionName || match.competitionName,

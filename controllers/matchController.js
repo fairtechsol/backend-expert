@@ -192,7 +192,7 @@ exports.createMatch = async (req, res) => {
       ...match,
       matchOdd : convertedData[matchBettingType.matchOdd],
       marketBookmaker : convertedData[matchBettingType.bookmaker],
-      marketTiedMatch : convertedData[matchBettingType.tiedMatch1],
+      marketTiedMatch : convertedData[matchBettingType.tiedMatch2],
     }
     await addMatchInCache(match.id,payload);
     return SuccessResponse(
@@ -300,11 +300,22 @@ exports.updateMatch = async (req, res) => {
 
     match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
     matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type","activeStatus"]);
+    const convertedData = matchBatting.reduce((result, item) => {
+      const key = item.type; // Assuming type is unique and case-insensitive
+      result[key] = { 
+        id : item.id,
+        minBet : item.minBet,
+        maxBet : item.maxBet,
+        activeStatus : item.activeStatus
+       };
+      return result;
+    }, {});
+
     let payload = {
       ...match ,
-      matchOdd : matchBatting.find(item => item.type == matchBettingType.matchOdd),
-      marketBookmaker : matchBatting.find(item => item.type == matchBettingType.bookmaker),
-      marketTiedMatch : matchBatting.find(item => item.type == matchBettingType.tiedMatch1),
+      matchOdd :  convertedData[matchBettingType.matchOdd],
+      marketBookmaker :  convertedData[matchBettingType.bookmaker],
+      marketTiedMatch :  convertedData[matchBettingType.tiedMatch2],
     }
     updateMatchInCache(match.id,payload)
     // Attach bookmaker data to the match object
@@ -444,7 +455,7 @@ exports.matchDetails = async (req, res) => {
           break;
       }
     });
-    
+
     let checkinCache = await hasMatchInCache(match.id);
     if(checkinCache){
       await updateMatchExpiry(match.id);

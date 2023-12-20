@@ -93,6 +93,23 @@ exports.createUser = async (req, res) => {
 };
 
 
+exports.getProfile = async (req, res) => {
+  let reqUser = req.user || {};
+  let userId = reqUser?.id;
+  if (req.query?.userId) {
+    userId = req.query.userId;
+  }
+
+  let user = await getUserById(userId);
+  let response = lodash.omit(user, ["password"]);
+  return SuccessResponse(
+    { statusCode: 200, message: { msg: "user.profile" }, data: response },
+    req,
+    res
+  );
+};
+
+
 exports.updateUser = async (req, res) => {
   try {
     // Destructuring request body for relevant user information

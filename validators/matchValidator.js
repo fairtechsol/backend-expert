@@ -80,8 +80,21 @@ module.exports.addMatchValidate = Joi.object({
     "array.base": "Bookmakers must be an array",
     "any.required": "Bookmakers are required",
   }),
-  tiedMatch: Joi.array().items(bookmakerSchema).messages({
-    "array.base": "Tied match must be an array",
+  marketTiedMatchMaxBet : Joi.number().greater(Joi.ref("minBet"))
+  .required()
+  .messages({
+    "number.base": "Maximum bet amount for market tied match must be a number",
+    "number.greater":
+      "Maximum bet amount for market tied match must be greater than minimum bet amount",
+    "any.required": "Maximum bet amount for market tied match is required",
+  }),
+  manualTiedMatchMaxBet : Joi.number().greater(Joi.ref("minBet"))
+  .required()
+  .messages({
+    "number.base": "Maximum bet amount for manual tied match must be a number",
+    "number.greater":
+      "Maximum bet amount for market tied match must be greater than minimum bet amount",
+    "any.required": "Maximum bet amount for manual tied match is required",
   }),
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",

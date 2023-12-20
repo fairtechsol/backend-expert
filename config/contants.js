@@ -90,3 +90,8 @@ module.exports.bettingType = {
 session : 'session',
 match : 'match'
 }
+
+module.exports.tiedMatchNames = {
+  manual : 'tied_manual',
+  market : 'tied_match'
+}

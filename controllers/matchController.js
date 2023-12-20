@@ -1,4 +1,4 @@
-const { matchBettingType, intialMatchBettingsName, bettingType } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, tiedMatchNames } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById } = require("../services/matchBettingService");
@@ -10,6 +10,7 @@ const {
   getMatch,
   getMatchDetails,
 } = require("../services/matchService");
+const { addMatchInCache, updateMatchInCache, hasMatchInCache, updateMatchExpiry } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 /**
@@ -40,7 +41,8 @@ exports.createMatch = async (req, res) => {
       betFairSessionMaxBet,
       betFairBookmakerMaxBet,
       bookmakers,
-      tiedMatch
+      marketTiedMatchMaxBet,
+      manualTiedMatchMaxBet
     } = req.body;
 
     /* access work left */
@@ -90,8 +92,7 @@ exports.createMatch = async (req, res) => {
       createBy: loginId
     };
 
-    let allArrays = [...bookmakers, ...tiedMatch];
-    let maxBetValues = allArrays.map(item => item.maxBet);
+    let maxBetValues = bookmakers.map(item => item.maxBet);
     let minimumMaxBet = Math.min(...maxBetValues);
     if(minimumMaxBet < minBet){
  
@@ -121,6 +122,7 @@ exports.createMatch = async (req, res) => {
       minBet: minBet,
       createBy: loginId
     }
+
     let matchBettings = [
       {
         ...matchBetting,
@@ -133,20 +135,21 @@ exports.createMatch = async (req, res) => {
         type: matchBettingType.bookmaker,
         name: intialMatchBettingsName.initialBookmaker,
         maxBet: betFairBookmakerMaxBet,
+      },
+      {
+        ...matchBetting,
+        type: matchBettingType.tiedMatch1,
+        name: tiedMatchNames.market,
+        maxBet:marketTiedMatchMaxBet
+      },
+      {
+        ...matchBetting,
+        type: matchBettingType.tiedMatch2,
+        name: tiedMatchNames.manual,
+        maxBet:manualTiedMatchMaxBet
       }
     ]
-    if (tiedMatch && tiedMatch.length) {
-      tiedMatch.map((item, index) => {
-        const { maxBet, marketName } = item;
-        index++;
-        matchBettings.push({
-          ...matchBetting,
-          type: matchBettingType["tiedMatch" + index],
-          name: marketName,
-          maxBet:maxBet
-        })
-      })
-    }
+
     // Prepare bookmakers for the new match
     bookmakers?.map((item, index) => {
       const { maxBet, marketName } = item;
@@ -160,6 +163,7 @@ exports.createMatch = async (req, res) => {
         maxBet: maxBet,
       });
     });
+
     // Attach bookmakers to the match
     let insertedMatchBettings = await insertMatchBettings(matchBettings);
     if (!insertedMatchBettings) {
@@ -170,10 +174,27 @@ exports.createMatch = async (req, res) => {
 
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
     }
-    match["bookmaker"] = insertedMatchBettings.generatedMaps;
-    // broadcastEvent("newMatchAdded", match);
+ 
+    let matchBettingData = await getMatchBattingByMatchId(match.id);
 
-    // Send success response with the add match data
+    const convertedData = matchBettingData.reduce((result, item) => {
+      const key = item.type; // Assuming type is unique and case-insensitive
+      result[key] = { 
+        id : item.id,
+        minBet : item.minBet,
+        maxBet : item.maxBet,
+        activeStatus : item.activeStatus
+       };
+      return result;
+    }, {});
+
+    let payload = {
+      ...match,
+      matchOdd : convertedData[matchBettingType.matchOdd],
+      marketBookmaker : convertedData[matchBettingType.bookmaker],
+      marketTiedMatch : convertedData[matchBettingType.tiedMatch1],
+    }
+    await addMatchInCache(match.id,payload);
     return SuccessResponse(
       {
         statusCode: 200,
@@ -183,7 +204,7 @@ exports.createMatch = async (req, res) => {
             name: "Match",
           },
         },
-        data: match,
+        data: {match,matchBettingData},
       },
       req,
       res
@@ -218,7 +239,7 @@ exports.updateMatch = async (req, res) => {
     }
 
     // Check if the match exists
-    let match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
+    let match = await getMatchById(id, ["id","createBy", "betFairSessionMinBet", "betFairSessionMaxBet"]);
 
     if (!match) {
         logger.error({
@@ -278,8 +299,14 @@ exports.updateMatch = async (req, res) => {
     // await Promise.all(updatePromises);
 
     match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
-    matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
-
+    matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type","activeStatus"]);
+    let payload = {
+      ...match ,
+      matchOdd : matchBatting.find(item => item.type == matchBettingType.matchOdd),
+      marketBookmaker : matchBatting.find(item => item.type == matchBettingType.bookmaker),
+      marketTiedMatch : matchBatting.find(item => item.type == matchBettingType.tiedMatch1),
+    }
+    updateMatchInCache(match.id,payload)
     // Attach bookmaker data to the match object
     match["bookmaker"] = matchBatting;
 
@@ -417,7 +444,19 @@ exports.matchDetails = async (req, res) => {
           break;
       }
     });
-
+    
+    let checkinCache = await hasMatchInCache(match.id);
+    if(checkinCache){
+      await updateMatchExpiry(match.id);
+    }else{
+      let payload = {
+        ...match,
+        matchOdd : categorizedMatchBettings[matchBettingType.matchOdd],
+        marketBookmaker : categorizedMatchBettings[matchBettingType.bookmaker],
+        marketTiedMatch : categorizedMatchBettings.tideMatch,
+      }
+      addMatchInCache(match.id,payload);
+    }
     // Assign the categorized match bettings to the match object
     Object.assign(match, categorizedMatchBettings);
 

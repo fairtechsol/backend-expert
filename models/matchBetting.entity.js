@@ -1,6 +1,7 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, matchBettingType, teamStatus, betStatusType } = require("../config/contants");
 const { ColumnNumericTransformer } = require("../services/commonService");
+const e = require("express");
 
 const matchBettingSchema = new EntitySchema({
   name: "matchBetting",
@@ -10,95 +11,104 @@ const matchBettingSchema = new EntitySchema({
       type: "uuid",
       nullable: false
     },
-    type : {
+    type: {
       type: 'enum',
       enum: Object.values(matchBettingType),
       nullable: false
     },
-    name : {
+    name: {
       type: 'varchar',
       nullable: false
     },
-    minBet : {
+    minBet: {
       type: 'float',
       nullable: false,
-      default : 0,
-      transformer : new ColumnNumericTransformer()
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
-    maxBet : {
+    maxBet: {
       type: 'float',
       nullable: false,
-      default : 1,
-      transformer : new ColumnNumericTransformer()
+      default: 1,
+      transformer: new ColumnNumericTransformer()
     },
-    backTeamA : {
+    backTeamA: {
       type: 'float',
       nullable: false,
-      default : 0,
-      transformer : new ColumnNumericTransformer()
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
-    backTeamB : {
+    backTeamB: {
       type: 'float',
       nullable: false,
-      default : 0,
-      transformer : new ColumnNumericTransformer()
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
-    backTeamC : {
+    backTeamC: {
       type: 'float',
       nullable: false,
-      default : 0,
-      transformer : new ColumnNumericTransformer()
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
-    layTeamA : {
+    layTeamA: {
       type: 'float',
       nullable: false,
-      default : 0,
-      transformer : new ColumnNumericTransformer()
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
-    layTeamB : {
+    layTeamB: {
       type: 'float',
       nullable: false,
-      default : 0,
-      transformer : new ColumnNumericTransformer()
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
-    layTeamC : {
+    layTeamC: {
       type: 'float',
       nullable: false,
-      default : 0,
-      transformer : new ColumnNumericTransformer()
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
-    statusTeamA : {
+    statusTeamA: {
       type: 'enum',
       enum: Object.values(teamStatus),
       nullable: false,
-      default : teamStatus.suspended
+      default: teamStatus.suspended
     },
-    statusTeamB : {
+    statusTeamB: {
       type: 'enum',
       enum: Object.values(teamStatus),
       nullable: false,
-      default : teamStatus.suspended
+      default: teamStatus.suspended
     },
-    statusTeamC : {
+    statusTeamC: {
       type: 'enum',
       enum: Object.values(teamStatus),
       nullable: true,
-      default : teamStatus.suspended
+      default: teamStatus.suspended
     },
-    activeStatus : {
+    activeStatus: {
       type: 'enum',
       enum: Object.values(betStatusType),
       nullable: false,
-      default : betStatusType.live
+      default: betStatusType.live
     },
-    isActive:{
+    isActive: {
       type: "boolean",
       default: false,
       nullable: false,
     },
-    stopAt :{
+    stopAt: {
       type: 'timestamp with time zone',
       nullable: true
+    },
+    result: {
+      type: "varchar",
+      nullable: true
+    },
+    isManuall: {
+      type: "boolean",
+      nullable: false,
+      default: true
     }
   },
   relations: {
@@ -114,17 +124,20 @@ const matchBettingSchema = new EntitySchema({
   indices: [
     {
       name: "matchBeting_name", // index name should be start with the table name
-      unique: true, // Optional: Set to true if you want a unique index
+      unique: false, // Optional: Set to true if you want a unique index
       columns: ["matchId", "name"],
     },
   ],
-  checks : [{
-    name: "matchBetting_minBet",
-    expression: `"minBet" >= 0`
-  },{
-    name: "matchBetting_maxBet",
-    expression: `"maxBet" > "minBet"`
-  }]
+  checks: [
+    {
+      name: "matchBetting_minBet",
+      expression: `"minBet" >= 0`
+    },
+    {
+      name: "matchBetting_maxBet",
+      expression: `"maxBet" > "minBet"`
+    }
+  ]
 });
 
 module.exports = matchBettingSchema;

@@ -15,67 +15,72 @@ const sessionBettingSchema = new EntitySchema({
             enum: Object.values(sessionBettingType),
             nullable: false
         },
-        name : {
+        name: {
             type: 'varchar',
             nullable: false
         },
-        minBet : {
+        minBet: {
             type: 'float',
             nullable: false,
-            default : 0,
+            default: 0,
             check: "minBet >= 0",
-            transformer : new ColumnNumericTransformer()
+            transformer: new ColumnNumericTransformer()
         },
-        maxBet : {
+        maxBet: {
             type: 'float',
             nullable: false,
-            default : 0,
+            default: 0,
             check: "maxBet > minBet",
-            transformer : new ColumnNumericTransformer()
+            transformer: new ColumnNumericTransformer()
         },
-        yesRate : {
+        yesRate: {
             type: 'float',
             nullable: false,
-            default : 0,
-            transformer : new ColumnNumericTransformer()
+            default: 0,
+            transformer: new ColumnNumericTransformer()
         },
-        noRate : {
+        noRate: {
             type: 'float',
             nullable: false,
-            default : 0,
-            transformer : new ColumnNumericTransformer()
+            default: 0,
+            transformer: new ColumnNumericTransformer()
         },
-        yesPercent : {
+        yesPercent: {
             type: 'float',
             nullable: false,
-            default : 0,
-            transformer : new ColumnNumericTransformer()
+            default: 0,
+            transformer: new ColumnNumericTransformer()
         },
-        noPercent : {
+        noPercent: {
             type: 'float',
             nullable: false,
-            default : 0,
-            transformer : new ColumnNumericTransformer()
+            default: 0,
+            transformer: new ColumnNumericTransformer()
         },
-        status : {
+        status: {
             type: 'enum',
             enum: Object.values(teamStatus),
             nullable: false,
-            default : teamStatus.suspended
+            default: teamStatus.suspended
         },
-        selectionId : {
+        selectionId: {
             type: 'varchar',
             nullable: true
         },
-        activeStatus : {
+        activeStatus: {
             type: 'enum',
             enum: Object.values(betStatusType),
             nullable: false,
-            default : betStatusType.live
+            default: betStatusType.live
         },
-        stopAt :{
+        stopAt: {
             type: 'timestamp with time zone',
             nullable: true
+        },
+        isManuall: {
+          type: "boolean",
+          nullable: false,
+          default: true
         }
     },
     relations: {

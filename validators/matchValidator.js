@@ -103,8 +103,7 @@ module.exports.addMatchValidate = Joi.object({
 
 const updatebookmakerSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
-  maxBet: Joi.number().required(),
-  type : Joi.string().required()
+  maxBet: Joi.number().required()
 });
 
 module.exports.updateMatchValidate = Joi.object({

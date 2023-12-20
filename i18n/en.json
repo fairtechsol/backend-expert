@@ -25,7 +25,8 @@
   "user" : {
     "passwordMatch": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?).",
     "confirmPasswordNotMatch":"Password and confirm password did not match.",
-    "userExist" : "User already exist on given user name." 
+    "userExist" : "User already exist on given user name." ,
+    "profile": "Profile get successfully."
     
   },
   "match":{

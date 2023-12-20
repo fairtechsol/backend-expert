@@ -318,9 +318,6 @@ exports.listMatch = async (req, res) => {
     const { fields } = query;
     const { id: loginId } = req.user;
 
-
-
-
     const loginUser = await getUserById(loginId, [
       "id",
       "allPrivilege",
@@ -364,6 +361,11 @@ exports.listMatch = async (req, res) => {
       res
     );
   } catch (err) {
+    logger.error({
+      error: `Error at list match for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }

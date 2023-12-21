@@ -50,6 +50,7 @@ module.exports.matchBettingType = {
   quickbookmaker3: "quickbookmaker3",
   tiedMatch1: "tiedMatch1",
   tiedMatch2: "tiedMatch2",
+  completeMatch : "completeMatch"
 };
 
 module.exports.manualMatchBettingType = [
@@ -97,9 +98,10 @@ module.exports.bettingType = {
   match: "match",
 };
 
-module.exports.tiedMatchNames = {
+module.exports.initialMatchNames = {
   manual: "tied_manual",
   market: "tied_match",
+  completeMatch : "complete_match"
 };
 
 module.exports.expertRoomSocket="expertRoom";

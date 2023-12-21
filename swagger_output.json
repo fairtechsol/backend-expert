@@ -450,6 +450,18 @@
                   },
                   "manualTiedMatchMaxBet": {
                     "example": "any"
+                  },
+                  "matchOddMarketId": {
+                    "example": "any"
+                  },
+                  "tiedMatchMarketId": {
+                    "example": "any"
+                  },
+                  "marketBookmakerId": {
+                    "example": "any"
+                  },
+                  "completeMatchMarketId": {
+                    "example": "any"
                   }
                 }
               }
@@ -661,7 +673,7 @@
         }
       }
     },
-    "/superAdmin/{id}": {
+    "/superAdmin/match/{id}": {
       "get": {
         "description": "",
         "parameters": [

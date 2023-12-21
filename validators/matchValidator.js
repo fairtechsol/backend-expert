@@ -96,6 +96,22 @@ module.exports.addMatchValidate = Joi.object({
       "Maximum bet amount for market tied match must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for manual tied match is required",
   }),
+  matchOddMarketId : Joi.string().required().messages({
+    "string.base": "Match odd market id must be a string",
+    "any.required": "Match odd market id is required",
+  }),
+  marketBookmakerId : Joi.string().required().messages({
+    "string.base": "Market bookmaker id must be a string",
+    "any.required": "Market bookmaker id is required",
+  }),
+  tiedMatchMarketId : Joi.string().required().messages({
+    "string.base": "Tied match market id must be a string",
+    "any.required": "Tied match market id is required",
+  }),
+  completeMatchMarketId : Joi.string().required().messages({
+    "string.base": "Complete match market id must be a string",
+    "any.required": "Complete match market id is required",
+  }),
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });
@@ -156,3 +172,27 @@ module.exports.MatchActiveInactive = Joi.object({
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });
+
+
+module.exports.getMatchSchema = Joi.object({
+  id:Joi.string().guid({ version: 'uuidv4' }),
+  matchType: Joi.string(),
+  competitionId: Joi.string(),
+  competitionName: Joi.string(),
+  title: Joi.string().required(),
+  marketId: Joi.string(),
+  eventId: Joi.string(),
+  teamA: Joi.string(),
+  teamB: Joi.string(),
+  teamC: Joi.string().trim().allow(""),
+  startAt: Joi.date(),
+  betFairSessionMaxBet: Joi.number(),
+  betFairSessionMinBet: Joi.number(),
+  apiSessionActive: Joi.boolean(),
+  manualSessionActive: Joi.boolean(),
+  matchOdd: Joi.string(),
+  marketBookmaker: Joi.string(),
+  marketTiedMatch: Joi.string(), 
+  marketCompleteMatch : Joi.string(),
+  stopAt: Joi.date(),   
+})

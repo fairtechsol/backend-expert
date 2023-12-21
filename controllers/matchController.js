@@ -501,14 +501,14 @@ exports.matchDetails = async (req, res) => {
 
       const categorizedMatchBettings = {
         ...(match.matchOdd
-          ? { [matchBettingType.matchOdd]: JSON.parse(match.matchOdd) }
+          ? { [matchBettingType.matchOdd]: match.matchOdd }
           : {}),
         ...(match.marketBookmaker
-          ? { [matchBettingType.bookmaker]: JSON.parse(match.marketBookmaker) }
+          ? { [matchBettingType.bookmaker]:match.marketBookmaker }
           : {}),
         quickBookmaker: [],
         ...(match.marketTiedMatch
-          ? { apiTideMatch: JSON.parse(match.marketTiedMatch) }
+          ? { apiTideMatch: match.marketTiedMatch }
           : {}),
         manualTiedMatch: null,
       };

@@ -445,7 +445,10 @@
                   "bookmakers": {
                     "example": "any"
                   },
-                  "tiedMatch": {
+                  "marketTiedMatchMaxBet": {
+                    "example": "any"
+                  },
+                  "manualTiedMatchMaxBet": {
                     "example": "any"
                   }
                 }
@@ -658,6 +661,33 @@
         }
       }
     },
+    "/superAdmin/{id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/session/add": {
       "post": {
         "description": "",
@@ -774,10 +804,18 @@
         }
       }
     },
-    "/session/": {
+    "/session/{matchId}": {
       "get": {
         "description": "",
         "parameters": [
+          {
+            "name": "matchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "x-forwarded-for",
             "in": "header",
@@ -794,20 +832,6 @@
           },
           {
             "name": "id",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "matchId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "type",
             "in": "query",
             "schema": {
               "type": "string"

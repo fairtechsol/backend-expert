@@ -6,10 +6,7 @@ const { getMatchSchema } = require("../../validators/userValidator");
 
 let expiry = 3600;
 
-
-
 exports.addMatchInCache = async (matchId, data) => {
-
   // Log the update information
   logger.info({
     message: `adding match data in redis with match id  ${matchId}`,

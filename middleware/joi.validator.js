@@ -15,3 +15,12 @@ module.exports = function (Schema) {
     }
 }
 
+module.exports.jsonValidator =async (schema,body) =>{
+    try {
+        const validated = await schema.validateAsync(body);
+        return validated;
+    } catch (err) {
+        throw (err)
+    }
+}
+

@@ -74,3 +74,26 @@ module.exports.ChangePassword=Joi.object({
     }),
     createBy:Joi.string().required(),
 });
+
+
+module.exports.getMatchSchema = Joi.object({
+  id:Joi.string().guid({ version: 'uuidv4' }),
+  matchType: Joi.string(),
+  competitionId: Joi.string(),
+  competitionName: Joi.string(),
+  title: Joi.string().required(),
+  marketId: Joi.string(),
+  eventId: Joi.string(),
+  teamA: Joi.string(),
+  teamB: Joi.string(),
+  teamC: Joi.string().trim().allow(""),
+  startAt: Joi.date(),
+  betFairSessionMaxBet: Joi.number(),
+  betFairSessionMinBet: Joi.number(),
+  apiSessionActive: Joi.boolean(),
+  manualSessionActive: Joi.boolean(),
+  matchOdd: Joi.string(),
+  marketBookmaker: Joi.string(),
+  marketTiedMatch: Joi.string(),
+  stopAt: Joi.date(),   
+})

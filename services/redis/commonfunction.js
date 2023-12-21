@@ -115,7 +115,7 @@ exports.getMatchFromCache = async(matchId) =>{
  * @param {Object} data - The data to be updated in the session.
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
-exports.updateBettingMatchRedis = async (matchId, sessionId, data) => {
+exports.updateSessionMatchRedis = async (matchId, sessionId, data) => {
     // Log the update information
     logger.info({
       message: `updating data in redis for session ${sessionId} of match ${matchId}`,

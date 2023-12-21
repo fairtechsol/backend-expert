@@ -108,6 +108,10 @@ const matchBettingSchema = new EntitySchema({
       type: "boolean",
       nullable: false,
       default: true
+    },
+    marketId : {
+      type : "varchar",
+      nullable : true
     }
   },
   relations: {

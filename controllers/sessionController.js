@@ -2,11 +2,11 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBetting, getSessionBettings } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService");
-const { sessionBettingType, teamStatus } = require("../config/contants");
+const { sessionBettingType, teamStatus, expertRoomSocket } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
-const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis } = require("../services/redis/commonfunction");
+const { sendMessageToUser } = require("../sockets/socketManager");
 
 
 
@@ -76,6 +76,8 @@ exports.addSession = async (req,res) =>{
      
       await updateSessionMatchRedis(matchId,session?.id,session);
 
+      sendMessageToUser(expertRoomSocket,"sessionAdded",session);
+
 
       return SuccessResponse(
         {
@@ -102,7 +104,6 @@ exports.addSession = async (req,res) =>{
   }
   
   //update session betting general data
-  
   exports.updateSession = async (req,res) =>{
     try {
       let {id,name,minBet,maxBet} = req.body
@@ -139,10 +140,11 @@ exports.addSession = async (req,res) =>{
         return ErrorResponse({statusCode: 400,message: {msg: "match.sessionUpdateFail" }},req,res);
       }
       
-     
-
-     
       await updateSessionMatchRedis(session?.matchId,session?.id,{...session,...sessionData});
+
+
+      sendMessageToUser("expertRoom","sessionUpdated",{...session,...sessionData});
+
       
       return SuccessResponse(
         {
@@ -170,10 +172,10 @@ exports.addSession = async (req,res) =>{
 
 exports.getSessions = async (req, res) => {
   try {
-    const {matchId}=req.params;
+    const { matchId } = req.params;
     const { id: sessionId } = req.query;
     let session;
-    
+
     if (!sessionId) {
       const redisMatchData = await getAllSessionRedis(matchId);
 
@@ -193,9 +195,8 @@ exports.getSessions = async (req, res) => {
         }
         let result = {};
         for (let index = 0; index < session?.length; index++) {
-          session[index]=JSON.stringify(session?.[index]);
+          session[index] = JSON.stringify(session?.[index]);
           result[session?.[index]?.id] = session?.[index];
-
         }
         await settingAllSessionMatchRedis(matchId, result);
       }

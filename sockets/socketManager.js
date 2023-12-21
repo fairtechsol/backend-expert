@@ -1,6 +1,8 @@
 const socketIO = require("socket.io");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
 const internalRedis = require("../config/internalRedisConnection");
+const { logger } = require("../config/logger");
+const { userRoleConstant, expertRoomSocket } = require("../config/contants");
 
 let io;
 /**
@@ -29,7 +31,26 @@ const handleConnection = async (client) => {
     }
 
     // Extract user ID and role from the decoded user object
-    const { id: userId } = decodedUser;
+    const { id: userId,roleName } = decodedUser;
+
+    if(roleName==userRoleConstant.user){
+      const userCount = parseInt(await internalRedis.get("loginUserCount"));
+
+      // If the user is a regular user, manage user login count
+      const incrementCount = async () => {
+        const count = await internalRedis.incr("loginUserCount");
+        io.to("expertUserCountRoom").emit("loginUserCount", { count });
+      };
+
+      // Increment and emit the login user count if greater than 0; otherwise, set it to 1
+      if (userCount > 0) {
+        incrementCount();
+      } else {
+        internalRedis.set("loginUserCount", 1);
+        io.to("expertUserCountRoom").emit("loginUserCount", { count: 1 });
+      }
+      return;
+    }
 
     // Retrieve the user's token from Redis
     const userTokenRedis = await getUserTokenFromRedis(userId);
@@ -45,11 +66,17 @@ const handleConnection = async (client) => {
 
     // Handle additional logic based on the user's role
     // If the user is an expert, add their ID to the "expertLoginIds" set and join the room
-    internalRedis.sadd("expertLoginIds", userId);
-    client.join("expertUserCountRoom");
+    // internalRedis.sadd("expertLoginIds", userId);
+    client.join(expertRoomSocket);
+    
+
   } catch (err) {
     // Handle any errors by disconnecting the client
-    console.error(err);
+    logger.error({
+      error: `Error at socket connection.`,
+      stack: err.stack,
+      message: err.message
+    });
     client.disconnect();
   }
 };
@@ -78,19 +105,41 @@ const handleDisconnect = async (client) => {
     }
 
     // Extract user ID and role from the decoded user object
-    const { id: userId } = decodedUser;
+    const { id: userId,roleName } = decodedUser;
+
+
+    if(roleName==userRoleConstant.user){
+      const userCount = parseInt(await internalRedis.get("loginUserCount"));
+      // If the user is a regular user, manage user login count
+      const decrementCount = async () => {
+        const userCount = await internalRedis.decr("loginUserCount");
+        io.to("expertUserCountRoom").emit("loginUserCount", {
+          count: userCount,
+        });
+      };
+
+      // Decrement and emit the login user count if greater than 0; otherwise, set it to 0
+      userCount > 0 ? decrementCount() : internalRedis.set("loginUserCount", 0);
+
+
+      
+      return;
+    }
 
     // Leave the room with the user's ID
-    client.leave(userId);
+    client.leaveAll();
 
     // Handle additional logic based on the user's role
     // If the user is an expert, remove their ID from the "expertLoginIds" set
-    internalRedis.srem("expertLoginIds", userId);
-    // Leave the "expertUserCountRoom" room
-    client.leave("expertUserCountRoom");
+    // internalRedis.srem("expertLoginIds", userId);
+    
   } catch (err) {
     // Handle any errors by disconnecting the client
-    console.error(err);
+    logger.error({
+      error: `Error at socket disconnect.`,
+      stack: err.stack,
+      message: err.message
+    });
     client.disconnect();
   }
 };
@@ -112,6 +161,18 @@ exports.socketManager = (server) => {
   io.on("connect", (client) => {
     // Delegate connection handling to a separate function
     handleConnection(client);
+
+    client.on("init",(match)=>{
+      client.join(match.id);
+    });
+
+    client.on("leaveAll",()=>{
+      client.leaveAll();
+    });
+
+    client.on("leaveMatch",(match)=>{
+      client.leave(match.id);
+    });
 
     // Event listener for socket disconnection
     client.on("disconnect", () => {

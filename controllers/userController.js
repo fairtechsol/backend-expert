@@ -12,6 +12,7 @@ const lodash = require("lodash");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
 const { verifyToken } = require("../utils/authUtils");
+const { logger } = require("../config/logger");
 
 /**
  * Creates or updates a user based on the provided request data.
@@ -41,6 +42,9 @@ exports.createUser = async (req, res) => {
     // Check if a user with the same username already exists
     let userExist = await getUserByUserName(userName);
     if (userExist){
+      logger.error({
+        error: `user exist for user id ${userExist?.id}`
+      });
       return ErrorResponse(
         { statusCode: 400, message: { msg: "user.userExist" } },
         req,
@@ -87,6 +91,11 @@ exports.createUser = async (req, res) => {
       res
     );
   } catch (err) {
+    logger.error({
+      error: `Error at add user for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -166,6 +175,11 @@ exports.updateUser = async (req, res) => {
       );
     
   } catch (err) {
+    logger.error({
+      error: `Error at update user for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -187,6 +201,7 @@ const checkOldPassword = async (userId, oldPassword) => {
 };
 
 const forceLogoutUser = async (userId, stopForceLogout) => {
+  logger.info({ message: `logging out user ${userId}` });
   if (!stopForceLogout) {
     await forceLogoutIfLogin(userId);
   }
@@ -230,6 +245,11 @@ exports.changeSelfPassword = async (req, res, next) => {
       res
     );
   } catch (error) {
+    logger.error({
+      error: `Error at change password for self.`,
+      stack: error.stack,
+      message: error.message
+    });
     // Log any errors that occur
     return ErrorResponse(
       {
@@ -274,6 +294,11 @@ exports.changePassword = async (req, res, next) => {
       res
     );
   } catch (error) {
+    logger.error({
+      error: `Error at change password for expert.`,
+      stack: error.stack,
+      message: error.message
+    });
     // Log any errors that occur
     return ErrorResponse(
       {
@@ -360,6 +385,11 @@ if(!loginId){
       res
     );
   } catch (error) {
+    logger.error({
+      error: `Error at get expert list.`,
+      stack: error.stack,
+      message: error.message
+    });
     return ErrorResponse(error, req, res);
   }
 }

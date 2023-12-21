@@ -101,3 +101,5 @@ module.exports.tiedMatchNames = {
   manual: "tied_manual",
   market: "tied_match",
 };
+
+module.exports.expertRoomSocket="expertRoom";

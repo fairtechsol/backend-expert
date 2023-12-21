@@ -42,56 +42,62 @@ module.exports.baseColumnsSchemaPart = {
   },
 };
 
-
 module.exports.matchBettingType = {
-  matchOdd : 'matchOdd',
-  bookmaker : 'bookmaker',
-  quickbookmaker1 : 'quickbookmaker1',
-  quickbookmaker2 : 'quickbookmaker2',
-  quickbookmaker3 : 'quickbookmaker3',
-  tiedMatch1 : 'tiedMatch1',
-  tiedMatch2 : 'tiedMatch2'
-}
+  matchOdd: "matchOdd",
+  bookmaker: "bookmaker",
+  quickbookmaker1: "quickbookmaker1",
+  quickbookmaker2: "quickbookmaker2",
+  quickbookmaker3: "quickbookmaker3",
+  tiedMatch1: "tiedMatch1",
+  tiedMatch2: "tiedMatch2",
+};
+
+module.exports.manualMatchBettingType = [
+  "quickbookmaker1",
+  "quickbookmaker2",
+  "quickbookmaker3",
+  "tiedMatch2",
+];
 
 module.exports.intialMatchBettingsName = {
-  initialBookmaker : "Bookmaker Market",
-  initialMatchOdd : "Match Odd"
-}
+  initialBookmaker: "Bookmaker Market",
+  initialMatchOdd: "Match Odd",
+};
 module.exports.sessionBettingType = {
-  marketSession : 'marketSession',
-  manualSession : 'manualSession',
-  overByOver : 'overByover',
-  ballByBall : 'ballByBall'
-}
+  marketSession: "marketSession",
+  manualSession: "manualSession",
+  overByOver: "overByover",
+  ballByBall: "ballByBall",
+};
 module.exports.teamStatus = {
-  suspended : 'suspended',
-  active : 'active',
-  closed : 'closed',
-  ballStart : "ball start",
-  ballStop : "ball stop",
-  ballRunning : 'ball running'
-}
+  suspended: "suspended",
+  active: "active",
+  closed: "closed",
+  ballStart: "ball start",
+  ballStop: "ball stop",
+  ballRunning: "ball running",
+};
 
 module.exports.betStatusType = {
-  save:'save',
-  live : 'live',
-  result : 'result',
-  close : 'close'
-}
+  save: "save",
+  live: "live",
+  result: "result",
+  close: "close",
+};
 
 module.exports.betType = {
-  back : 'back',
-  lay : 'lay',
-  yes : 'yes',
-  no : 'no'
-}
+  back: "back",
+  lay: "lay",
+  yes: "yes",
+  no: "no",
+};
 
 module.exports.bettingType = {
-session : 'session',
-match : 'match'
-}
+  session: "session",
+  match: "match",
+};
 
 module.exports.tiedMatchNames = {
-  manual : 'tied_manual',
-  market : 'tied_match'
-}
+  manual: "tied_manual",
+  market: "tied_match",
+};

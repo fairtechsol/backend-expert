@@ -1,4 +1,5 @@
 const internalRedis = require("../../config/internalRedisConnection");
+const { logger } = require("../../config/logger");
 const { getMatchById } = require("../matchService");
 
 let expiry = 3600;
@@ -99,6 +100,175 @@ exports.updateMatchExpiry =async (matchId) =>{
 }
 
 exports.getMatchFromCache = async(matchId) =>{
-    let matchKey =`${matchId}_match`;
-    return await internalRedis.hgetall(matchKey);
+    let match = await internalRedis.hgetall(`${matchId}_match`);
+    return Object.keys(match)?.length > 0 ? match : null;
 }
+
+
+
+
+/**
+ * Updates betting match data in Redis.
+ *
+ * @param {string} matchId - The ID of the match.
+ * @param {string} sessionId - The ID of the session.
+ * @param {Object} data - The data to be updated in the session.
+ * @returns {Promise<void>} - A Promise that resolves when the update is complete.
+ */
+exports.updateSessionMatchRedis = async (matchId, sessionId, data) => {
+    // Log the update information
+    logger.info({
+      message: `updating data in redis for session ${sessionId} of match ${matchId}`,
+      data: data
+    });
+  
+    // Use a Redis pipeline for atomicity and efficiency
+    await internalRedis
+      .pipeline()
+      .hset(`${matchId}_session`, sessionId, JSON.stringify(data))
+      .expire(`${matchId}_session`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
+      .exec();
+  };
+  
+  /**
+   * Updates session match data in Redis.
+   *
+   * @param {string} matchId - The ID of the match.
+   * @param {Object} data - The data to be updated in the session.
+   * @returns {Promise<void>} - A Promise that resolves when the update is complete.
+   */
+  exports.settingAllSessionMatchRedis=async (matchId,data)=>{
+    logger.info({
+      message: `updating data in redis for session of match ${matchId}`,
+      data: data
+    });
+  
+     // Use a Redis pipeline for atomicity and efficiency
+     await internalRedis
+     .pipeline()
+     .hset(`${matchId}_session`, data)
+     .expire(`${matchId}_session`, 3600) // Set a TTL of 3600 seconds (1 hour) for the key
+     .exec();
+  }
+  
+  
+  /**
+   * Retrieves session data from Redis based on match and session IDs.
+   *
+   * @param {string} matchId - The ID of the match.
+   * @param {string} sessionId - The ID of the session.
+   * @returns {Promise<Object|null>} - A Promise that resolves with the session data
+   *                                   or null if no data is found for the given IDs.
+   */
+  exports.getSessionFromRedis = async (matchId, sessionId) => {
+    // Retrieve session data from Redis
+    const sessionData = await internalRedis.hget(`${matchId}_session`, sessionId);
+  
+    // Parse and return the session data or null if it doesn't exist
+    return sessionData ? JSON.parse(sessionData) : null;
+  };
+  
+  /**
+   * Retrieves all session data for a given match from Redis.
+   *
+   * @param {string} matchId - The ID of the match.
+   * @returns {Promise<Object|null>} - A Promise that resolves with an object containing
+   *                                   all session data for the match or null if no data is found.
+   */
+  exports.getAllSessionRedis = async (matchId) => {
+    // Retrieve all session data for the match from Redis
+    const sessionData = await internalRedis.hgetall(`${matchId}_session`);
+  
+    // Return the session data as an object or null if no data is found
+    return Object.keys(sessionData)?.length == 0 ? null : sessionData;
+  };
+  
+
+  
+  exports.updateExpiryTimeSession = async (matchId) => {
+    await internalRedis.expire(`${matchId}_session`, expiry);
+  };
+
+
+  /**
+ * Updates bookmaker match data in Redis.
+ *
+ * @param {string} matchId - The ID of the match.
+ * @param {string} bettingType - The type of the betting.
+ * @param {Object} data - The data to be updated in the session.
+ * @returns {Promise<void>} - A Promise that resolves when the update is complete.
+ */
+exports.updateBettingMatchRedis = async (matchId, bettingType, data) => {
+    // Log the update information
+    logger.info({
+      message: `updating data in redis for bettingType ${bettingType} of match ${matchId}`,
+      data: data
+    });
+  
+    // Use a Redis pipeline for atomicity and efficiency
+    await internalRedis
+      .pipeline()
+      .hset(`${matchId}_manualBetting`, bettingType, JSON.stringify(data))
+      .expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
+      .exec();
+  };
+  
+  /**
+   * Updates betting data in Redis.
+   *
+   * @param {string} matchId - The ID of the match.
+   * @param {Object} data - The data to be updated in the session.
+   * @returns {Promise<void>} - A Promise that resolves when the update is complete.
+   */
+  exports.settingAllBettingMatchRedis=async (matchId,data)=>{
+    logger.info({
+      message: `updating data in redis for betting of match ${matchId}`,
+      data: data
+    });
+  
+     // Use a Redis pipeline for atomicity and efficiency
+     await internalRedis
+     .pipeline()
+     .hset(`${matchId}_manualBetting`, data)
+     .expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
+     .exec();
+  }
+  
+  
+  /**
+   * Retrieves betting data from Redis based on match and betting type.
+   *
+   * @param {string} matchId - The ID of the match.
+   * @param {string} bettingType - The betting type of match.
+   * @returns {Promise<Object|null>} - A Promise that resolves with the betting data
+   *                                   or null if no data is found for the given IDs.
+   */
+  exports.getBettingFromRedis = async (matchId, bettingType) => {
+    // Retrieve betting data from Redis
+    const bettingData = await internalRedis.hget(`${matchId}_manualBetting`, bettingType);
+  
+    // Parse and return the betting data or null if it doesn't exist
+    return bettingData ? JSON.parse(bettingData) : null;
+  };
+  
+  /**
+   * Retrieves all betting data for a given match from Redis.
+   *
+   * @param {string} matchId - The ID of the match.
+   * @returns {Promise<Object|null>} - A Promise that resolves with an object containing
+   *                                   all betting data for the match or null if no data is found.
+   */
+  exports.getAllBettingRedis = async (matchId) => {
+    // Retrieve all betting data for the match from Redis
+    const bettingData = await internalRedis.hgetall(`${matchId}_manualBetting`);
+  
+    // Return the betting data as an object or null if no data is found
+    return Object.keys(bettingData)?.length == 0 ? null : bettingData;
+  };
+
+
+  exports.updateExpiryTimeBetting = async (matchId) => {
+    await internalRedis.expire(`${matchId}_manualBetting`, expiry);
+  };
+
+  

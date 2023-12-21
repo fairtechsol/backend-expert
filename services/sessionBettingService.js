@@ -31,7 +31,7 @@ exports.getSessionBettings = async (where, select) => {
 };
 
 exports.getSessionBattingByMatchId = async (id, select) => {
-  return await SessionBetting.findOne({
+  return await SessionBetting.find({
     where:  {matchId : id},
     select: select,
   });

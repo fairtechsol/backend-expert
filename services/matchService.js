@@ -92,11 +92,7 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
         .orderBy("match.startAt", "DESC")
         .leftJoinAndSelect(
           "match.matchBettings",
-          "matchBetting",
-          "matchBetting.type = :type",
-          {
-            type: matchBettingType.matchOdd,
-          }
+          "matchBetting"
         )
         .select(select),
       query

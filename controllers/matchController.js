@@ -1,4 +1,4 @@
-const { matchBettingType, intialMatchBettingsName, bettingType, tiedMatchNames } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, tiedMatchNames, manualMatchBettingType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById } = require("../services/matchBettingService");
@@ -10,7 +10,8 @@ const {
   getMatch,
   getMatchDetails,
 } = require("../services/matchService");
-const { addMatchInCache, updateMatchInCache, hasMatchInCache, updateMatchExpiry } = require("../services/redis/commonfunction");
+const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis } = require("../services/redis/commonfunction");
+const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
 const { getUserById } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 /**
@@ -161,6 +162,7 @@ exports.createMatch = async (req, res) => {
         name: marketName,
         minBet: minBet,
         maxBet: maxBet,
+        createBy:loginId
       });
     });
 
@@ -179,22 +181,35 @@ exports.createMatch = async (req, res) => {
 
     const convertedData = matchBettingData.reduce((result, item) => {
       const key = item.type; // Assuming type is unique and case-insensitive
-      result[key] = { 
-        id : item.id,
-        minBet : item.minBet,
-        maxBet : item.maxBet,
-        activeStatus : item.activeStatus
-       };
+
+      if (!manualMatchBettingType?.includes(key)) {
+        result[key] = {
+          id: item.id,
+          minBet: item.minBet,
+          maxBet: item.maxBet,
+          activeStatus: item.activeStatus,
+        };
+      } else {
+        result[key] = item;
+      }
       return result;
     }, {});
 
     let payload = {
       ...match,
-      matchOdd : convertedData[matchBettingType.matchOdd],
-      marketBookmaker : convertedData[matchBettingType.bookmaker],
-      marketTiedMatch : convertedData[matchBettingType.tiedMatch2],
-    }
-    await addMatchInCache(match.id,payload);
+      matchOdd: convertedData[matchBettingType.matchOdd],
+      marketBookmaker: convertedData[matchBettingType.bookmaker],
+      marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
+    };
+    await addMatchInCache(match.id, payload);
+    const manualBettingRedisData ={};
+     manualMatchBettingType?.forEach((item) => {
+      if(convertedData[item]){
+        manualBettingRedisData[item]= JSON.stringify(convertedData[item]);
+      }
+    });
+
+    await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
     return SuccessResponse(
       {
         statusCode: 200,
@@ -232,7 +247,7 @@ exports.updateMatch = async (req, res) => {
       tiedMatch
     } = req.body;
     //get user data to check privilages
-    const { id: loginId, role } = req.user;
+    const { id: loginId } = req.user;
     const user = await getUserById(loginId,["allPrivilege","addMatchPrivilege","betFairMatchPrivilege","bookmakerMatchPrivilege","sessionMatchPrivilege"]);
     if(!user){
       return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
@@ -299,27 +314,51 @@ exports.updateMatch = async (req, res) => {
     // await Promise.all(updatePromises);
 
     match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
-    matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type","activeStatus"]);
+    matchBatting = await getMatchBattingByMatchId(id);
     const convertedData = matchBatting.reduce((result, item) => {
       const key = item.type; // Assuming type is unique and case-insensitive
-      result[key] = { 
-        id : item.id,
-        minBet : item.minBet,
-        maxBet : item.maxBet,
-        activeStatus : item.activeStatus
-       };
+      if (!manualMatchBettingType?.includes(key)) {
+        result[key] = {
+          id: item.id,
+          minBet: item.minBet,
+          maxBet: item.maxBet,
+          activeStatus: item.activeStatus,
+        };
+      } else {
+        result[key] = item;
+      }
       return result;
     }, {});
 
     let payload = {
-      ...match ,
-      matchOdd :  convertedData[matchBettingType.matchOdd],
-      marketBookmaker :  convertedData[matchBettingType.bookmaker],
-      marketTiedMatch :  convertedData[matchBettingType.tiedMatch2],
-    }
-    updateMatchInCache(match.id,payload)
+      ...match,
+      matchOdd: convertedData[matchBettingType.matchOdd],
+      marketBookmaker: convertedData[matchBettingType.bookmaker],
+      marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
+    };
+    updateMatchInCache(match.id, payload);
+
+    // Create an empty object to store manual betting Redis data
+    const manualBettingRedisData = {};
+
+    // Iterate through each item in manualMatchBettingType
+    manualMatchBettingType?.forEach((item) => {
+      // Check if the item exists in the convertedData object
+      if (convertedData[item]) {
+        // If the item exists, add it to the manualBettingRedisData object
+        // with its value stringified using JSON.stringify
+        manualBettingRedisData[item] = JSON.stringify(convertedData[item]);
+      }
+    });
+
+    // Update Redis with the manual betting data for the current match
+    await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
+
+    
     // Attach bookmaker data to the match object
     match["bookmaker"] = matchBatting;
+
+   
 
     //   broadcastEvent("newMatchAdded", match);
 
@@ -413,67 +452,175 @@ exports.matchDetails = async (req, res) => {
   try {
     const { id: matchId } = req.params;
 
-    const match = await getMatchDetails(matchId, []);
-    if (!match) {
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "notFound",
-            keys: {
-              name: "Match",
+    let match = await getMatchFromCache(matchId);
+
+    // Check if the match exists
+    if (match) {
+      // Retrieve all betting data from Redis for the given match
+      let betting = await getAllBettingRedis(matchId);
+
+      // If betting data is found in Redis, update its expiry time
+      if (!betting) {
+        
+        // If no betting data is found in Redis, fetch it from the database
+        betting = await getMatchBattingByMatchId(matchId);
+
+        // Create an empty object to store manual betting Redis data
+        const manualBettingRedisData = {};
+
+        // Iterate through each item in manualMatchBettingType
+        betting?.forEach((item) => {
+          // Check if the item exists in the convertedData object
+          if (manualMatchBettingType.includes(item?.type)) {
+            // If the item exists, add it to the manualBettingRedisData object
+            // with its value stringified using JSON.stringify
+            item.type = JSON.stringify(item);
+          }
+        });
+
+        // Update Redis with the manual betting data for the current match
+        await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
+      }
+
+      // Retrieve all session data from Redis for the given match
+      let sessions = await getAllSessionRedis(matchId);
+
+      // If session data is found in Redis, update its expiry time
+      if (!sessions) {
+     
+        // If no session data is found in Redis, fetch it from the database
+        sessions = await getSessionBattingByMatchId(matchId);
+
+        let result = {};
+        for (let index = 0; index < sessions?.length; index++) {
+          sessions[index] = JSON.stringify(sessions?.[index]);
+          result[sessions?.[index]?.id] = sessions?.[index];
+        }
+        await settingAllSessionMatchRedis(matchId, result);
+      }
+
+      const categorizedMatchBettings = {
+        ...(match.matchOdd
+          ? { [matchBettingType.matchOdd]: JSON.parse(match.matchOdd) }
+          : {}),
+        ...(match.marketBookmaker
+          ? { [matchBettingType.bookmaker]: JSON.parse(match.marketBookmaker) }
+          : {}),
+        quickBookmaker: [],
+        ...(match.marketTiedMatch
+          ? { apiTideMatch: JSON.parse(match.marketTiedMatch) }
+          : {}),
+        manualTiedMatch: null,
+      };
+      // Iterate through matchBettings and categorize them
+      (Object.values(betting) || []).forEach((item) => {
+        item=JSON.parse(item);
+        switch (item?.type) {
+          case matchBettingType.quickbookmaker1:
+          case matchBettingType.quickbookmaker2:
+          case matchBettingType.quickbookmaker3:
+            categorizedMatchBettings.quickBookmaker.push(item);
+            break;
+          case matchBettingType.tiedMatch2:
+            categorizedMatchBettings.manualTiedMatch= item;
+            break;
+        }
+      });
+      // Assign the categorized match betting to the match object
+      Object.assign(match, categorizedMatchBettings);
+
+      delete match.matchOdd;
+      delete match.marketBookmaker;
+      delete match.marketTiedMatch;
+
+      match.sessionBettings = sessions;
+    } else {
+      match = await getMatchDetails(matchId, []);
+      if (!match) {
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "notFound",
+              keys: {
+                name: "Match",
+              },
             },
           },
-        },
-        req,
-        res
-      );
-    }
-
-    const categorizedMatchBettings = {
-      [matchBettingType.matchOdd]: null,
-      [matchBettingType.bookmaker]: null,
-      quickBookmaker: [],
-      tideMatch:[]
-    };
-
-    // Iterate through matchBettings and categorize them
-    (match?.matchBettings || []).forEach((item) => {
-      switch (item?.type) {
-        case matchBettingType.matchOdd:
-          categorizedMatchBettings[matchBettingType.matchOdd] = item;
-          break;
-        case matchBettingType.bookmaker:
-          categorizedMatchBettings[matchBettingType.bookmaker] = item;
-          break;
-        case matchBettingType.quickbookmaker1:
-        case matchBettingType.quickbookmaker2:
-        case matchBettingType.quickbookmaker3:
-          categorizedMatchBettings.quickBookmaker.push(item);
-          break;
-        case matchBettingType.tiedMatch1:
-        case matchBettingType.tiedMatch2:
-          categorizedMatchBettings.tideMatch.push(item);
-          break;
+          req,
+          res
+        );
       }
-    });
 
-    let checkinCache = await hasMatchInCache(match.id);
-    if(checkinCache){
-      await updateMatchExpiry(match.id);
-    }else{
+      const categorizedMatchBettings = {
+        [matchBettingType.matchOdd]: null,
+        [matchBettingType.bookmaker]: null,
+        quickBookmaker: [],
+        apiTideMatch: null,
+        manualTideMatch: null,
+      };
+
+      // Iterate through matchBettings and categorize them
+      (match?.matchBettings || []).forEach((item) => {
+        switch (item?.type) {
+          case matchBettingType.matchOdd:
+            categorizedMatchBettings[matchBettingType.matchOdd] = item;
+            break;
+          case matchBettingType.bookmaker:
+            categorizedMatchBettings[matchBettingType.bookmaker] = item;
+            break;
+          case matchBettingType.quickbookmaker1:
+          case matchBettingType.quickbookmaker2:
+          case matchBettingType.quickbookmaker3:
+            categorizedMatchBettings.quickBookmaker.push(item);
+            break;
+          case matchBettingType.tiedMatch1:
+            categorizedMatchBettings.apiTideMatch = item;
+            break;
+          case matchBettingType.tiedMatch2:
+            categorizedMatchBettings.manualTideMatch = item;
+            break;
+        }
+      });
+
       let payload = {
         ...match,
-        matchOdd : categorizedMatchBettings[matchBettingType.matchOdd],
-        marketBookmaker : categorizedMatchBettings[matchBettingType.bookmaker],
-        marketTiedMatch : categorizedMatchBettings.tideMatch,
-      }
-      addMatchInCache(match.id,payload);
-    }
-    // Assign the categorized match bettings to the match object
-    Object.assign(match, categorizedMatchBettings);
+        matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
+        marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
+        marketTiedMatch: categorizedMatchBettings.tideMatch,
+      };
+      await addMatchInCache(match.id, payload);
 
-    delete match.matchBettings;
+      // Create an empty object to store manual betting Redis data
+      const manualBettingRedisData = {};
+
+      // Iterate through each item in manualMatchBettingType
+      match?.matchBettings?.forEach((item) => {
+        // Check if the item exists in the convertedData object
+        if (manualMatchBettingType.includes(item?.type)) {
+          // If the item exists, add it to the manualBettingRedisData object
+          // with its value stringified using JSON.stringify
+          manualBettingRedisData[item?.type] = JSON.stringify(item);
+        }
+      });
+
+      // Update Redis with the manual betting data for the current match
+      await settingAllBettingMatchRedis(matchId, manualBettingRedisData);
+
+      let sessions = match?.sessionBettings;
+      let result = {};
+      for (let index = 0; index < sessions?.length; index++) {
+        sessions[index] = JSON.stringify(sessions?.[index]);
+        result[sessions?.[index]?.id] = sessions?.[index];
+      }
+      await settingAllSessionMatchRedis(matchId, result);
+
+      match.sessionBettings=sessions;
+      // Assign the categorized match betting to the match object
+      Object.assign(match, categorizedMatchBettings);
+
+      delete match.matchBettings;
+    }
 
     return SuccessResponse(
       {

@@ -6,83 +6,9 @@ const { sessionBettingType, teamStatus } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis } = require("../services/redis/commonfunction");
 
 
-/**
- * Updates session match data in Redis.
- *
- * @param {string} matchId - The ID of the match.
- * @param {string} sessionId - The ID of the session.
- * @param {Object} data - The data to be updated in the session.
- * @returns {Promise<void>} - A Promise that resolves when the update is complete.
- */
-const updateSessionMatchRedis = async (matchId, sessionId, data) => {
-  // Log the update information
-  logger.info({
-    message: `updating data in redis for session ${sessionId} of match ${matchId}`,
-    data: data
-  });
-
-  // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis
-    .pipeline()
-    .hset(`${matchId}_session`, sessionId, JSON.stringify(data))
-    .expire(`${matchId}_session`, 3600) // Set a TTL of 3600 seconds (1 hour) for the key
-    .exec();
-};
-
-/**
- * Updates session match data in Redis.
- *
- * @param {string} matchId - The ID of the match.
- * @param {Object} data - The data to be updated in the session.
- * @returns {Promise<void>} - A Promise that resolves when the update is complete.
- */
-const settingAllSessionMatchRedis=async (matchId,data)=>{
-  logger.info({
-    message: `updating data in redis for session of match ${matchId}`,
-    data: data
-  });
-
-   // Use a Redis pipeline for atomicity and efficiency
-   await internalRedis
-   .pipeline()
-   .hset(`${matchId}_session`, data)
-   .expire(`${matchId}_session`, 3600) // Set a TTL of 3600 seconds (1 hour) for the key
-   .exec();
-}
-
-
-/**
- * Retrieves session data from Redis based on match and session IDs.
- *
- * @param {string} matchId - The ID of the match.
- * @param {string} sessionId - The ID of the session.
- * @returns {Promise<Object|null>} - A Promise that resolves with the session data
- *                                   or null if no data is found for the given IDs.
- */
-const getSessionFromRedis = async (matchId, sessionId) => {
-  // Retrieve session data from Redis
-  const sessionData = await internalRedis.hget(`${matchId}_session`, sessionId);
-
-  // Parse and return the session data or null if it doesn't exist
-  return sessionData ? JSON.parse(sessionData) : null;
-};
-
-/**
- * Retrieves all session data for a given match from Redis.
- *
- * @param {string} matchId - The ID of the match.
- * @returns {Promise<Object|null>} - A Promise that resolves with an object containing
- *                                   all session data for the match or null if no data is found.
- */
-const getAllSessionRedis = async (matchId) => {
-  // Retrieve all session data for the match from Redis
-  const sessionData = await internalRedis.hgetall(`${matchId}_session`);
-
-  // Return the session data as an object or null if no data is found
-  return Object.keys(sessionData)?.length == 0 ? null : sessionData;
-};
 
 
 exports.addSession = async (req,res) =>{

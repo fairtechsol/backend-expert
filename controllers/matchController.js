@@ -10,7 +10,7 @@ const {
   getMatch,
   getMatchDetails,
 } = require("../services/matchService");
-const { addMatchInCache, updateMatchInCache, hasMatchInCache, updateMatchExpiry, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, updateExpiryTimeBetting, getAllSessionRedis, updateExpiryTimeSession, settingAllSessionMatchRedis } = require("../services/redis/commonfunction");
+const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis } = require("../services/redis/commonfunction");
 const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
 const { getUserById } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -460,9 +460,8 @@ exports.matchDetails = async (req, res) => {
       let betting = await getAllBettingRedis(matchId);
 
       // If betting data is found in Redis, update its expiry time
-      if (betting) {
-        updateExpiryTimeBetting(matchId);
-      } else {
+      if (!betting) {
+        
         // If no betting data is found in Redis, fetch it from the database
         betting = await getMatchBattingByMatchId(matchId);
 
@@ -487,9 +486,8 @@ exports.matchDetails = async (req, res) => {
       let sessions = await getAllSessionRedis(matchId);
 
       // If session data is found in Redis, update its expiry time
-      if (sessions) {
-        updateExpiryTimeSession(matchId);
-      } else {
+      if (!sessions) {
+     
         // If no session data is found in Redis, fetch it from the database
         sessions = await getSessionBattingByMatchId(matchId);
 

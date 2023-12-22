@@ -9,6 +9,9 @@ const {
   updateMatch,
   getMatch,
   getMatchDetails,
+  getMatchCompetitions,
+  getMatchDates,
+  getMatchByCompetitionIdAndDates,
 } = require("../services/matchService");
 const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis, updateMatchKeyInCache,  updateBettingMatchRedis } = require("../services/redis/commonfunction");
 const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
@@ -748,6 +751,83 @@ exports.matchActiveInActive = async (req, res) => {
     // Log any errors that occur during the process
     logger.error({
       error: `Error at updating active status of betting table for match ${req.body.matchId}.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+
+exports.getMatchCompetitionsByType = async (req, res) => {
+  try {
+    const { type } = req.params;
+
+    const competitions = await getMatchCompetitions(type);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: competitions,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at list competition for the user.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+
+exports.getMatchDatesByCompetitionId = async (req, res) => {
+  try {
+    const { competitionId } = req.params;
+
+    const dates = await getMatchDates(competitionId);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: dates,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at list date for the user.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
+  try {
+    const { competitionId,date } = req.params;
+
+    const matches = await getMatchByCompetitionIdAndDates(competitionId, date);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: matches,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at list match for the user.`,
       stack: err.stack,
       message: err.message,
     });

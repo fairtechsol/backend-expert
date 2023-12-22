@@ -1,13 +1,9 @@
 const { AppDataSource } = require("../config/postGresConnection");
 const ApiFeature = require("../utils/apiFeatures");
+const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
 const match = AppDataSource.getRepository(matchSchema);
 
-// bookmaker
-const bookmakerSchema = require("../models/matchBetting.entity");
-const {  matchBettingType } = require("../config/contants");
-const { IsNull } = require("typeorm");
-const bookmaker = AppDataSource.getRepository(bookmakerSchema);
 
 exports.getMatchById = async (id, select) => {
   return await match.findOne({
@@ -33,21 +29,6 @@ exports.addMatch = async (body) => {
   return insertMatch;
 };
 
-exports.getBookMakerById = async (id, select) => {
-  return await bookmaker.findOne({
-    where: { id },
-    select: select,
-  });
-};
-
-exports.updateBookmaker = async (id, body) => {
-  let updateBookmaker = await bookmaker.update(id, body);
-  return updateBookmaker;
-};
-exports.addBookmaker = async (body) => {
-  let insertBookmaker = await bookmaker.save(body);
-  return insertBookmaker;
-};
 
 exports.getMatch = async (filters, select, query) => {
   try {
@@ -121,4 +102,24 @@ exports.getMatchDetails = async (id, select) => {
     });
   };
 
-exports.getMatchDetails
+
+  exports.getMatchCompetitions = async (type) => {
+    return await match.query(
+      'SELECT DISTINCT "competitionId", "competitionName" FROM matchs WHERE "matchType" = $1 AND "stopAt" IS NULL',
+      [type]
+    );
+  };
+
+  exports.getMatchDates = async (competitionId) => {
+    return await match.query(
+      'SELECT DISTINCT DATE_TRUNC(\'day\', "startAt") as startDate FROM matchs WHERE "competitionId" = $1 AND "stopAt" IS NULL',
+      [competitionId]
+    );
+  };
+
+  exports.getMatchByCompetitionIdAndDates = async (competitionId,date) => {
+    return await match.query(
+      'SELECT id, title FROM matchs WHERE "competitionId" = $1 AND DATE_TRUNC(\'day\',"startAt") = $2 AND "stopAt" IS NULL',
+      [competitionId, new Date(date)]
+    );
+  };

@@ -441,18 +441,19 @@ const commonGetMatchDetails=async (matchId)=>{
     if (!betting) {
       
       // If no betting data is found in Redis, fetch it from the database
-      betting = await getMatchBattingByMatchId(matchId);
+      const matchBetting = await getMatchBattingByMatchId(matchId);
 
       // Create an empty object to store manual betting Redis data
       const manualBettingRedisData = {};
-
+      betting = {};
       // Iterate through each item in manualMatchBettingType
-      betting?.forEach((item) => {
+      matchBetting?.forEach((item) => {
         // Check if the item exists in the convertedData object
         if (manualMatchBettingType.includes(item?.type)) {
           // If the item exists, add it to the manualBettingRedisData object
           // with its value stringified using JSON.stringify
           manualBettingRedisData[item?.type] = JSON.stringify(item);
+          betting[item?.type]=JSON.stringify(item);
         }
       });
 
@@ -493,7 +494,7 @@ const categorizedMatchBettings = {
           manualTiedMatch: null,
         };
     // Iterate through matchBettings and categorize them
-    (Array.isArray(betting) ? betting : Object.values(betting) || []).forEach(
+    (Object.values(betting) || []).forEach(
       (item) => {
         item = JSON.parse(item);
         switch (item?.type) {

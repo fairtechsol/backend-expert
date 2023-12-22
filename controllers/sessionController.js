@@ -1,11 +1,11 @@
 
-const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBetting, getSessionBettings } = require("../services/sessionBettingService");
+const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBetting, getSessionBettings, getSessionBattingByMatchId } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService");
 const { sessionBettingType, teamStatus, expertRoomSocket } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 
 
@@ -63,20 +63,28 @@ exports.addSession = async (req,res) =>{
         createBy: loginId
       }
       let session = await addSessionBetting(sessionData)
-      if(!session){
-
+      if (!session) {
         logger.error({
           error: `Error at add session betting in match :${matchId}`,
-          session:sessionData
+          session: sessionData,
         });
-        return ErrorResponse({statusCode: 400,message: {msg: "match.sessionAddFail" }},req,res);
+        return ErrorResponse(
+          { statusCode: 400, message: { msg: "match.sessionAddFail" } },
+          req,
+          res
+        );
       }
 
+      const isSessionExist = await hasSessionInCache(matchId);
 
-     
-      await updateSessionMatchRedis(matchId,session?.id,session);
+      if (isSessionExist) {
+        await updateSessionMatchRedis(matchId, session?.id, session);
+      }
+      else{
+        addAllsessionInRedis(matchId);
+      }
 
-      sendMessageToUser(expertRoomSocket,"sessionAdded",session);
+      sendMessageToUser(expertRoomSocket, "sessionAdded", session);
 
 
       return SuccessResponse(

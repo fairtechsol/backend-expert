@@ -296,16 +296,16 @@ exports.getMatchFromCache = async (matchId) => {
   let matchKey = `${matchId}_match`;
   let MatchData = await internalRedis.hgetall(matchKey);
   if (Object.keys(MatchData)?.length) {
-    let validate = await joiValidator.jsonValidator(getMatchSchema, MatchData);
-    if (validate?.matchOdd)
-      validate.matchOdd = JSON.parse(validate.matchOdd);
-    if (validate?.marketBookmaker)
-      validate.marketBookmaker = JSON.parse(validate?.marketBookmaker);
-    if (validate.marketTiedMatch)
-      validate.marketTiedMatch = JSON.parse(validate.marketTiedMatch);
-    if (validate.marketCompleteMatch)
-      validate.marketCompleteMatch = JSON.parse(validate.marketCompleteMatch);
-    return validate;
+    let {validated} = await joiValidator.jsonValidator(getMatchSchema, MatchData);
+    if (validated?.matchOdd)
+      validated.matchOdd = JSON.parse(validated.matchOdd);
+    if (validated?.marketBookmaker)
+      validated.marketBookmaker = JSON.parse(validated?.marketBookmaker);
+    if (validated.marketTiedMatch)
+      validated.marketTiedMatch = JSON.parse(validated.marketTiedMatch);
+    if (validated.marketCompleteMatch)
+      validated.marketCompleteMatch = JSON.parse(validated.marketCompleteMatch);
+    return validated;
   }
   return null;
 }

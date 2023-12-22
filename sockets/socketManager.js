@@ -2,7 +2,15 @@ const socketIO = require("socket.io");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
-const { userRoleConstant, expertRoomSocket } = require("../config/contants");
+const { userRoleConstant, socketData } = require("../config/contants");
+const { getSessionFromRedis, getBettingFromRedis, updateBettingMatchRedis, updateSessionMatchRedis } = require("../services/redis/commonfunction");
+const { updateMatchBettingById } = require("../services/matchBettingService");
+const { addAllMatchBetting } = require("../controllers/matchBettingController");
+const {  UpdateMatchBettingRateInSocket } = require("../validators/matchBettingValidator");
+const { jsonValidator } = require("../middleware/joi.validator");
+const { addAllsessionInRedis } = require("../controllers/sessionController");
+const { updateSessionBetting } = require("../services/sessionBettingService");
+const { UpdateSessionRateInSocket } = require("../validators/sessionValidator");
 
 let io;
 /**
@@ -31,9 +39,9 @@ const handleConnection = async (client) => {
     }
 
     // Extract user ID and role from the decoded user object
-    const { id: userId,roleName } = decodedUser;
+    const { id: userId, roleName } = decodedUser;
 
-    if(roleName==userRoleConstant.user){
+    if (roleName == userRoleConstant.user) {
       const userCount = parseInt(await internalRedis.get("loginUserCount"));
 
       // If the user is a regular user, manage user login count
@@ -67,8 +75,7 @@ const handleConnection = async (client) => {
     // Handle additional logic based on the user's role
     // If the user is an expert, add their ID to the "expertLoginIds" set and join the room
     // internalRedis.sadd("expertLoginIds", userId);
-    client.join(expertRoomSocket);
-    
+    client.join(socketData.expertRoomSocket);
 
   } catch (err) {
     // Handle any errors by disconnecting the client
@@ -105,10 +112,10 @@ const handleDisconnect = async (client) => {
     }
 
     // Extract user ID and role from the decoded user object
-    const { id: userId,roleName } = decodedUser;
+    const { id: userId, roleName } = decodedUser;
 
 
-    if(roleName==userRoleConstant.user){
+    if (roleName == userRoleConstant.user) {
       const userCount = parseInt(await internalRedis.get("loginUserCount"));
       // If the user is a regular user, manage user login count
       const decrementCount = async () => {
@@ -122,7 +129,7 @@ const handleDisconnect = async (client) => {
       userCount > 0 ? decrementCount() : internalRedis.set("loginUserCount", 0);
 
 
-      
+
       return;
     }
 
@@ -132,7 +139,7 @@ const handleDisconnect = async (client) => {
     // Handle additional logic based on the user's role
     // If the user is an expert, remove their ID from the "expertLoginIds" set
     // internalRedis.srem("expertLoginIds", userId);
-    
+
   } catch (err) {
     // Handle any errors by disconnecting the client
     logger.error({
@@ -162,17 +169,85 @@ exports.socketManager = (server) => {
     // Delegate connection handling to a separate function
     handleConnection(client);
 
-    client.on("init",(match)=>{
+    client.on("init", (match) => {
       client.join(match.id);
     });
 
-    client.on("leaveAll",()=>{
+    client.on("leaveAll", () => {
       client.leaveAll();
     });
 
-    client.on("leaveMatch",(match)=>{
+    client.on("leaveMatch", (match) => {
       client.leave(match.id);
     });
+
+    client.on("updateMatchBettingRate", async (body) => {
+
+      let { error, validated } = await jsonValidator(UpdateMatchBettingRateInSocket, body);
+      if (error) {
+        return;
+      }
+      let { matchId, id, type } = body;
+
+      logger.info({
+        message: `updating rate in redis for match betting id ${id} and type ${type} of match ${matchId}`,
+        data: body
+      });
+
+      this.sendMessageToUser(socketData.expertRoomSocket, "updateMatchBettingRateClient", body);
+
+      let matchBettingData = {};
+      matchBettingData = await getBettingFromRedis(matchId, type);
+      if (!matchBettingData) {
+        await addAllMatchBetting(matchId);
+        matchBettingData = await getBettingFromRedis(matchId, type);
+      }
+      matchBettingData['backTeamA'] = body.backTeamA ? body.backTeamA : 0;
+      matchBettingData['backTeamB'] = body.backTeamB ? body.backTeamB : matchBettingData['backTeamB'];
+      matchBettingData['backTeamC'] = body.backTeamC ? body.backTeamC : matchBettingData['backTeamC'];
+      matchBettingData['layTeamA'] = body.layTeamA ? body.layTeamA : matchBettingData['layTeamB'];
+      matchBettingData['layTeamB'] = body.layTeamB ? body.layTeamB : matchBettingData['layTeamB'];
+      matchBettingData['layTeamC'] = body.layTeamC ? body.layTeamC : matchBettingData['layTeamC'];
+      matchBettingData['statusTeamA'] = body.statusTeamA ? body.statusTeamA : matchBettingData['statusTeamA'];
+      matchBettingData['statusTeamB'] = body.statusTeamB ? body.statusTeamB : matchBettingData['statusTeamB'];
+      matchBettingData['statusTeamC'] = body.statusTeamC ? body.statusTeamC : matchBettingData['statusTeamC'];
+
+      updateMatchBettingById(id, matchBettingData);
+      updateBettingMatchRedis(matchId, type, matchBettingData);
+      return;
+    })
+
+    
+    client.on("updateSessionRate", async (body) => {
+
+      let { error, validated } = await jsonValidator(UpdateSessionRateInSocket, body);
+      if (error) {
+        return;
+      }
+      let { matchId, id } = body;
+
+      logger.info({
+        message: `updating rate in redis for session id ${id} and match ${matchId}`,
+        data: body
+      });
+
+      this.sendMessageToUser(socketData.expertRoomSocket, "updateSessionRateClient", body);
+
+      let sessionData = {};
+      sessionData = await getSessionFromRedis(matchId, id);
+      if (!sessionData) {
+        await addAllsessionInRedis(matchId);
+        sessionData = await getSessionFromRedis(matchId, id);
+      }
+      sessionData['yesRate'] = body.yesRate ? body.yesRate : 0;
+      sessionData['noRate'] = body.noRate ? body.noRate : sessionData['noRate'];
+      sessionData['yesPercent'] = body.yesPercent ? body.yesPercent : sessionData['yesPercent'];
+      sessionData['noPercent'] = body.noPercent ? body.noPercent : sessionData['noPercent'];
+      sessionData['status'] = body.status ? body.status : sessionData['status'];
+      updateSessionBetting({id}, sessionData);
+      updateSessionMatchRedis(matchId, id, sessionData);
+      return;
+    })
 
     // Event listener for socket disconnection
     client.on("disconnect", () => {

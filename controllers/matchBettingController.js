@@ -27,7 +27,7 @@ exports.getMatchBetting = async (req, res) => {
                         res
                     );
                 }
-                addAllMatchBetting(matchId, matchBetting);
+                this.addAllMatchBetting(matchId, matchBetting);
             }
         } else {
             if (!matchBetId || !type) {
@@ -78,7 +78,7 @@ exports.getMatchBetting = async (req, res) => {
     }
 }
 
-const addAllMatchBetting = async (matchId, result) => {
+exports.addAllMatchBetting = async (matchId, result) => {
     if (!result)
         result = await getMatchAllBettings({ matchId });
     if (!result) {

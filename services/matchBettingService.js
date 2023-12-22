@@ -54,3 +54,10 @@ exports.getMatchBettingWithMatchDetails = async (where) => {
     relations: ["match"]
   });
 }
+
+exports.getMatchBettingById = async (id) => {
+  let MatchBettings = await MatchBetting.findOne({
+    where:  {id : id}
+  });
+  return MatchBettings;
+};

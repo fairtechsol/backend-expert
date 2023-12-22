@@ -2,7 +2,7 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBetting, getSessionBettings } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService");
-const { sessionBettingType, teamStatus, expertRoomSocket } = require("../config/contants");
+const { sessionBettingType, teamStatus, socketData } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis } = require("../services/redis/commonfunction");
@@ -76,7 +76,7 @@ exports.addSession = async (req,res) =>{
      
       await updateSessionMatchRedis(matchId,session?.id,session);
 
-      sendMessageToUser(expertRoomSocket,"sessionAdded",session);
+      sendMessageToUser(socketData.expertRoomSocket,"sessionAdded",session);
 
 
       return SuccessResponse(
@@ -217,7 +217,7 @@ exports.getSessions = async (req, res) => {
             res
           );
         }
-        addAllsessionInRedis(matchId,null);
+        this.addAllsessionInRedis(matchId,null);
       }
     }
 
@@ -245,7 +245,7 @@ exports.getSessions = async (req, res) => {
   }
 };
 
-const addAllsessionInRedis = async (matchId, result) => {
+exports.addAllsessionInRedis = async (matchId, result) => {
   if (!result)
       result = await getSessionBettings({ matchId });
   if (!result) {

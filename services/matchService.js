@@ -105,21 +105,21 @@ exports.getMatchDetails = async (id, select) => {
 
   exports.getMatchCompetitions = async (type) => {
     return await match.query(
-      'SELECT DISTINCT "competitionId", "competitionName" FROM matchs WHERE "matchType" = $1',
+      'SELECT DISTINCT "competitionId", "competitionName" FROM matchs WHERE "matchType" = $1 AND "stopAt" IS NULL',
       [type]
     );
   };
 
   exports.getMatchDates = async (competitionId) => {
     return await match.query(
-      'SELECT DISTINCT DATE_TRUNC(\'day\', "startAt") as startDate FROM matchs WHERE "competitionId" = $1',
+      'SELECT DISTINCT DATE_TRUNC(\'day\', "startAt") as startDate FROM matchs WHERE "competitionId" = $1 AND "stopAt" IS NULL',
       [competitionId]
     );
   };
 
   exports.getMatchByCompetitionIdAndDates = async (competitionId,date) => {
     return await match.query(
-      'SELECT id, title FROM matchs WHERE "competitionId" = $1 AND DATE_TRUNC(\'day\',"startAt") = $2',
-      [competitionId, date]
+      'SELECT id, title FROM matchs WHERE "competitionId" = $1 AND DATE_TRUNC(\'day\',"startAt") = $2 AND "stopAt" IS NULL',
+      [competitionId, new Date(date)]
     );
   };

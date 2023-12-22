@@ -2,7 +2,7 @@
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
-const { getMatchSchema } = require("../../validators/userValidator");
+const { getMatchSchema } = require("../../validators/matchValidator");
 
 let expiry = 3600;
 
@@ -28,9 +28,10 @@ exports.addMatchInCache = async (matchId, data) => {
     startAt: data.startAt,
     apiSessionActive: data.apiSessionActive,
     manualSessionActive: data.manualSessionActive,
-   ...(data.matchOdd ? { matchOdd: JSON.stringify(data.matchOdd)}:{}),
-   ...(data.marketBookmaker ? { marketBookmaker: JSON.stringify(data.marketBookmaker)}:{}),
-   ...(data.marketTiedMatch ? { marketTiedMatch: JSON.stringify(data.marketTiedMatch)}:{})
+    ...(data.matchOdd ? { matchOdd: JSON.stringify(data.matchOdd) } : {}),
+    ...(data.marketBookmaker ? { marketBookmaker: JSON.stringify(data.marketBookmaker) } : {}),
+    ...(data.marketTiedMatch ? { marketTiedMatch: JSON.stringify(data.marketTiedMatch) } : {}),
+    ...(data.marketCompleteMatch ? { marketCompleteMatch: JSON.stringify(data.marketCompleteMatch) } : {}),
   }
   if (data.teamC) {
     payload.teamC = data.teamC;
@@ -56,7 +57,7 @@ exports.updateMatchInCache = async (matchId, data) => {
   let matchKey = `${matchId}_match`;
   let match = await internalRedis.hgetall(matchKey);
   let payload = {
-    id: match.id,
+    id: match.id || data.id,
     matchType: data.matchType || match.matchType,
     competitionId: data.competitionId || match.competitionId,
     competitionName: data.competitionName || match.competitionName,
@@ -72,7 +73,8 @@ exports.updateMatchInCache = async (matchId, data) => {
     manualSessionActive: data.manualSessionActive ?? match.manualSessionActive,
     matchOdd: JSON.stringify(data.matchOdd) || match.matchOdd,
     marketBookmaker: JSON.stringify(data.marketBookmaker) || match.marketBookmaker,
-    marketTiedMatch: JSON.stringify(data.marketTiedMatch) || match.marketTiedMatch
+    marketTiedMatch: JSON.stringify(data.marketTiedMatch) || match.marketTiedMatch,
+    marketCompleteMatch : JSON.stringify(data.marketCompleteMatch) || match.marketCompleteMatch
   }
   if (data.teamC || match.teamC) {
     payload.teamC = data.teamC || match.teamC;
@@ -301,7 +303,8 @@ exports.getMatchFromCache = async (matchId) => {
       validate.marketBookmaker = JSON.parse(validate?.marketBookmaker);
     if (validate.marketTiedMatch)
       validate.marketTiedMatch = JSON.parse(validate.marketTiedMatch);
-    console.log(validate);
+    if (validate.marketCompleteMatch)
+      validate.marketCompleteMatch = JSON.parse(validate.marketCompleteMatch);
     return validate;
   }
   return null;

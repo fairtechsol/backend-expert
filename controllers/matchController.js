@@ -1,4 +1,5 @@
-const { matchBettingType, intialMatchBettingsName, bettingType, tiedMatchNames, manualMatchBettingType } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames } = require("../config/contants");
+const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting,  addMatchBetting } = require("../services/matchBettingService");
 const {
@@ -46,7 +47,11 @@ exports.createMatch = async (req, res) => {
       betFairBookmakerMaxBet,
       bookmakers,
       marketTiedMatchMaxBet,
-      manualTiedMatchMaxBet
+      manualTiedMatchMaxBet,
+      matchOddMarketId,
+      tiedMatchMarketId,
+      marketBookmakerId,
+      completeMatchMarketId
     } = req.body;
 
     /* access work left */
@@ -133,40 +138,49 @@ exports.createMatch = async (req, res) => {
         type: matchBettingType.matchOdd,
         name: intialMatchBettingsName.initialMatchOdd,
         maxBet: matchOddMaxBet,
+        marketId : matchOddMarketId
       },
       {
         ...matchBetting,
         type: matchBettingType.bookmaker,
         name: intialMatchBettingsName.initialBookmaker,
         maxBet: betFairBookmakerMaxBet,
+        marketId : marketBookmakerId
       },
-      ...(bookmakers?.map((item, index) => {
-        const { maxBet, marketName } = item;
-        index++;
-        return{
-          type: matchBettingType["quickbookmaker" + index],
-          matchId: match.id,
-          name: marketName,
-          minBet: minBet,
-          maxBet: maxBet,
-          createBy:loginId
-        };
-      })),
       {
         ...matchBetting,
         type: matchBettingType.tiedMatch1,
-        name: tiedMatchNames.market,
-        maxBet:marketTiedMatchMaxBet
+        name: initialMatchNames.market,
+        maxBet:marketTiedMatchMaxBet,
+        marketId : tiedMatchMarketId
       },
       {
         ...matchBetting,
         type: matchBettingType.tiedMatch2,
-        name: tiedMatchNames.manual,
-        maxBet:manualTiedMatchMaxBet
+        name: initialMatchNames.manual,
+        maxBet:manualTiedMatchMaxBet,
+      },
+      {
+        ...matchBetting,
+        type: matchBettingType.completeMatch,
+        name: initialMatchNames.completeMatch,
+        maxBet:manualTiedMatchMaxBet,
+        marketId : completeMatchMarketId
       }
     ];
 
-   
+    // Prepare bookmakers for the new match
+    bookmakers?.map((item, index) => {
+      const { maxBet, marketName } = item;
+      index++;
+      // Add the bookmaker
+      matchBettings.push({
+        ...matchBetting,
+        type: matchBettingType["quickbookmaker" + index],
+        name: marketName,
+        maxBet: maxBet
+      });
+    });
 
     // Attach bookmakers to the match
     let insertedMatchBettings = await insertMatchBettings(matchBettings);
@@ -182,18 +196,8 @@ exports.createMatch = async (req, res) => {
     let matchBettingData = await getMatchBattingByMatchId(match.id);
 
     const convertedData = matchBettingData.reduce((result, item) => {
-      const key = item.type; // Assuming type is unique and case-insensitive
-
-      if (!manualMatchBettingType?.includes(key)) {
-        result[key] = {
-          id: item.id,
-          minBet: item.minBet,
-          maxBet: item.maxBet,
-          activeStatus: item.activeStatus,
-        };
-      } else {
-        result[key] = item;
-      }
+      const key = item.type; 
+      result[key] = item;
       return result;
     }, {});
 
@@ -202,6 +206,7 @@ exports.createMatch = async (req, res) => {
       matchOdd: convertedData[matchBettingType.matchOdd],
       marketBookmaker: convertedData[matchBettingType.bookmaker],
       marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
+      marketCompleteMatch : convertedData[matchBettingType.completeMatch]
     };
     await addMatchInCache(match.id, payload);
     const manualBettingRedisData ={};
@@ -316,20 +321,11 @@ exports.updateMatch = async (req, res) => {
 
     // await Promise.all(updatePromises);
 
-    match = await getMatchById(id, ["id", "betFairSessionMinBet", "betFairSessionMaxBet"]);
+    match = await getMatchById(id);
     matchBatting = await getMatchBattingByMatchId(id);
     const convertedData = matchBatting.reduce((result, item) => {
-      const key = item.type; // Assuming type is unique and case-insensitive
-      if (!manualMatchBettingType?.includes(key)) {
-        result[key] = {
-          id: item.id,
-          minBet: item.minBet,
-          maxBet: item.maxBet,
-          activeStatus: item.activeStatus,
-        };
-      } else {
-        result[key] = item;
-      }
+      const key = item.type;  
+      result[key] = item;
       return result;
     }, {});
 
@@ -337,7 +333,8 @@ exports.updateMatch = async (req, res) => {
       ...match,
       matchOdd: convertedData[matchBettingType.matchOdd],
       marketBookmaker: convertedData[matchBettingType.bookmaker],
-      marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
+      marketTiedMatch: convertedData[matchBettingType.tiedMatch2],      
+      marketCompleteMatch : convertedData[matchBettingType.completeMatch],
     };
     updateMatchInCache(match.id, payload);
 
@@ -495,20 +492,22 @@ const commonGetMatchDetails=async (matchId)=>{
       }
       await settingAllSessionMatchRedis(matchId, result);
     }
-
-    const categorizedMatchBettings = {
-      ...(match.matchOdd
-        ? { [matchBettingType.matchOdd]: match.matchOdd }
+const categorizedMatchBettings = {
+  ...(match.matchOdd
+    ? { [matchBettingType.matchOdd]: match.matchOdd }
+    : {}),
+    ...(match.marketBookmaker
+      ? { [matchBettingType.bookmaker]:match.marketBookmaker }
+      : {}),
+      ...(match.marketCompleteMatch
+        ? { "marketCompleteMatch":match.marketCompleteMatch }
         : {}),
-      ...(match.marketBookmaker
-        ? { [matchBettingType.bookmaker]:match.marketBookmaker }
-        : {}),
-      quickBookmaker: [],
-      ...(match.marketTiedMatch
-        ? { apiTideMatch: match.marketTiedMatch }
-        : {}),
-      manualTiedMatch: null,
-    };
+        quickBookmaker: [],
+        ...(match.marketTiedMatch
+          ? { "apiTideMatch": match.marketTiedMatch }
+          : {}),
+          manualTiedMatch: null,
+        };
     // Iterate through matchBettings and categorize them
     (Object.values(betting) || []).forEach((item) => {
       item=JSON.parse(item);
@@ -520,6 +519,8 @@ const commonGetMatchDetails=async (matchId)=>{
           break;
         case matchBettingType.tiedMatch2:
           categorizedMatchBettings.manualTiedMatch= item;
+        case matchBettingType.completeMatch:
+          categorizedMatchBettings.marketCompleteMatch = item
           break;
       }
     });
@@ -548,6 +549,7 @@ const commonGetMatchDetails=async (matchId)=>{
     const categorizedMatchBettings = {
       [matchBettingType.matchOdd]: null,
       [matchBettingType.bookmaker]: null,
+      marketCompleteMatch: null,
       quickBookmaker: [],
       apiTideMatch: null,
       manualTideMatch: null,
@@ -573,16 +575,20 @@ const commonGetMatchDetails=async (matchId)=>{
         case matchBettingType.tiedMatch2:
           categorizedMatchBettings.manualTideMatch = item;
           break;
+        case matchBettingType.completeMatch:
+          categorizedMatchBettings.marketCompleteMatch = item;
+          break;
       }
     });
 
-    let payload = {
-      ...match,
-      matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
-      marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
-      marketTiedMatch: categorizedMatchBettings.tideMatch,
-    };
-    await addMatchInCache(match.id, payload);
+      let payload = {
+        ...match,
+        matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
+        marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
+        marketTiedMatch: categorizedMatchBettings.apiTideMatch,
+        marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
+      };
+      await addMatchInCache(match.id, payload);
 
     // Create an empty object to store manual betting Redis data
     const manualBettingRedisData = {};

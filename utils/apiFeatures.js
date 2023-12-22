@@ -106,7 +106,7 @@ class ApiFeature {
   paginate() {
     if(this.options.page){
       const page = this.options.page;
-      const limit = this.options.limit || 10;
+      const limit = parseInt(this.options.limit) || 10;
       const skip = parseInt((parseInt(page) - 1) * parseInt(limit));
 
       this.query.skip(skip).take(limit);

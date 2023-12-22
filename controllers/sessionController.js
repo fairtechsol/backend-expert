@@ -195,8 +195,8 @@ exports.getSessions = async (req, res) => {
         }
         let result = {};
         for (let index = 0; index < session?.length; index++) {
+          result[session?.[index]?.id] = JSON.stringify(session?.[index]);
           session[index] = JSON.stringify(session?.[index]);
-          result[session?.[index]?.id] = session?.[index];
         }
         await settingAllSessionMatchRedis(matchId, result);
       }
@@ -217,7 +217,7 @@ exports.getSessions = async (req, res) => {
             res
           );
         }
-        await updateSessionMatchRedis(matchId, sessionId, session);
+        addAllsessionInRedis(matchId,null);
       }
     }
 
@@ -244,3 +244,20 @@ exports.getSessions = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 };
+
+const addAllsessionInRedis = async (matchId, result) => {
+  if (!result)
+      result = await getSessionBettings({ matchId });
+  if (!result) {
+      throw {
+          error: true,
+          message: { msg: "notFound", keys: { name: "Session" } },
+          statusCode: 404,
+      };
+  }
+  let session = {};
+  for (let index = 0; index < result?.length; index++) {
+    session[result[index].id] = JSON.stringify(result[index]);
+  }
+  await settingAllSessionMatchRedis(matchId, session);
+}

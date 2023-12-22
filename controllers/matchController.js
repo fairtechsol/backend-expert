@@ -48,6 +48,7 @@ exports.createMatch = async (req, res) => {
       bookmakers,
       marketTiedMatchMaxBet,
       manualTiedMatchMaxBet,
+      completeMatchMaxBet,
       matchOddMarketId,
       tiedMatchMarketId,
       marketBookmakerId,
@@ -147,6 +148,18 @@ exports.createMatch = async (req, res) => {
         maxBet: betFairBookmakerMaxBet,
         marketId : marketBookmakerId
       },
+      ...(bookmakers?.map((item, index) => {
+        const { maxBet, marketName } = item;
+        index++;
+        return{
+          type: matchBettingType["quickbookmaker" + index],
+          matchId: match.id,
+          name: marketName,
+          minBet: minBet,
+          maxBet: maxBet,
+          createBy:loginId
+        };
+      })),
       {
         ...matchBetting,
         type: matchBettingType.tiedMatch1,
@@ -164,23 +177,12 @@ exports.createMatch = async (req, res) => {
         ...matchBetting,
         type: matchBettingType.completeMatch,
         name: initialMatchNames.completeMatch,
-        maxBet:manualTiedMatchMaxBet,
+        maxBet:completeMatchMaxBet,
         marketId : completeMatchMarketId
       }
     ];
 
-    // Prepare bookmakers for the new match
-    bookmakers?.map((item, index) => {
-      const { maxBet, marketName } = item;
-      index++;
-      // Add the bookmaker
-      matchBettings.push({
-        ...matchBetting,
-        type: matchBettingType["quickbookmaker" + index],
-        name: marketName,
-        maxBet: maxBet
-      });
-    });
+   
 
     // Attach bookmakers to the match
     let insertedMatchBettings = await insertMatchBettings(matchBettings);
@@ -252,7 +254,9 @@ exports.updateMatch = async (req, res) => {
       betFairSessionMaxBet,
       betFairBookmakerMaxBet,
       bookmakers,
-      tiedMatch
+      marketTiedMatchMaxBet,
+      manualTiedMatchMaxBet,
+      completeMatchMaxBet
     } = req.body;
     //get user data to check privilages
     const { id: loginId } = req.user;
@@ -286,38 +290,18 @@ exports.updateMatch = async (req, res) => {
         return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User"}}},req,res);
     }
 
-    if (minBet) {
-      await updateMatchBetting({ matchId: id }, { minBet });
-      await updateMatch(id, { betFairSessionMinBet: minBet });
-    }
-
-    if (matchOddMaxBet) {
-      await updateMatchBetting({ matchId: id, type: matchBettingType.matchOdd }, { maxBet: matchOddMaxBet });
-    }
-
-    if (betFairSessionMaxBet) {
-      await updateMatch(id, { betFairSessionMaxBet });
-    }
-
-    if (betFairBookmakerMaxBet) {
-      await updateMatchBetting({ matchId: id, type: matchBettingType.bookmaker }, { maxBet: betFairBookmakerMaxBet });
-    }
+    await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet });
+    await updateMatchBetting({ matchId: id, type: matchBettingType.matchOdd }, { maxBet: matchOddMaxBet, minBet: minBet });
+    await updateMatchBetting({ matchId: id, type: matchBettingType.bookmaker }, { maxBet: betFairBookmakerMaxBet, minBet: minBet });
+    await updateMatchBetting({ matchId: id, type: matchBettingType.tiedMatch1 }, { maxBet: marketTiedMatchMaxBet, minBet: minBet });
+    await updateMatchBetting({ matchId: id, type: matchBettingType.tiedMatch2 }, { maxBet: manualTiedMatchMaxBet, minBet: minBet });
+    await updateMatchBetting({ matchId: id, type: matchBettingType.completeMatch }, { maxBet: completeMatchMaxBet, minBet: minBet });
 
     if (bookmakers && bookmakers.length) {
-      logger.info({
-        message: `User ${loginId} updating bookmaker this match ${id}`,
-        bookmakers:bookmakers
-      });
-      await Promise.all[bookmakers.map(item => updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item.maxBet }))];
+      
+      await Promise.all[bookmakers.map(item => updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item.maxBet, minBet:minBet }))];
     }
 
-    if (tiedMatch && tiedMatch.length) {
-      logger.info({
-        message: `User ${loginId} updating tied match this match ${id}`,
-        tiedMatch:tiedMatch
-      });
-      await Promise.all[tiedMatch.map(item => updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item.maxBet }))];
-    }
 
     // await Promise.all(updatePromises);
 
@@ -468,7 +452,7 @@ const commonGetMatchDetails=async (matchId)=>{
         if (manualMatchBettingType.includes(item?.type)) {
           // If the item exists, add it to the manualBettingRedisData object
           // with its value stringified using JSON.stringify
-          item.type = JSON.stringify(item);
+          manualBettingRedisData[item?.type] = JSON.stringify(item);
         }
       });
 
@@ -509,25 +493,25 @@ const categorizedMatchBettings = {
           manualTiedMatch: null,
         };
     // Iterate through matchBettings and categorize them
-    (Object.values(betting) || []).forEach((item) => {
-      item=JSON.parse(item);
-      switch (item?.type) {
-        case matchBettingType.quickbookmaker1:
-        case matchBettingType.quickbookmaker2:
-        case matchBettingType.quickbookmaker3:
-          categorizedMatchBettings.quickBookmaker.push(item);
-          break;
-        case matchBettingType.tiedMatch2:
-          categorizedMatchBettings.manualTiedMatch= item;
-        case matchBettingType.completeMatch:
-          categorizedMatchBettings.marketCompleteMatch = item
-          break;
+    (Array.isArray(betting) ? betting : Object.values(betting) || []).forEach(
+      (item) => {
+        item = JSON.parse(item);
+        switch (item?.type) {
+          case matchBettingType.quickbookmaker1:
+          case matchBettingType.quickbookmaker2:
+          case matchBettingType.quickbookmaker3:
+            categorizedMatchBettings.quickBookmaker.push(item);
+            break;
+          case matchBettingType.tiedMatch2:
+            categorizedMatchBettings.manualTiedMatch = item;
+
+            break;
+        }
       }
-    });
+    );
     // Assign the categorized match betting to the match object
     Object.assign(match, categorizedMatchBettings);
 
-    delete match.matchOdd;
     delete match.marketBookmaker;
     delete match.marketTiedMatch;
 

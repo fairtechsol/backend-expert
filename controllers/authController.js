@@ -86,6 +86,11 @@ exports.login = async (req, res) => {
         data: {
           token,
           forceChangePassword,
+          allPrivilege: user.allPrivilege,
+          addMatchPrivilege: user.addMatchPrivilege,
+          betFairMatchPrivilege: user.betFairMatchPrivilege,
+          bookmakerMatchPrivilege: user.bookmakerMatchPrivilege,
+          sessionMatchPrivilege: user.sessionMatchPrivilege,
         },
       },
       req,

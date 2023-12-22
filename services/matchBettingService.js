@@ -1,3 +1,4 @@
+const { logger } = require("../config/logger");
 const { AppDataSource } = require("../config/postGresConnection");
 
 // betting
@@ -11,6 +12,13 @@ exports.addMatchBetting = async (body) => {
 
 exports.getMatchBetting = async (where, select) => {
   return await MatchBetting.findOne({
+    where:  where,
+    select: select,
+  });
+};
+
+exports.getMatchAllBettings = async (where, select) => {
+  return await MatchBetting.find({
     where:  where,
     select: select,
   });
@@ -38,3 +46,11 @@ exports.updateMatchBettingById = async (id, body) => {
   let updateMatchBetting = await MatchBetting.update(id, body);
   return updateMatchBetting;
 };
+
+exports.getMatchBettingWithMatchDetails = async (where) => {
+  console.log(where);
+  return await MatchBetting.findOne({
+    where:  where,
+    relations: ["match"]
+  });
+}

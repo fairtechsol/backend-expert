@@ -21,7 +21,7 @@ exports.addsessionBettingValidator = Joi.object({
     maxBet: Joi.number().greater(Joi.ref("minBet")).messages({
         "number.base": "Maximum bet amount must be a number",
         "number.greater":
-        "Maximum bet amount must be greater than minimum bet amount",
+            "Maximum bet amount must be greater than minimum bet amount",
         "any.required": "Maximum bet amount is required",
     }),
     yesRate: Joi.number().messages({
@@ -47,7 +47,7 @@ exports.addsessionBettingValidator = Joi.object({
     selectionId: Joi.string().messages({
         "string.base": "Selection ID must be a string",
     })
-    });
+});
 
 exports.updateSessionBettingValidator = Joi.object({
     minBet: Joi.number().messages({
@@ -57,7 +57,7 @@ exports.updateSessionBettingValidator = Joi.object({
     maxBet: Joi.number().greater(Joi.ref("minBet")).messages({
         "number.base": "Maximum bet amount must be a number",
         "number.greater":
-        "Maximum bet amount must be greater than minimum bet amount",
+            "Maximum bet amount must be greater than minimum bet amount",
         "any.required": "Maximum bet amount is required",
     }),
     name: Joi.string().messages({
@@ -68,4 +68,41 @@ exports.updateSessionBettingValidator = Joi.object({
         "string.base": "Match ID must be a string",
         "any.required": "Match ID is required",
     }),
-    });
+});
+
+
+exports.UpdateSessionRateInSocket = Joi.object({
+    id: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `id should be a type of 'text'`,
+        'string.empty': `id cannot be an empty field`,
+        'string.guid': `id must be a valid GUID`,
+        'any.required': `id is a required field`
+    }),
+    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `matchId should be a type of 'text'`,
+        'string.empty': `matchId cannot be an empty field`,
+        'string.guid': `matchId must be a valid GUID`,
+        'any.required': `matchId is a required field`
+    }),
+    yesRate : Joi.number().messages({
+        'number.base': `yesRate should be a type of 'number'`,
+        'number.empty': `yesRate cannot be an empty field`,
+    }),
+    noRate : Joi.number().messages({
+        'number.base': `noRate should be a type of 'number'`,
+        'number.empty': `noRate cannot be an empty field`,
+    }),
+    yesPercent : Joi.number().messages({
+        'number.base': `yesPercent should be a type of 'number'`,
+        'number.empty': `yesPercent cannot be an empty field`,
+    }),
+    noPercent : Joi.number().messages({
+        'number.base': `noPercent should be a type of 'number'`,
+        'number.empty': `noPercent cannot be an empty field`,
+    }),
+    status : Joi.string().valid(...Object.values(teamStatus)).required().messages({
+        'string.base': `status should be a type of 'text'`,
+        'string.empty': `status cannot be an empty field`,
+        'any.only': `status must be a valid type`,
+    }),
+})

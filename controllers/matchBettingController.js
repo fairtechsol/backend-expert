@@ -1,6 +1,6 @@
 const { logger } = require("../config/logger");
 const { getMatchBetting, getMatchBettingWithMatchDetails, getMatchAllBettings } = require("../services/matchBettingService");
-const { getAllBettingRedis, settingAllBettingMatchRedis, getBettingFromRedis, updateBettingMatchRedis } = require("../services/redis/commonfunction");
+const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting } = require("../services/redis/commonfunction");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 
@@ -76,21 +76,4 @@ exports.getMatchBetting = async (req, res) => {
         });
         return ErrorResponse(error, req, res);
     }
-}
-
-const addAllMatchBetting = async (matchId, result) => {
-    if (!result)
-        result = await getMatchAllBettings({ matchId });
-    if (!result) {
-        throw {
-            error: true,
-            message: { msg: "notFound", keys: { name: "Match betting" } },
-            statusCode: 404,
-        };
-    }
-    let matchBetting = {};
-    for (let index = 0; index < result?.length; index++) {
-        matchBetting[result[index].type] = JSON.stringify(result[index]);
-    }
-    await settingAllBettingMatchRedis(matchId, matchBetting);
 }

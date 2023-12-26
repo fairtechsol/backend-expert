@@ -451,6 +451,9 @@
                   "manualTiedMatchMaxBet": {
                     "example": "any"
                   },
+                  "completeMatchMaxBet": {
+                    "example": "any"
+                  },
                   "matchOddMarketId": {
                     "example": "any"
                   },
@@ -518,7 +521,13 @@
                   "bookmakers": {
                     "example": "any"
                   },
-                  "tiedMatch": {
+                  "marketTiedMatchMaxBet": {
+                    "example": "any"
+                  },
+                  "manualTiedMatchMaxBet": {
+                    "example": "any"
+                  },
+                  "completeMatchMaxBet": {
                     "example": "any"
                   }
                 }
@@ -613,13 +622,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -643,13 +645,6 @@
           },
           {
             "name": "x-forwarded-for",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -685,13 +680,6 @@
           },
           {
             "name": "x-forwarded-for",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -1014,6 +1002,54 @@
           {
             "name": "x-forwarded-for",
             "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/matchBeting/{matchId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "matchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
             "schema": {
               "type": "string"
             }

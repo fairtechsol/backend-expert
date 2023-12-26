@@ -1,6 +1,6 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, teamStatus, sessionBettingType, betStatusType } = require("../config/contants");
-const { ColumnNumericTransformer } = require("../services/commonService");
+const {ColumnNumericTransformer} = require('../services/dbService')
 
 const sessionBettingSchema = new EntitySchema({
     name: "sessionBetting",

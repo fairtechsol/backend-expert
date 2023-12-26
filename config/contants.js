@@ -111,4 +111,6 @@ module.exports.initialMatchNames = {
   completeMatch : "complete_match"
 };
 
-module.exports.expertRoomSocket="expertRoom";
+module.exports.socketData ={
+  expertRoomSocket : "expertRoom"
+};

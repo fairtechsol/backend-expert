@@ -1,5 +1,4 @@
 const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames } = require("../config/contants");
-const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting,  addMatchBetting } = require("../services/matchBettingService");
 const {

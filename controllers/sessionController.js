@@ -148,8 +148,14 @@ exports.addSession = async (req,res) =>{
         return ErrorResponse({statusCode: 400,message: {msg: "match.sessionUpdateFail" }},req,res);
       }
       
-      await updateSessionMatchRedis(session?.matchId,session?.id,{...session,...sessionData});
+      const isSessionExist = await hasSessionInCache(session?.matchId);
 
+      if (isSessionExist) {
+        await updateSessionMatchRedis(session?.matchId,session?.id,{...session,...sessionData});
+      }
+      else{
+        addAllsessionInRedis(session?.matchId);
+      }
 
       sendMessageToUser("expertRoom","sessionUpdated",{...session,...sessionData});
 

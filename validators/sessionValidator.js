@@ -100,7 +100,7 @@ exports.UpdateSessionRateInSocket = Joi.object({
         'number.base': `noPercent should be a type of 'number'`,
         'number.empty': `noPercent cannot be an empty field`,
     }),
-    status : Joi.string().valid(...Object.values(teamStatus)).messages({
+    status : Joi.string().valid(...Object.values(teamStatus)).required().messages({
         'string.base': `status should be a type of 'text'`,
         'string.empty': `status cannot be an empty field`,
         'any.only': `status must be a valid type`,

@@ -3,12 +3,10 @@ const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { userRoleConstant, socketData } = require("../config/contants");
-const { getSessionFromRedis, getBettingFromRedis, updateBettingMatchRedis, updateSessionMatchRedis } = require("../services/redis/commonfunction");
+const { getSessionFromRedis, getBettingFromRedis, updateBettingMatchRedis, updateSessionMatchRedis,addAllsessionInRedis,addAllMatchBetting } = require("../services/redis/commonfunction");
 const { updateMatchBettingById } = require("../services/matchBettingService");
-const { addAllMatchBetting } = require("../controllers/matchBettingController");
 const {  UpdateMatchBettingRateInSocket } = require("../validators/matchBettingValidator");
 const { jsonValidator } = require("../middleware/joi.validator");
-const { addAllsessionInRedis } = require("../controllers/sessionController");
 const { updateSessionBetting } = require("../services/sessionBettingService");
 const { UpdateSessionRateInSocket } = require("../validators/sessionValidator");
 
@@ -203,14 +201,14 @@ exports.socketManager = (server) => {
         matchBettingData = await getBettingFromRedis(matchId, type);
       }
       matchBettingData['backTeamA'] = body.backTeamA ? body.backTeamA : 0;
-      matchBettingData['backTeamB'] = body.backTeamB ? body.backTeamB : matchBettingData['backTeamB'];
-      matchBettingData['backTeamC'] = body.backTeamC ? body.backTeamC : matchBettingData['backTeamC'];
-      matchBettingData['layTeamA'] = body.layTeamA ? body.layTeamA : matchBettingData['layTeamB'];
-      matchBettingData['layTeamB'] = body.layTeamB ? body.layTeamB : matchBettingData['layTeamB'];
-      matchBettingData['layTeamC'] = body.layTeamC ? body.layTeamC : matchBettingData['layTeamC'];
-      matchBettingData['statusTeamA'] = body.statusTeamA ? body.statusTeamA : matchBettingData['statusTeamA'];
-      matchBettingData['statusTeamB'] = body.statusTeamB ? body.statusTeamB : matchBettingData['statusTeamB'];
-      matchBettingData['statusTeamC'] = body.statusTeamC ? body.statusTeamC : matchBettingData['statusTeamC'];
+      matchBettingData['backTeamB'] = body.backTeamB ? body.backTeamB : 0;
+      matchBettingData['backTeamC'] = body.backTeamC ? body.backTeamC : 0;
+      matchBettingData['layTeamA'] = body.layTeamA ? body.layTeamA : 0;
+      matchBettingData['layTeamB'] = body.layTeamB ? body.layTeamB : 0;
+      matchBettingData['layTeamC'] = body.layTeamC ? body.layTeamC : 0;
+      matchBettingData['statusTeamA'] = body.statusTeamA ;
+      matchBettingData['statusTeamB'] = body.statusTeamB ;
+      matchBettingData['statusTeamC'] = body.statusTeamC ;
 
       updateMatchBettingById(id, matchBettingData);
       updateBettingMatchRedis(matchId, type, matchBettingData);
@@ -239,11 +237,13 @@ exports.socketManager = (server) => {
         await addAllsessionInRedis(matchId);
         sessionData = await getSessionFromRedis(matchId, id);
       }
+      if(!sessionData)
+      return;
       sessionData['yesRate'] = body.yesRate ? body.yesRate : 0;
-      sessionData['noRate'] = body.noRate ? body.noRate : sessionData['noRate'];
-      sessionData['yesPercent'] = body.yesPercent ? body.yesPercent : sessionData['yesPercent'];
-      sessionData['noPercent'] = body.noPercent ? body.noPercent : sessionData['noPercent'];
-      sessionData['status'] = body.status ? body.status : sessionData['status'];
+      sessionData['noRate'] = body.noRate ? body.noRate : 0;
+      sessionData['yesPercent'] = body.yesPercent ? body.yesPercent : 0;
+      sessionData['noPercent'] = body.noPercent ? body.noPercent : 0;
+      sessionData['status'] = body.status;
       updateSessionBetting({id}, sessionData);
       updateSessionMatchRedis(matchId, id, sessionData);
       return;

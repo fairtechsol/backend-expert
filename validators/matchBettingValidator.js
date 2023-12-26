@@ -44,17 +44,17 @@ exports.UpdateMatchBettingRateInSocket = Joi.object({
         'number.base': `layTeamC should be a type of 'number'`,
         'number.empty': `layTeamC cannot be an empty field`,
     }),
-    statusTeamA : Joi.string().valid(...Object.values(teamStatus)).messages({
+    statusTeamA : Joi.string().valid(...Object.values(teamStatus)).required().messages({
         'string.base': `statusTeamA should be a type of 'text'`,
         'string.empty': `statusTeamA cannot be an empty field`,
         'any.only': `statusTeamA must be a valid type`,
     }),
-    statusTeamB : Joi.string().valid(...Object.values(teamStatus)).messages({
+    statusTeamB : Joi.string().valid(...Object.values(teamStatus)).required().messages({
         'string.base': `statusTeamB should be a type of 'text'`,
         'string.empty': `statusTeamB cannot be an empty field`,
         'any.only': `statusTeamB must be a valid type`,
     }),
-    statusTeamC : Joi.string().valid(...Object.values(teamStatus)).messages({
+    statusTeamC : Joi.string().valid(...Object.values(teamStatus)).required().messages({
         'string.base': `statusTeamC should be a type of 'text'`,
         'string.empty': `statusTeamC cannot be an empty field`,
         'any.only': `statusTeamC must be a valid type`,

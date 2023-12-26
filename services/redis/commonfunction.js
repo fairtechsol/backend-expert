@@ -3,6 +3,8 @@ const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
 const { getMatchSchema } = require("../../validators/matchValidator");
+const { getMatchAllBettings } = require("../matchBettingService");
+const { getSessionBettings } = require("../sessionBettingService");
 
 let expiry = 3600;
 
@@ -336,4 +338,41 @@ exports.getMultipleMatchKey = async (matchId, keys) => {
   let matchKey = `${matchId}_match`;
   let MatchData = await internalRedis.hmget(matchKey, keys);
   return MatchData;
+}
+
+
+exports.addAllsessionInRedis = async (matchId, result) => {
+  if (!result)
+      result = await getSessionBettings({ matchId });
+  if (!result) {
+      throw {
+          error: true,
+          message: { msg: "notFound", keys: { name: "Session" } },
+          statusCode: 404,
+      };
+  }
+  let session = {};
+  for (let index = 0; index < result?.length; index++) {
+    session[result[index].id] = JSON.stringify(result[index]);
+  }
+  await this.settingAllSessionMatchRedis(matchId, session);
+}
+
+
+
+exports.addAllMatchBetting = async (matchId, result) => {
+  if (!result)
+      result = await getMatchAllBettings({ matchId });
+  if (!result) {
+      throw {
+          error: true,
+          message: { msg: "notFound", keys: { name: "Match betting" } },
+          statusCode: 404,
+      };
+  }
+  let matchBetting = {};
+  for (let index = 0; index < result?.length; index++) {
+      matchBetting[result[index].type] = JSON.stringify(result[index]);
+  }
+  await this.settingAllBettingMatchRedis(matchId, matchBetting);
 }

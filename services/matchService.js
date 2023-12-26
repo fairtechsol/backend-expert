@@ -69,14 +69,33 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
         .createQueryBuilder()
         .where(filters)
         .andWhere({
-          stopAt:IsNull()
+          stopAt: IsNull(),
         })
-        .orderBy("match.startAt", "DESC")
-        .leftJoinAndSelect(
+        .leftJoinAndMapMany(
+          "match.matchOdds",
           "match.matchBettings",
-          "matchBetting"
-          )
-          .select(select),
+          "matchOdds",
+          "matchOdds.type = :type",
+          {
+            type: matchBettingType.matchOdd,
+          }
+        )
+        .leftJoinAndMapMany(
+          "match.isBookmaker",
+          "match.matchBettings",
+          "isBookmaker",
+          "isBookmaker.isActive = true AND isBookmaker.type IN (:...types)",
+          {
+            types: [
+              matchBettingType.bookmaker,
+              matchBettingType.quickbookmaker1,
+              matchBettingType.quickbookmaker2,
+              matchBettingType.quickbookmaker3,
+            ]
+          }
+        )
+        .select(select)
+        .orderBy("match.startAt", "DESC"),
       query
     )
       .search()

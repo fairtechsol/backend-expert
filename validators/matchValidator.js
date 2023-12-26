@@ -189,7 +189,7 @@ module.exports.updateMatchValidate = Joi.object({
 module.exports.MatchActiveInactive = Joi.object({
   matchId: Joi.string().guid({ version: "uuidv4" }).required(),
   bettingId: Joi.string().guid({ version: "uuidv4" }),
-  matchBettingType: Joi.string()
+  type: Joi.string()
     .valid(...Object.values(bettingType))
     .required()
     .messages({
@@ -219,9 +219,9 @@ module.exports.getMatchSchema = Joi.object({
   betFairSessionMinBet: Joi.number(),
   apiSessionActive: Joi.boolean(),
   manualSessionActive: Joi.boolean(),
-  matchOdd: Joi.string(),
-  marketBookmaker: Joi.string(),
-  marketTiedMatch: Joi.string(), 
-  marketCompleteMatch : Joi.string(),
+  matchOdd: Joi.string().allow(""),
+  marketBookmaker: Joi.string().allow(""),
+  marketTiedMatch: Joi.string().allow(""), 
+  marketCompleteMatch : Joi.string().allow(""),
   stopAt: Joi.date(),   
 })

@@ -119,6 +119,14 @@ exports.updateMatchExpiry = async (matchId) => {
     .expire(matchKey, expiry);
 }
 
+exports.getKeyFromMatchRedis = async (matchId, key) => {
+  // Retrieve match data from Redis
+  const matchData = await internalRedis.hget(`${matchId}_match`, key);
+
+  // Parse and return the match data or null if it doesn't exist
+  return matchData ? JSON.parse(matchData) : null;
+};
+
 // exports.getMatchFromCache = async(matchId) =>{
 //     let match = await internalRedis.hgetall(`${matchId}_match`);
 //     return Object.keys(match)?.length > 0 ? match : null;
@@ -296,6 +304,12 @@ exports.getAllBettingRedis = async (matchId) => {
 exports.updateExpiryTimeBetting = async (matchId) => {
   await internalRedis.expire(`${matchId}_manualBetting`, expiry);
 };
+
+
+exports.hasBettingInCache = async (matchId) => {
+    let bettingKey = `${matchId}_manualBetting`;
+    return await internalRedis.exists(bettingKey);
+  }
 
 
 exports.getMatchFromCache = async (matchId) => {

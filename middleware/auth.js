@@ -48,7 +48,10 @@ exports.isAuthenticate = async (req, res, next) => {
         );
       }
 
-      req.user = { ...decodedUser, ...userData };
+      const userPrivilegeData={}
+      Object.keys(userData)?.map((item)=>userPrivilegeData[item]=JSON.parse(userData[item]))
+
+      req.user = { ...decodedUser, ...userPrivilegeData };
       next();
     }
   } catch (err) {

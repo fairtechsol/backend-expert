@@ -939,8 +939,23 @@ exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
 
 exports.matchListWithManualBetting = async (req, res) => {
   try {
+
+    const {
+      allPrivilege,
+      addMatchPrivilege,
+      betFairMatchPrivilege,
+      bookmakerMatchPrivilege,
+      sessionMatchPrivilege,
+    } = req.user;
+
     
-    const match = await getMatchWithBettingAndSession();
+    
+    const match = await getMatchWithBettingAndSession(
+      allPrivilege,
+      addMatchPrivilege,
+      bookmakerMatchPrivilege,
+      sessionMatchPrivilege
+    );
     if (!match) {
       return ErrorResponse(
         {

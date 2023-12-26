@@ -111,6 +111,50 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
     throw error;
   }
 };
+
+exports.getMatchWithBettingAndSession = async () => {
+  try {
+    // Start building the query
+    let matchQuery = match
+      .createQueryBuilder()
+      .leftJoinAndMapMany(
+        "match.bookmakers",
+        "match.matchBettings",
+        "bookmakers",
+        "bookmakers.type IN (:...types)",
+        {
+          types: [
+            matchBettingType.quickbookmaker1,
+            matchBettingType.quickbookmaker2,
+            matchBettingType.quickbookmaker3,
+            matchBettingType.tiedMatch2,
+          ],
+        }
+      )
+      .leftJoinAndMapMany(
+        "match.sessions",
+        "match.sessionBettings",
+        "sessions",
+        "sessions.isManual = true"
+      )
+      .select([
+        "match.id",
+        "match.title",
+        "sessions.id",
+        "sessions.name",
+        "bookmakers.id",
+        "bookmakers.name",
+      ])
+      .orderBy("match.startAt", "DESC")
+      .getManyAndCount();
+    // Execute the query and get the result along with count
+    const [matches, count] = await matchQuery;
+
+    return { matches, count };
+  } catch (error) {
+    throw error;
+  }
+};
 exports.getMatchDetails = async (id, select) => {
     return await match.findOne({
       where: { id:id },

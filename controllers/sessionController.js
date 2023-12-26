@@ -2,12 +2,11 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBetting, getSessionBettings, getSessionBattingByMatchId } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService");
-const { sessionBettingType, teamStatus, expertRoomSocket } = require("../config/contants");
+const { sessionBettingType, teamStatus, socketData } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
-
 
 
 
@@ -84,7 +83,7 @@ exports.addSession = async (req,res) =>{
         addAllsessionInRedis(matchId);
       }
 
-      sendMessageToUser(expertRoomSocket, "sessionAdded", session);
+      sendMessageToUser(socketData.expertRoomSocket,"sessionAdded",session);
 
 
       return SuccessResponse(
@@ -259,19 +258,3 @@ exports.getSessions = async (req, res) => {
   }
 };
 
-const addAllsessionInRedis = async (matchId, result) => {
-  if (!result)
-      result = await getSessionBettings({ matchId });
-  if (!result) {
-      throw {
-          error: true,
-          message: { msg: "notFound", keys: { name: "Session" } },
-          statusCode: 404,
-      };
-  }
-  let session = {};
-  for (let index = 0; index < result?.length; index++) {
-    session[result[index].id] = JSON.stringify(result[index]);
-  }
-  await settingAllSessionMatchRedis(matchId, session);
-}

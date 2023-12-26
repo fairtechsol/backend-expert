@@ -1,6 +1,6 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart } = require("../config/contants");
-const { ColumnNumericTransformer } = require("../services/commonService");
+const { ColumnNumericTransformer } = require("../services/dbService");
 
 const matchSchema = new EntitySchema({
   name: "match",

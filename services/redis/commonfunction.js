@@ -150,6 +150,12 @@ exports.updateSessionMatchRedis = async (matchId, sessionId, data) => {
     .exec();
 };
 
+
+exports.hasSessionInCache = async (matchId) => {
+    let sessionKey = `${matchId}_session`;
+    return await internalRedis.exists(sessionKey);
+  }
+
 /**
  * Updates session match data in Redis.
  *

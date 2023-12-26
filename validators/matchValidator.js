@@ -96,6 +96,14 @@ module.exports.addMatchValidate = Joi.object({
       "Maximum bet amount for market tied match must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for manual tied match is required",
   }),
+  completeMatchMaxBet : Joi.number().greater(Joi.ref("minBet"))
+  .required()
+  .messages({
+    "number.base": "Maximum bet amount for complete match must be a number",
+    "number.greater":
+      "Maximum bet amount for complete match must be greater than minimum bet amount",
+    "any.required": "Maximum bet amount for complete tied match is required",
+  }),
   matchOddMarketId : Joi.string().required().messages({
     "string.base": "Match odd market id must be a string",
     "any.required": "Match odd market id is required",
@@ -150,9 +158,30 @@ module.exports.updateMatchValidate = Joi.object({
   bookmakers: Joi.array().items(updatebookmakerSchema).messages({
     "array.base": "Bookmakers must be an array",
   }),
-  tiedMatch: Joi.array().items(updatebookmakerSchema).messages({
-    "array.base": "Tied match must be an array",
+  marketTiedMatchMaxBet: Joi.number()
+  .greater(Joi.ref("minBet"))
+  .messages({
+    "number.base":
+      "Maximum bet amount for market tied match must be a number",
+    "number.greater":
+      "Maximum bet amount for market tied match must be greater than minimum bet amount"
   }),
+  manualTiedMatchMaxBet: Joi.number()
+  .greater(Joi.ref("minBet"))
+  .messages({
+    "number.base":
+      "Maximum bet amount for manual tied match must be a number",
+    "number.greater":
+      "Maximum bet amount for manual tied match must be greater than minimum bet amount"
+  }),
+  completeMatchMaxBet: Joi.number()
+  .greater(Joi.ref("minBet"))
+  .messages({
+    "number.base":
+      "Maximum bet amount for complete match must be a number",
+    "number.greater":
+      "Maximum bet amount for complete match must be greater than minimum bet amount"
+  })  
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });

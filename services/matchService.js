@@ -2,6 +2,7 @@ const { AppDataSource } = require("../config/postGresConnection");
 const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
+const { matchBettingType } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
 
 
@@ -68,14 +69,14 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
         .createQueryBuilder()
         .where(filters)
         .andWhere({
-            stopAt:IsNull()
+          stopAt:IsNull()
         })
         .orderBy("match.startAt", "DESC")
         .leftJoinAndSelect(
           "match.matchBettings",
           "matchBetting"
-        )
-        .select(select),
+          )
+          .select(select),
       query
     )
       .search()
@@ -119,7 +120,7 @@ exports.getMatchDetails = async (id, select) => {
 
   exports.getMatchByCompetitionIdAndDates = async (competitionId,date) => {
     return await match.query(
-      'SELECT id, title FROM matchs WHERE "competitionId" = $1 AND DATE_TRUNC(\'day\',"startAt") = $2 AND "stopAt" IS NULL',
+      `SELECT matchs.id, matchs.title, COUNT("matchOdds".id) > 0 AS "isTiedMatch" FROM matchs LEFT JOIN "matchBettings" "matchOdds" ON "matchOdds"."matchId"="matchs"."id" AND ( "matchOdds"."type" IN ('${matchBettingType.tiedMatch1}','${matchBettingType.tiedMatch2}') AND "matchOdds"."isActive"=true) WHERE matchs."competitionId" = $1 AND DATE_TRUNC(\'day\',matchs."startAt") = $2 AND matchs."stopAt" IS NULL Group by matchs.id`,
       [competitionId, new Date(date)]
     );
   };

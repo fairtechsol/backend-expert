@@ -105,5 +105,8 @@ module.exports.initialMatchNames = {
 };
 
 module.exports.socketData ={
-  expertRoomSocket : "expertRoom"
+  expertRoomSocket : "expertRoom",
+  updateMatchEvent : "updateMatch",
+  sessionAddedEvent : "sessionAdded",
+  addMatchEvent : "addMatch"
 };

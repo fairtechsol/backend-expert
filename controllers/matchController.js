@@ -1,4 +1,4 @@
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, socketData } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting,  addMatchBetting } = require("../services/matchBettingService");
 const {
@@ -218,7 +218,7 @@ exports.createMatch = async (req, res) => {
     });
 
     await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
-    broadcastEvent("addMatch");
+    broadcastEvent(socketData.addMatchEvent);
     return SuccessResponse(
       {
         statusCode: 200,
@@ -340,7 +340,7 @@ exports.updateMatch = async (req, res) => {
     
     // Attach bookmaker data to the match object
     match["bookmaker"] = matchBatting;
-
+    broadcastEvent(socketData.updateMatchEvent,match);
     // Send success response with the updated match data
     return SuccessResponse(
       {

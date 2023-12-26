@@ -660,6 +660,25 @@ exports.matchActiveInActive = async (req, res) => {
     const { matchId, bettingId, type, isManualBet, isActive } =
       req.body;
 
+
+      const { allPrivilege, addMatchPrivilege } = req.user;
+
+        if (!allPrivilege && !addMatchPrivilege) {
+          return ErrorResponse(
+            {
+              statusCode: 400,
+              message: {
+                msg: "notAuthorized",
+                keys: {
+                  name: "Expert",
+                },
+              },
+            },
+            req,
+            res
+          );
+        }
+
       let match = await getMatchFromCache(matchId);
       
       if(!match){

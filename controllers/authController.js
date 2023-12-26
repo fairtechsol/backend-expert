@@ -41,7 +41,7 @@ exports.login = async (req, res) => {
 
     if (!user) {
       logger.error({
-        error: `Error at the login for the expert. User not found for user: ${userName}.`
+        error: `Error at the login for the expert. User not found for user: ${userName}.`,
       });
       return ErrorResponse(
         {
@@ -72,10 +72,19 @@ exports.login = async (req, res) => {
       userLoginAtUpdate(user.id);
     }
 
-  logger.info({ message: `Setting login token in redis: ${token} for user: ${user.id}` });
-    
+    logger.info({
+      message: `Setting login token in redis: ${token} for user: ${user.id}`,
+    });
+
     // setting token in redis for checking if user already loggedin
-    await internalRedis.hmset(user.id, { token: token });
+    await internalRedis.hmset(user.id, {
+      token: token,
+      allPrivilege: user.allPrivilege,
+      addMatchPrivilege: user.addMatchPrivilege,
+      betFairMatchPrivilege: user.betFairMatchPrivilege,
+      bookmakerMatchPrivilege: user.bookmakerMatchPrivilege,
+      sessionMatchPrivilege: user.sessionMatchPrivilege,
+    });
 
     // Return token and user information
 

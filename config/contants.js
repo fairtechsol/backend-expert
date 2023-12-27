@@ -108,5 +108,8 @@ module.exports.socketData ={
   expertRoomSocket : "expertRoom",
   updateMatchEvent : "updateMatch",
   sessionAddedEvent : "sessionAdded",
-  addMatchEvent : "addMatch"
+  addMatchEvent : "addMatch",
+  matchActiveInActiveEvent : "matchActiveInActive",
+  logoutUserForceEvent : "logoutUserForce",
+  sessionUpdatedEvent :"sessionUpdated"
 };

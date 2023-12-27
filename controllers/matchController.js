@@ -718,7 +718,7 @@ exports.matchActiveInActive = async (req, res) => {
      await updateBettingMatchRedis(matchId, matchBetting?.type, matchBetting);
     }
 
-    broadcastEvent("matchActiveInActive");
+    broadcastEvent(socketData.matchActiveInActiveEvent);
 
 
     // Return a success response with the updated match information

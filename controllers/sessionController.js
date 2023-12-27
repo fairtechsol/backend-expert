@@ -156,7 +156,7 @@ exports.addSession = async (req,res) =>{
         addAllsessionInRedis(session?.matchId);
       }
 
-      sendMessageToUser("expertRoom","sessionUpdated",{...session,...sessionData});
+      sendMessageToUser(socketData.expertRoomSocket,socketData.sessionUpdatedEvent,{...session,...sessionData});
 
       
       return SuccessResponse(

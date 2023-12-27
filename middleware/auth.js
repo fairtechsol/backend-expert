@@ -1,4 +1,4 @@
-const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
+const { verifyToken, getUserDataFromRedis } = require("../utils/authUtils");
 const { ErrorResponse } = require("../utils/response");
 
 exports.isAuthenticate = async (req, res, next) => {
@@ -34,8 +34,8 @@ exports.isAuthenticate = async (req, res, next) => {
           res
         );
       }
-      const userTokenRedis = await getUserTokenFromRedis(decodedUser.id);
-      if (userTokenRedis != token) {
+      const {token:redisUserToken,...userData} = await getUserDataFromRedis(decodedUser.id);
+      if (redisUserToken != token) {
         return ErrorResponse(
           {
             statusCode: 401,
@@ -48,7 +48,10 @@ exports.isAuthenticate = async (req, res, next) => {
         );
       }
 
-      req.user = decodedUser;
+      const userPrivilegeData={}
+      Object.keys(userData)?.map((item)=>userPrivilegeData[item]=JSON.parse(userData[item]))
+
+      req.user = { ...decodedUser, ...userPrivilegeData };
       next();
     }
   } catch (err) {

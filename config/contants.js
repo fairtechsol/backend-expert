@@ -60,6 +60,13 @@ module.exports.manualMatchBettingType = [
   "tiedMatch2",
 ];
 
+module.exports.marketBettingTypeByBettingType={
+  matchOdd: "matchOdd",
+  bookmaker: "marketBookmaker",
+  tiedMatch1: "marketTiedMatch",
+  completeMatch : "marketCompleteMatch"
+}
+
 module.exports.intialMatchBettingsName = {
   initialBookmaker: "Bookmaker Market",
   initialMatchOdd: "Match Odd",

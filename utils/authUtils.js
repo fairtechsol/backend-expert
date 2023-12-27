@@ -11,7 +11,12 @@ function getUserTokenFromRedis(userId) {
   return internalRedis.hget(userId, "token");
 }
 
+function getUserDataFromRedis(userId) {
+  return internalRedis.hgetall(userId);
+}
+
 module.exports = {
   verifyToken,
   getUserTokenFromRedis,
+  getUserDataFromRedis
 };

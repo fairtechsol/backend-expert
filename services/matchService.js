@@ -69,14 +69,33 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
         .createQueryBuilder()
         .where(filters)
         .andWhere({
-          stopAt:IsNull()
+          stopAt: IsNull(),
         })
-        .orderBy("match.startAt", "DESC")
-        .leftJoinAndSelect(
+        .leftJoinAndMapMany(
+          "match.matchOdds",
           "match.matchBettings",
-          "matchBetting"
-          )
-          .select(select),
+          "matchOdds",
+          "matchOdds.type = :type",
+          {
+            type: matchBettingType.matchOdd,
+          }
+        )
+        .leftJoinAndMapMany(
+          "match.isBookmaker",
+          "match.matchBettings",
+          "isBookmaker",
+          "isBookmaker.isActive = true AND isBookmaker.type IN (:...types)",
+          {
+            types: [
+              matchBettingType.bookmaker,
+              matchBettingType.quickbookmaker1,
+              matchBettingType.quickbookmaker2,
+              matchBettingType.quickbookmaker3,
+            ]
+          }
+        )
+        .select(select)
+        .orderBy("match.startAt", "DESC"),
       query
     )
       .search()
@@ -84,6 +103,63 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
       .sort()
       .paginate()
       .getResult();
+    // Execute the query and get the result along with count
+    const [matches, count] = await matchQuery;
+
+    return { matches, count };
+  } catch (error) {
+    throw error;
+  }
+};
+
+exports.getMatchWithBettingAndSession = async (
+  allPrivilege,
+  addMatchPrivilege,
+  bookmakerMatchPrivilege,
+  sessionMatchPrivilege
+) => {
+  try {
+    // Start building the query
+    let matchQuery = match
+      .createQueryBuilder()
+      ;
+    if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
+      matchQuery = matchQuery
+        .leftJoinAndMapMany(
+          "match.bookmakers",
+          "match.matchBettings",
+          "bookmakers",
+          "bookmakers.type IN (:...types)",
+          {
+            types: [
+              matchBettingType.quickbookmaker1,
+              matchBettingType.quickbookmaker2,
+              matchBettingType.quickbookmaker3,
+              matchBettingType.tiedMatch2,
+            ],
+          }
+        );
+    }
+    if (sessionMatchPrivilege || allPrivilege || addMatchPrivilege) {
+      matchQuery = matchQuery
+        .leftJoinAndMapMany(
+          "match.sessions",
+          "match.sessionBettings",
+          "sessions",
+          "sessions.isManual = true"
+        );
+    }
+
+    matchQuery = matchQuery.select(["match.id", "match.title"]);
+
+    if (sessionMatchPrivilege || allPrivilege || addMatchPrivilege) {
+      matchQuery = matchQuery.addSelect(["sessions.id", "sessions.name"]);
+    }
+    if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
+      matchQuery = matchQuery.addSelect(["bookmakers.id", "bookmakers.name"]);
+    }
+    matchQuery = matchQuery.orderBy("match.startAt", "DESC").getManyAndCount();
+
     // Execute the query and get the result along with count
     const [matches, count] = await matchQuery;
 

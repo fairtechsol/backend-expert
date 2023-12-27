@@ -16,7 +16,7 @@ const {
 const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis, updateMatchKeyInCache,  updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
 const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
 const { getUserById } = require("../services/userService");
-const { broadcastEvent } = require("../sockets/socketManager");
+const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 /**
  * Create or update a match.
@@ -310,7 +310,7 @@ exports.updateMatch = async (req, res) => {
     
     // Attach bookmaker data to the match object
     match["bookmaker"] = matchBatting;
-    broadcastEvent(socketData.updateMatchEvent,match);
+    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent,match);
     // Send success response with the updated match data
     return SuccessResponse(
       {
@@ -834,7 +834,7 @@ exports.matchActiveInActive = async (req, res) => {
       }
     }
 
-    broadcastEvent(socketData.matchActiveInActiveEvent);
+    sendMessageToUser(matchId, socketData.matchActiveInActiveEvent);
 
 
     // Return a success response with the updated match information

@@ -1,5 +1,5 @@
 const { logger } = require("../config/logger");
-const { getMatchBetting, getMatchBettingWithMatchDetails, getMatchAllBettings } = require("../services/matchBettingService");
+const { getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
 const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting } = require("../services/redis/commonfunction");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
@@ -70,7 +70,7 @@ exports.getMatchBetting = async (req, res) => {
         );
     } catch (error) {
         logger.error({
-            error: `Error at get list session.`,
+            error: `Error at get list match betting.`,
             stack: error.stack,
             message: error.message,
         });

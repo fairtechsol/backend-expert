@@ -11,6 +11,7 @@ const {
   getMatchCompetitions,
   getMatchDates,
   getMatchByCompetitionIdAndDates,
+  getMatchWithBettingAndSession,
 } = require("../services/matchService");
 const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis, updateMatchKeyInCache,  updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
 const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
@@ -377,22 +378,27 @@ exports.listMatch = async (req, res) => {
   try {
     const { query } = req;
     const { fields } = query;
-    const { id: loginId } = req.user;
+    const {
+      id: loginId,
+      allPrivilege,
+      addMatchPrivilege,
+      betFairMatchPrivilege,
+      bookmakerMatchPrivilege,
+      sessionMatchPrivilege,
+    } = req.user;
 
-    const loginUser = await getUserById(loginId, [
-      "id",
-      "allPrivilege",
-      "addMatchPrivilege",
-      "betFairMatchPrivilege",
-      "bookmakerMatchPrivilege",
-      "sessionMatchPrivilege",
-    ]);
 
-    const filters = loginUser?.allPrivilege||loginUser?.betFairMatchPrivilege||loginUser?.bookmakerMatchPrivilege||loginUser?.sessionMatchPrivilege
-      ? {}
-      : {
-        "createBy": loginId,
-      };
+    
+
+    const filters =
+      allPrivilege ||
+      betFairMatchPrivilege ||
+      bookmakerMatchPrivilege ||
+      sessionMatchPrivilege
+        ? {}
+        : {
+            createBy: loginId,
+          };
 
     //   let userRedisData = await internalRedis.hgetall(user.userId);
     const match = await getMatch(filters, fields?.split(",") || null, query);
@@ -924,6 +930,62 @@ exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
       error: `Error at list match for the user.`,
       stack: err.stack,
       message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+
+exports.matchListWithManualBetting = async (req, res) => {
+  try {
+
+    const {
+      allPrivilege,
+      addMatchPrivilege,
+      betFairMatchPrivilege,
+      bookmakerMatchPrivilege,
+      sessionMatchPrivilege,
+    } = req.user;
+
+    
+    
+    const match = await getMatchWithBettingAndSession(
+      allPrivilege,
+      addMatchPrivilege,
+      bookmakerMatchPrivilege,
+      sessionMatchPrivilege
+    );
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match list" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at list match for the manual betting and session.`,
+      stack: err.stack,
+      message: err.message
     });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);

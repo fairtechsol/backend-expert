@@ -33,7 +33,7 @@ exports.addSession = async (req,res) =>{
           }
         }
       }
-   
+      let isManual = true;
       if(!minBet){
         minBet = match.betFairSessionMinBet
       }
@@ -41,7 +41,7 @@ exports.addSession = async (req,res) =>{
         maxBet = match.betFairSessionMaxBet
       }
       if(selectionId){
-        type = sessionBettingType.marketSession
+        isManual = false;
       }
       let status = teamStatus.suspended
       if(yesRate || noRate){
@@ -59,7 +59,8 @@ exports.addSession = async (req,res) =>{
         noPercent,
         selectionId,
         status,
-        createBy: loginId
+        createBy: loginId,
+        isManual
       }
       let session = await addSessionBetting(sessionData)
       if (!session) {

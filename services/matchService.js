@@ -156,7 +156,7 @@ exports.getMatchWithBettingAndSession = async (
       matchQuery = matchQuery.addSelect(["sessions.id", "sessions.name"]);
     }
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
-      matchQuery = matchQuery.addSelect(["bookmakers.id", "bookmakers.name"]);
+      matchQuery = matchQuery.addSelect(["bookmakers.id", "bookmakers.name", "bookmakers.type"]);
     }
     matchQuery = matchQuery.orderBy("match.startAt", "DESC").getManyAndCount();
 

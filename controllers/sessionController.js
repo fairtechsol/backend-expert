@@ -5,7 +5,7 @@ const {getUserById} = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 
 
@@ -232,6 +232,22 @@ exports.getSessions = async (req, res) => {
         }
         addAllsessionInRedis(matchId,null);
       }
+
+      const isMatch = await hasMatchInCache(matchId);
+      let match;
+      if (isMatch) {
+        match = await getMultipleMatchKey(matchId, [
+          "apiSessionActive",
+          "manualSessionActive",
+        ]);
+      } else {
+        match = getMatchById(matchId, [
+          "apiSessionActive",
+          "manualSessionActive",
+        ]);
+      }
+
+      session = { ...session, ...match };
     }
 
     return SuccessResponse(

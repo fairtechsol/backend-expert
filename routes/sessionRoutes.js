@@ -13,5 +13,5 @@ router.post('/add',isAuthenticate,validator(addsessionBettingValidator),addSessi
 
 router.post('/update',isAuthenticate,validator(updateSessionBettingValidator),updateSession)
 
-router.get('/:matchId',isAuthenticate,getSessions)
+router.get('/:matchId',isAuthenticate,getSessions);
 module.exports = router;

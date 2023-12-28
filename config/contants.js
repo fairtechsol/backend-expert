@@ -93,10 +93,10 @@ module.exports.betStatusType = {
 };
 
 module.exports.betType = {
-  back: "back",
-  lay: "lay",
-  yes: "yes",
-  no: "no",
+  YES : "YES",
+  NO : "NO",
+  BACK : "BACK",
+  LAY : "LAY"
 };
 
 module.exports.bettingType = {

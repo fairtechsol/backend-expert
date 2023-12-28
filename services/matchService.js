@@ -150,13 +150,13 @@ exports.getMatchWithBettingAndSession = async (
         );
     }
 
-    matchQuery = matchQuery.select(["match.id", "match.title"]);
+    matchQuery = matchQuery.select(["match.id", "match.title","match.teamA","match.teamB","match.teamC",]);
 
     if (sessionMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery.addSelect(["sessions.id", "sessions.name"]);
     }
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
-      matchQuery = matchQuery.addSelect(["bookmakers.id", "bookmakers.name"]);
+      matchQuery = matchQuery.addSelect(["bookmakers.id", "bookmakers.name", "bookmakers.type"]);
     }
     matchQuery = matchQuery.orderBy("match.startAt", "DESC").getManyAndCount();
 

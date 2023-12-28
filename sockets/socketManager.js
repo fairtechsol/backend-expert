@@ -167,7 +167,7 @@ exports.socketManager = (server) => {
     // Delegate connection handling to a separate function
     handleConnection(client);
 
-    client.on("init", (match) => {
+    client.on("matchRoom", (match) => {
       client.join(match.id);
     });
 

@@ -86,13 +86,19 @@ module.exports.teamStatus = {
   ballRunning: "ball running",
 };
 
+module.exports.betStatusType = {
+  save: "save",
+  live: "live",
+  result: "result",
+  close: "close",
+};
 
 module.exports.betType = {
   YES : "YES",
   NO : "NO",
   BACK : "BACK",
   LAY : "LAY"
-}
+};
 
 module.exports.bettingType = {
   session: "session",

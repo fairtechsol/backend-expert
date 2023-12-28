@@ -150,7 +150,7 @@ exports.getMatchWithBettingAndSession = async (
         );
     }
 
-    matchQuery = matchQuery.select(["match.id", "match.title"]);
+    matchQuery = matchQuery.select(["match.id", "match.title","match.teamA","match.teamB","match.teamC",]);
 
     if (sessionMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery.addSelect(["sessions.id", "sessions.name"]);

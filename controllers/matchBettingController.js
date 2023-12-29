@@ -1,6 +1,7 @@
+const { marketBettingTypeByBettingType, manualMatchBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
-const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting } = require("../services/redis/commonfunction");
+const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, getMultipleMatchKey } = require("../services/redis/commonfunction");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 
@@ -50,7 +51,7 @@ exports.getMatchBetting = async (req, res) => {
                         res
                     );
                 }
-                addAllMatchBetting(matchId,null);
+                addAllMatchBetting(matchId, null);
             }
         }
 
@@ -60,7 +61,7 @@ exports.getMatchBetting = async (req, res) => {
                 message: {
                     msg: "success",
                     keys: {
-                        name: "Session",
+                        name: "Match Betting",
                     },
                 },
                 data: matchBetting,
@@ -68,6 +69,46 @@ exports.getMatchBetting = async (req, res) => {
             req,
             res
         );
+    } catch (error) {
+        logger.error({
+            error: `Error at get list match betting.`,
+            stack: error.stack,
+            message: error.message,
+        });
+        return ErrorResponse(error, req, res);
+    }
+}
+
+
+exports.getMatchBettingDetails = async (req, res) => {
+    try {
+        const { matchId, } = req.params;
+        const { type } = req.query;
+        let matchBetting,matchDetails;
+        let manualBets = Object.values(manualMatchBettingType);
+        matchDetails = await getMatchFromCache(matchId);
+        let match= {
+            id : matchDetails.id,
+            eventId : matchDetails.eventId,
+            competitionName : matchDetails.competitionName,
+            teamA : matchDetails.teamA,
+            teamB: matchDetails.teamB,
+            teamC : matchDetails.teamC ? matchDetails.teamC : null,
+            competitionId : matchDetails.competitionId,
+            startAt : matchDetails.startAt,
+            title : matchDetails.title,                
+        }
+        if (manualBets.includes(type)) {
+            matchBetting = await getBettingFromRedis(matchId, type);
+        } else {
+            match[marketBettingTypeByBettingType[type]] = matchDetails[marketBettingTypeByBettingType[type]];
+            // fetch third party api for market rate
+        }
+        let response = {
+            match: match,
+            matchBetting: matchBetting
+        }
+        return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Session" } }, data: response }, req, res);
     } catch (error) {
         logger.error({
             error: `Error at get list match betting.`,

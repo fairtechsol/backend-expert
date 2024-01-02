@@ -482,10 +482,13 @@ const commonGetMatchDetails=async (matchId)=>{
 
       let result = {};
       for (let index = 0; index < sessions?.length; index++) {
+        result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
         sessions[index] = JSON.stringify(sessions?.[index]);
-        result[sessions?.[index]?.id] = sessions?.[index];
       }
       await settingAllSessionMatchRedis(matchId, result);
+    }
+    else{
+      sessions=Object.values(sessions);
     }
 const categorizedMatchBettings = {
   ...(match.matchOdd
@@ -604,8 +607,8 @@ const categorizedMatchBettings = {
     let sessions = match?.sessionBettings;
     let result = {};
     for (let index = 0; index < sessions?.length; index++) {
+      result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
       sessions[index] = JSON.stringify(sessions?.[index]);
-      result[sessions?.[index]?.id] = sessions?.[index];
     }
     await settingAllSessionMatchRedis(matchId, result);
 

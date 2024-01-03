@@ -570,18 +570,10 @@
         }
       }
     },
-    "/match/{id}": {
+    "/match/listWithManualBetting": {
       "get": {
         "description": "",
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
           {
             "name": "x-forwarded-for",
             "in": "header",
@@ -729,7 +721,7 @@
                   "bettingId": {
                     "example": "any"
                   },
-                  "matchBettingType": {
+                  "type": {
                     "example": "any"
                   },
                   "isManualBet": {
@@ -741,6 +733,40 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/match/{id}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       }
@@ -786,6 +812,40 @@
           {
             "name": "x-forwarded-for",
             "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/superAdmin/session/{matchId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "matchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
             "schema": {
               "type": "string"
             }

@@ -72,8 +72,7 @@ module.exports.intialMatchBettingsName = {
   initialMatchOdd: "Match Odd",
 };
 module.exports.sessionBettingType = {
-  marketSession: "marketSession",
-  manualSession: "manualSession",
+  session: "session",
   overByOver: "overByover",
   ballByBall: "ballByBall",
 };

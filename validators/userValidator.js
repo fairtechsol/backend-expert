@@ -9,8 +9,8 @@ module.exports.CreateUser = Joi.object({
     'string.pattern.base': 'user.passwordMatch',
     'any.required': 'Password is required',
   }),
-  phoneNumber: Joi.string(),
-  city: Joi.string().max(255),
+  phoneNumber: Joi.string().allow(""),
+  city: Joi.string().max(255).allow(""),
   allPrivilege:Joi.boolean(),
   addMatchPrivilege:Joi.boolean(),
   betFairMatchPrivilege:Joi.boolean(),
@@ -27,8 +27,8 @@ module.exports.CreateUser = Joi.object({
 
 module.exports.UpdateUser = Joi.object({
   fullName: Joi.string().min(3).max(255),
-  phoneNumber: Joi.string(),
-  city: Joi.string().max(255),
+  phoneNumber: Joi.string().allow(""),
+  city: Joi.string().max(255).allow(""),
   allPrivilege:Joi.boolean(),
   addMatchPrivilege:Joi.boolean(),
   betFairMatchPrivilege:Joi.boolean(),

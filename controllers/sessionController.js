@@ -2,10 +2,10 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBetting, getSessionBettings, getSessionBattingByMatchId } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService");
-const { sessionBettingType, teamStatus, socketData } = require("../config/contants");
+const { sessionBettingType, teamStatus, socketData, betStatusType } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, getMarketSessionIdFromRedis, updateMarketSessionIdRedis, getUserRedisData } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 
 
@@ -284,6 +284,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
   try {
     let reqUser = req.user;
     let sessionId = req.params.id;
+    let {status} = req.body;
     const user = await getUserRedisData(reqUser.id);
     if(!user){
       return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
@@ -299,8 +300,21 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
         }
       }
     }
+    let updateSession = await updateSessionBetting({id : sessionId},{activeStatus : status});
+    // Update redis cache
+      if(status == betStatusType.live){
+        await updateMarketSessionIdRedis(sessionData.matchId,sessionData.selectionId,sessionId);
+      }else if(status == betStatusType.save){
+        deleteKeyFromMarketSessionId(sessionData.matchId,sessionData.selectionId);
+      }
+      return SuccessResponse({statusCode: 200,message: {msg: "updated",keys: {name: "Session"}}}, req,res);
 
   } catch (error) {
-    
+    logger.error({
+      error: `Error At update Market Session Active Status.`,
+      stack: error.stack,
+      message: error.message,
+      });
+      return ErrorResponse(error, req, res);
   }
 }

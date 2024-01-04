@@ -425,3 +425,11 @@ exports.getUserRedisData = async (userId)=>{
   // Return the user data as an object or null if no data is found
   return Object.keys(userData)?.length == 0 ? null : userData;
 }
+
+// create function for remove key from market session
+exports.deleteKeyFromMarketSessionId = async(matchId,selectionId) => {
+  const deleteKey = await internalRedis.hdel(`${matchId}_selectionId`,selectionId);
+  return deleteKey;
+}
+
+

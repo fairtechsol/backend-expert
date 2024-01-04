@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { sessionBettingType, teamStatus } = require("../config/contants");
+const { sessionBettingType, teamStatus, betStatusType } = require("../config/contants");
 
 exports.addsessionBettingValidator = Joi.object({
     matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
@@ -101,6 +101,14 @@ exports.UpdateSessionRateInSocket = Joi.object({
         'number.empty': `noPercent cannot be an empty field`,
     }),
     status : Joi.string().valid(...Object.values(teamStatus)).required().messages({
+        'string.base': `status should be a type of 'text'`,
+        'string.empty': `status cannot be an empty field`,
+        'any.only': `status must be a valid type`,
+    }),
+})
+
+exports.UpdateSessionstatusValidator = Joi.object({
+    status : Joi.string().valid(...Object.values(betStatusType)).required().messages({
         'string.base': `status should be a type of 'text'`,
         'string.empty': `status cannot be an empty field`,
         'any.only': `status must be a valid type`,

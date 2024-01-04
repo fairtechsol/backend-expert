@@ -162,28 +162,50 @@ exports.createMatch = async (req, res) => {
       })),
       {
         ...matchBetting,
+        type: matchBettingType.tiedMatch2,
+        name: initialMatchNames.manual,
+        maxBet:manualTiedMatchMaxBet,
+      }
+      
+    ];
+
+   if(completeMatchMarketId && completeMatchMarketId != ''){
+    matchBettings.push({
+      ...matchBetting,
+      type: matchBettingType.completeMatch,
+      name: initialMatchNames.completeMatch,
+      maxBet:completeMatchMaxBet,
+      marketId : completeMatchMarketId
+    })
+   }else{
+    matchBettings.push({
+      ...matchBetting,
+      type: matchBettingType.completeMatch,
+      name: initialMatchNames.completeMatch,
+      maxBet:completeMatchMaxBet,
+      marketId : addIncrement(matchOddMarketId,2)
+    })
+   }
+
+   if(tiedMatchMarketId && tiedMatchMarketId != ''){
+    matchBettings.push(
+      {
+        ...matchBetting,
         type: matchBettingType.tiedMatch1,
         name: initialMatchNames.market,
         maxBet:marketTiedMatchMaxBet,
         marketId : tiedMatchMarketId
-      },
+      })
+   }else{
+    matchBettings.push(
       {
         ...matchBetting,
-        type: matchBettingType.tiedMatch2,
-        name: initialMatchNames.manual,
-        maxBet:manualTiedMatchMaxBet,
-      },
-      {
-        ...matchBetting,
-        type: matchBettingType.completeMatch,
-        name: initialMatchNames.completeMatch,
-        maxBet:completeMatchMaxBet,
-        marketId : completeMatchMarketId
-      }
-    ];
-
-   
-
+        type: matchBettingType.tiedMatch1,
+        name: initialMatchNames.market,
+        maxBet:marketTiedMatchMaxBet,
+        marketId : addIncrement(matchOddMarketId,1)
+      })
+   }
     // Attach bookmakers to the match
     let insertedMatchBettings = await insertMatchBettings(matchBettings);
     if (!insertedMatchBettings) {
@@ -994,3 +1016,33 @@ exports.matchListWithManualBetting = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+
+function addIncrement(number, increment) {
+  // Convert the number to a string to manipulate the decimal part
+  const numberStr = number.toString();
+  
+  // Find the position of the decimal point
+  const decimalPosition = numberStr.indexOf('.');
+  
+  // If there is a decimal point
+  if (decimalPosition !== -1) {
+      // Extract the integer and decimal parts
+      const integerPart = numberStr.slice(0, decimalPosition);
+      const decimalPart = numberStr.slice(decimalPosition + 1);
+      
+      // Convert the decimal part to an integer and add the increment
+      const newDecimalPart = parseInt(decimalPart) + increment;
+      
+      // Combine the integer and updated decimal parts
+      const updatedNumberStr = `${integerPart}.${newDecimalPart.toString().padStart(5, '0')}`;
+      
+      // Convert the updated string back to a float
+      const updatedNumber = parseFloat(updatedNumberStr);
+      
+      return updatedNumber;
+  } else {
+      // If there is no decimal point, just return the original number
+      return number;
+  }
+}

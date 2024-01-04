@@ -112,13 +112,11 @@ module.exports.addMatchValidate = Joi.object({
     "string.base": "Market bookmaker id must be a string",
     "any.required": "Market bookmaker id is required",
   }),
-  tiedMatchMarketId : Joi.string().required().messages({
+  tiedMatchMarketId : Joi.string().messages({
     "string.base": "Tied match market id must be a string",
-    "any.required": "Tied match market id is required",
   }),
-  completeMatchMarketId : Joi.string().required().messages({
+  completeMatchMarketId : Joi.string().messages({
     "string.base": "Complete match market id must be a string",
-    "any.required": "Complete match market id is required",
   }),
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",

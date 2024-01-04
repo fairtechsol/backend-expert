@@ -5,7 +5,7 @@ const joiValidator = require("../../middleware/joi.validator");
 const { getMatchSchema } = require("../../validators/matchValidator");
 const { getMatchAllBettings } = require("../matchBettingService");
 const { getSessionBettings } = require("../sessionBettingService");
-
+const lodash = require('lodash')
 let expiry = 3600;
 
 exports.addMatchInCache = async (matchId, data) => {
@@ -390,3 +390,46 @@ exports.addAllMatchBetting = async (matchId, result) => {
   }
   await this.settingAllBettingMatchRedis(matchId, matchBetting);
 }
+
+exports.hasMarketSessionIdsInCache = async (matchId) => {
+  let Key = `${matchId}_selectionId`;
+  return await internalRedis.exists(Key);
+}
+
+exports.getAllMarketSessionIdsRedis = async (matchId) => {
+  // Retrieve all betting data for the match from Redis
+  const MarketSessionIds = await internalRedis.hgetall(`${matchId}_selectionId`);
+
+  // Return the betting data as an object or null if no data is found
+  return lodash.isEmpty(MarketSessionIds)? null : MarketSessionIds;
+};
+
+exports.getMarketSessionIdFromRedis = async (matchId, selectionId) => {
+  // Retrieve betting data from Redis
+  const MarketSessionId = await internalRedis.hget(`${matchId}_selectionId`, selectionId);
+
+  // Parse and return the betting data or null if it doesn't exist
+  return MarketSessionId ? MarketSessionId : null;
+};
+
+exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
+  // Use a Redis pipeline for atomicity and efficiency
+  await internalRedis.hset(`${matchId}_selectionId`, selectionId, data)
+};
+
+exports.getUserRedisData = async (userId)=>{
+  
+  // Retrieve all user data for the match from Redis
+  const userData = await internalRedis.hgetall(userId);
+
+  // Return the user data as an object or null if no data is found
+  return Object.keys(userData)?.length == 0 ? null : userData;
+}
+
+// create function for remove key from market session
+exports.deleteKeyFromMarketSessionId = async(matchId,selectionId) => {
+  const deleteKey = await internalRedis.hdel(`${matchId}_selectionId`,selectionId);
+  return deleteKey;
+}
+
+

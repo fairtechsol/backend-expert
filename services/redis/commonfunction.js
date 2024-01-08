@@ -1,4 +1,5 @@
 
+const { redisKeys } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
@@ -348,9 +349,9 @@ exports.getSingleMatchKey = async (matchId, key, type) => {
 }
 
 
-exports.getMultipleMatchKey = async (matchId, keys) => {
+exports.getMultipleMatchKey = async (matchId) => {
   let matchKey = `${matchId}_match`;
-  let MatchData = await internalRedis.hmget(matchKey, keys);
+  let MatchData = await internalRedis.hgetall(matchKey);
   return MatchData;
 }
 
@@ -433,3 +434,16 @@ exports.deleteKeyFromMarketSessionId = async(matchId,selectionId) => {
 }
 
 
+exports.setExpertsRedisData = async(data)=>{
+  await internalRedis.hset(redisKeys.expertRedisData, data)
+
+}
+
+exports.getExpertsRedisData = async()=>{
+   // Retrieve expert data from Redis
+   const expertData = await internalRedis.hgetall(redisKeys.expertRedisData);
+
+   // Parse and return the betting data or null if it doesn't exist
+   return lodash.isEmpty(expertData) ? null : expertData;
+
+}

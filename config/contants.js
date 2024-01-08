@@ -117,5 +117,19 @@ module.exports.socketData ={
   addMatchEvent : "addMatch",
   matchActiveInActiveEvent : "matchActiveInActive",
   logoutUserForceEvent : "logoutUserForce",
-  sessionUpdatedEvent :"sessionUpdated"
+  sessionUpdatedEvent :"sessionUpdated",
+  SessionBetPlaced:"userSessionBetPlaced",
+  MatchBetPlaced:"userMatchBetPlaced",
+
 };
+
+module.exports.redisKeys = {
+  userAllExposure : "exposure",
+  userMatchExposure : "matchExposure_",
+  userSessionExposure : "sessionExposure_",
+  userTeamARate : "teamARate_",
+  userTeamBRate : "teamBRate_",
+  userTeamCRate : "teamCRate_",
+  userExposureLimit : "exposureLimit",
+  expertRedisData:"expertRedisData"
+}

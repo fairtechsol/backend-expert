@@ -1,7 +1,7 @@
 const { marketBettingTypeByBettingType, manualMatchBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
-const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, getMultipleMatchKey } = require("../services/redis/commonfunction");
+const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache } = require("../services/redis/commonfunction");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 

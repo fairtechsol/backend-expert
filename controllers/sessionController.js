@@ -242,11 +242,14 @@ exports.getSessions = async (req, res) => {
       const isMatch = await hasMatchInCache(matchId);
       let match;
       if (isMatch) {
-        match = await getMultipleMatchKey(matchId, [
-          "apiSessionActive",
-          "manualSessionActive",
-          "marketId"
-        ]);
+        match = await getMultipleMatchKey(matchId);
+        match = {
+          apiSessionActive: JSON.parse(match?.apiSessionActive),
+          manualSessionActive: JSON.parse(match?.manualSessionActive),
+          marketId: match?.marketId,
+        };
+
+
       } else {
         match =await getMatchById(matchId, [
           "apiSessionActive",

@@ -101,7 +101,7 @@ exports.getMatchBettingDetails = async (req, res) => {
         if (manualBets.includes(type)) {
             matchBetting = await getBettingFromRedis(matchId, type);
         } else {
-            match[marketBettingTypeByBettingType[type]] = matchDetails[marketBettingTypeByBettingType[type]];
+            matchBetting = matchDetails[marketBettingTypeByBettingType[type]];
             // fetch third party api for market rate
         }
         let response = {

@@ -245,11 +245,13 @@ exports.getSessions = async (req, res) => {
         match = await getMultipleMatchKey(matchId, [
           "apiSessionActive",
           "manualSessionActive",
+          "marketId"
         ]);
       } else {
-        match = getMatchById(matchId, [
+        match =await getMatchById(matchId, [
           "apiSessionActive",
           "manualSessionActive",
+          "marketId"
         ]);
       }
 

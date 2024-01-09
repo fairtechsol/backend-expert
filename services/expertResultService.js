@@ -5,7 +5,10 @@ const expertResultRepo = AppDataSource.getRepository(expertResultSchema);
 
 
 exports.getExpertResult=async (where,select)=>{
-    return await expertResultRepo.findOne(where,select)
+    return await expertResultRepo.findOne({
+        where:  where,
+        select: select,
+      })
 }
 
 exports.addExpertResult = async (body)=>{

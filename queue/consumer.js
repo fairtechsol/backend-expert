@@ -5,11 +5,11 @@ const { redisKeys, socketData } = require('../config/contants');
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { setExpertsRedisData, getExpertsRedisData } = require('../services/redis/commonfunction');
 const expertRedisOption = {
-    removeOnSuccess: true,
-    redis: {
-      host: process.env.INTERNAL_REDIS_HOST,
-      port: process.env.INTERNAL_REDIS_PORT,
-    }
+  removeOnSuccess: true,
+  redis: {
+    port: process.env.EXTERNAL_REDIS_PORT,
+    host: process.env.EXTERNAL_REDIS_HOST
+  }
   }
   
   const ExpertMatchBetQueue = new Queue('expertMatchBetQueue', expertRedisOption);

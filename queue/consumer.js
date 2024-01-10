@@ -136,7 +136,7 @@ ExpertSessionBetQueue.process(async function (job, done) {
                 partnership
               );
   
-              await updateUserDataRedis(partnershipId, {
+              await updateUserDataRedis(redisKeys.expertRedisData, {
                 [`${placedBetObject?.betPlacedData?.betId}_profitLoss`]:
                   JSON.stringify(redisData),
               

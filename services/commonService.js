@@ -67,7 +67,7 @@ const calculateProfitLoss = (betData, odds,partnership) => {
     (betData?.betPlacedData?.betType === betType.YES &&
       odds >= betData?.betPlacedData?.odds)
   ) {
-    return partnership
+    return partnership!=null||partnership!=undefined
       ? -parseFloat(
           (parseFloat(betData?.winAmount) * partnership) / 100
         ).toFixed(2)
@@ -78,7 +78,7 @@ const calculateProfitLoss = (betData, odds,partnership) => {
     (betData?.betPlacedData?.betType === betType.YES &&
       odds < betData?.betPlacedData?.odds)
   ) {
-    return partnership
+    return partnership!=null||partnership!=undefined
       ? parseFloat(
           (parseFloat(betData?.loseAmount) * partnership) / 100
         ).toFixed(2)

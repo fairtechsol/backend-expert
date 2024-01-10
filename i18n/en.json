@@ -34,5 +34,12 @@
     "maxMustBeGreater":"Max bet must be greater than min bet.",
     "atLeastOneBookmaker":"Please create at least one bookmaker.",
     "matchAddFail" : "Match add operation failed due to invalid data."
+  },
+  "bet":{
+    "matchDeclare":"Match Result already declared.",
+    "resultDuplicate":"You cannot declare result multiple times",
+    "resultReject": "Your result has been rejected because of difference in result.",
+    "resultApprove": "Your result has been saved but need to be approve by other expert"
+
   }
 }

@@ -327,7 +327,7 @@ exports.updateMatch = async (req, res) => {
 
     // await Promise.all(updatePromises);
 
-    updateMatchDataAndBettingInRedis();
+    updateMatchDataAndBettingInRedis(id);
 
     
     // Attach bookmaker data to the match object
@@ -360,7 +360,7 @@ exports.updateMatch = async (req, res) => {
 };
 
 
-const updateMatchDataAndBettingInRedis=async ()=>{
+const updateMatchDataAndBettingInRedis=async (id)=>{
  const match = await getMatchById(id);
  const matchBatting = await getMatchBattingByMatchId(id);
   const convertedData = matchBatting.reduce((result, item) => {

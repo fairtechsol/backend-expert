@@ -1,4 +1,5 @@
 module.exports.redisTimeOut = 24 * 60 * 60;
+module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
 
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",
@@ -117,5 +118,19 @@ module.exports.socketData ={
   addMatchEvent : "addMatch",
   matchActiveInActiveEvent : "matchActiveInActive",
   logoutUserForceEvent : "logoutUserForce",
-  sessionUpdatedEvent :"sessionUpdated"
+  sessionUpdatedEvent :"sessionUpdated",
+  SessionBetPlaced:"userSessionBetPlaced",
+  MatchBetPlaced:"userMatchBetPlaced",
+
 };
+
+module.exports.redisKeys = {
+  userAllExposure : "exposure",
+  userMatchExposure : "matchExposure_",
+  userSessionExposure : "sessionExposure_",
+  userTeamARate : "teamARate_",
+  userTeamBRate : "teamBRate_",
+  userTeamCRate : "teamCRate_",
+  userExposureLimit : "exposureLimit",
+  expertRedisData:"expertRedisData"
+}

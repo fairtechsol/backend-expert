@@ -39,11 +39,12 @@ exports.getMatch = async (filters, select, query) => {
         .createQueryBuilder()
         .select(select)
         .where(filters)
-        .orderBy("match.startAt", "DESC")
         .leftJoinAndSelect(
           "match.matchBettings",
           "matchBetting"
-        ),
+        )
+        .orderBy("match.startAt", "DESC")
+        .addOrderBy("matchBetting.marketId", "ASC"),
       query
     )
       .search()

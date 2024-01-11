@@ -323,6 +323,138 @@ exports.declareSessionNoResult = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+exports.unDeclareSessionResult = async (req, res) => {
+    try {
+      const { betId, matchId } = req.body;
+      const { id: userId } = req.user;
+  
+    
+      // check result already declare
+      let bet = await getSessionBettingById(betId);
+      if (!bet) {
+        logger.error({
+            message:"Error in unDeclare no bet found",
+            data:{
+                betId
+            }
+        });
+        return ErrorResponse(
+          {
+            statusCode: 404,
+            message: { msg: "notFound",keys:{
+                name:"Bet"
+            } },
+          },
+          req,
+          res
+        );
+      }
+
+
+      if(bet.activeStatus==betStatusType.live){
+        logger.error({
+            message:"Error in unDeclare no bet found",
+            data:{
+                betId
+            }
+        });
+
+        return ErrorResponse(
+            {
+              statusCode: 404,
+              message: { msg: "bet.notDeclared"},
+            },
+            req,
+            res
+          );
+      }
+
+      await updateSessionBetting(
+        { id: betId },
+        {
+          activeStatus: betStatus.live,
+          result: null,
+        }
+      );
+  
+      await apiCall(
+        apiMethod.post,
+        walletDomain + allApiRoutes.wallet.unDeclareSessionResult,
+        {
+          betId,
+          userId,
+          matchId,
+        }
+      )
+        .then((data) => {
+          return data;
+        })
+        .catch(async (err) => {
+          logger.error({
+            error: `Error at no result declare match wallet side`,
+            stack: err.stack,
+            message: err.message,
+          });
+          let bet = await getSessionBettingById(betId);
+          bet.activeStatus = betStatusType.save;
+          bet.result = null;
+          await addSessionBetting(bet);
+          await deleteExpertResult(betId, userId);
+          throw err;
+        });
+  
+      await addResult({
+        betType: bettingType.session,
+        betId: betId,
+        matchId: matchId,
+        result: noResult,
+        profitLoss: 0,
+      });
+  
+      sendMessageToUser(
+        socketData.expertRoomSocket,
+        socketData.sessionResultDeclared,
+        {
+          matchId: matchId,
+          betId: betId,
+          score:noResult,
+          profitLoss: fwProfitLoss,
+          stopAt: match.stopAt,
+        }
+      );
+  
+      await deleteKeyFromExpertRedisData(`${betId}_profitLoss`);
+      await deleteKeyFromManualSessionId(matchId, betId);
+  
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: {
+            msg: "success",
+            keys: {
+              name: "Bet no result declared",
+            },
+          },
+          data: {
+            score: noResult,
+            betId,
+            matchId,
+          },
+        },
+        req,
+        res
+      );
+    } catch (err) {
+      logger.error({
+        error: `Error at no result declare match`,
+        stack: err.stack,
+        message: err.message,
+      });
+      // Handle any errors and return an error response
+      return ErrorResponse(err, req, res);
+    }
+  };
   
 
 const checkResult = async (body) => {

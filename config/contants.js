@@ -1,5 +1,6 @@
 module.exports.redisTimeOut = 24 * 60 * 60;
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
+module.exports.noResult="No Result";
 
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",

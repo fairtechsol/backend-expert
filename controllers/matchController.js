@@ -632,7 +632,7 @@ const categorizedMatchBettings = {
     let sessions = match?.sessionBettings;
     let result = {};
     for (let index = 0; index < sessions?.length; index++) {
-      if(session[index]?.activeStatus== betStatusType.live){
+      if(sessions?.[index]?.activeStatus== betStatusType.live){
 
       result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
       }

@@ -452,3 +452,9 @@ exports.getExpertsRedisData = async()=>{
    return lodash.isEmpty(expertData) ? null : expertData;
 
 }
+
+// create function for remove key from market session
+exports.deleteKeyFromExpertRedisData = async(key) => {
+  const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData,key);
+  return deleteKey;
+}

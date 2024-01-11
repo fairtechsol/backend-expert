@@ -355,6 +355,15 @@ exports.getMultipleMatchKey = async (matchId) => {
   return MatchData;
 }
 
+exports.hasMatchInCache = async (matchId) => {
+  let key = `${matchId}_match`;
+  return await internalRedis.exists(key);
+}
+
+exports.settingMatchKeyInCache = async (matchId,data) => {
+  let key = `${matchId}_match`;
+  return await internalRedis.hset(key,data);
+}
 
 exports.addAllsessionInRedis = async (matchId, result) => {
   if (!result)

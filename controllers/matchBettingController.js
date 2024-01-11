@@ -1,7 +1,8 @@
-const { marketBettingTypeByBettingType, manualMatchBettingType } = require("../config/contants");
+const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
-const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache } = require("../services/redis/commonfunction");
+const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting } = require("../services/matchBettingService");
+const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache } = require("../services/redis/commonfunction");
+const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 
@@ -112,6 +113,57 @@ exports.getMatchBettingDetails = async (req, res) => {
     } catch (error) {
         logger.error({
             error: `Error at get list match betting.`,
+            stack: error.stack,
+            message: error.message,
+        });
+        return ErrorResponse(error, req, res);
+    }
+}
+
+exports.matchBettingStatusChange = async (req, res)=>{
+    try{
+        const {isStop, betId }=req.body;
+
+        const matchBettingUpdate = await getMatchBettingById(betId); 
+
+        if(isStop){
+            matchBettingUpdate.activeStatus=betStatusType.save;
+        }
+        else{
+            matchBettingUpdate.activeStatus=betStatusType.live;
+        }
+
+        await addMatchBetting(matchBettingUpdate);
+
+        const hasMatchDetailsInCache = await hasMatchInCache(
+          matchBettingUpdate?.matchId
+        );
+
+        if (hasMatchDetailsInCache) {
+          await settingMatchKeyInCache(matchBettingUpdate?.matchId, {
+            [marketBettingTypeByBettingType[matchBettingUpdate?.type]]:
+              JSON.stringify(matchBettingUpdate),
+          });
+        }
+
+
+        sendMessageToUser(socketData.expertRoomSocket,socketData.matchBettingStatusChange,matchBettingUpdate);
+
+        return SuccessResponse(
+          {
+            statusCode: 200,
+            message: { msg: "updated", keys: { name: "Status" } },
+            data: matchBettingUpdate,
+          },
+          req,
+          res
+        );
+
+
+    }
+    catch (error) {
+        logger.error({
+            error: `Error at change match betting status.`,
             stack: error.stack,
             message: error.message,
         });

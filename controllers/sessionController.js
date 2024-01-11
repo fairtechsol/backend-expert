@@ -214,7 +214,9 @@ exports.getSessions = async (req, res) => {
         }
         let result = {};
         for (let index = 0; index < session?.length; index++) {
-          result[session?.[index]?.id] = JSON.stringify(session?.[index]);
+          if (session[index]?.activeStatus == betStatusType.live) {
+            result[session?.[index]?.id] = JSON.stringify(session?.[index]);
+          }
           session[index] = JSON.stringify(session?.[index]);
         }
         await settingAllSessionMatchRedis(matchId, result);

@@ -1,4 +1,4 @@
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType,socketData } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType,socketData, betStatusType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting,  addMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
 const {
@@ -504,7 +504,10 @@ const commonGetMatchDetails=async (matchId)=>{
 
       let result = {};
       for (let index = 0; index < sessions?.length; index++) {
+        if(sessions?.[index]?.activeStatus== betStatusType.live){
+
         result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
+      }
         sessions[index] = JSON.stringify(sessions?.[index]);
       }
       await settingAllSessionMatchRedis(matchId, result);
@@ -629,7 +632,10 @@ const categorizedMatchBettings = {
     let sessions = match?.sessionBettings;
     let result = {};
     for (let index = 0; index < sessions?.length; index++) {
+      if(session[index]?.activeStatus== betStatusType.live){
+
       result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
+      }
       sessions[index] = JSON.stringify(sessions?.[index]);
     }
     await settingAllSessionMatchRedis(matchId, result);

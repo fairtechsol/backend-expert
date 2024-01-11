@@ -1,5 +1,5 @@
 
-const { redisKeys } = require("../../config/contants");
+const { redisKeys, betStatusType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
@@ -358,7 +358,7 @@ exports.getMultipleMatchKey = async (matchId) => {
 
 exports.addAllsessionInRedis = async (matchId, result) => {
   if (!result)
-      result = await getSessionBettings({ matchId });
+      result = await getSessionBettings({ matchId,activeStatus:betStatusType?.live });
   if (!result) {
       throw {
           error: true,

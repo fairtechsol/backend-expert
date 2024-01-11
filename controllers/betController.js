@@ -1,78 +1,100 @@
-const { betStatus, socketData, teamStatus, walletDomain } = require("../config/contants");
+const {
+  betStatus,
+  socketData,
+  teamStatus,
+  walletDomain,
+  betStatusType,
+  bettingType,
+} = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getExpertResult, addExpertResult } = require("../services/expertResultService");
+const { addResult } = require("../services/betService");
+const {
+  getExpertResult,
+  addExpertResult,
+  deleteExpertResult,
+} = require("../services/expertResultService");
 const { getMatchById } = require("../services/matchService");
-const { getSessionFromRedis, updateSessionMatchRedis, deleteKeyFromMarketSessionId } = require("../services/redis/commonfunction");
-const { getSessionBettingById, updateSessionBetting } = require("../services/sessionBettingService");
+const {
+  getSessionFromRedis,
+  updateSessionMatchRedis,
+  deleteKeyFromMarketSessionId,
+  deleteKeyFromManualSessionId,
+} = require("../services/redis/commonfunction");
+const {
+  getSessionBettingById,
+  updateSessionBetting,
+  addSessionBetting,
+} = require("../services/sessionBettingService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { ErrorResponse } = require("../utils/response");
+const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.declareSessionResult = async (req, res) => {
   try {
     const { betId, matchId, score } = req.body;
     const { id: userId } = req.user;
 
-    const match=await getMatchById(matchId);
+    const match = await getMatchById(matchId);
     logger.info({
-        message:"Result declare",
-        data:match
+      message: "Result declare",
+      data: match,
     });
 
-    if(match.stopAt){
-        return ErrorResponse(
-            {
-              statusCode: 403,
-              message: { msg: "bet.matchDeclare" },
-            },
-            req,
-            res
-          );
+    if (match.stopAt) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.matchDeclare" },
+        },
+        req,
+        res
+      );
     }
-
 
     // check result already declare
     let resultDeclare = await getSessionBettingById(betId);
-    // if (resultDeclare && resultDeclare.activeStatus == betStatus.result) {
-    //     return ErrorResponse(
-    //         {
-    //           statusCode: 403,
-    //           message: { msg: "bet.matchDeclare" },
-    //         },
-    //         req,
-    //         res
-    //       );
-    // }
+    if (resultDeclare && resultDeclare.activeStatus == betStatus.result) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.matchDeclare" },
+        },
+        req,
+        res
+      );
+    }
 
+    const resultValidate = await checkResult({
+      betId: resultDeclare.id,
+      matchId: resultDeclare.matchId,
+      isSessionBet: true,
+      userId: userId,
+      result: score,
+      selectionId: resultDeclare.selectionId,
+    });
 
-    // const resultValidate = await checkResult({
-    //     betId:resultDeclare.id,
-    //     matchId:resultDeclare.matchId,
-    //     isSessionBet:true,
-    //     userId:userId,
-    //     result:score,
-    //     selectionId:resultDeclare.selectionId,
-    // });
+    if (resultValidate) {
+      return ErrorResponse(
+        {
+          statusCode: 500,
+          message: { msg: "bet.resultApprove" },
+        },
+        req,
+        res
+      );
+    }
 
-    // if (resultValidate) {
-    //   return ErrorResponse(
-    //     {
-    //       statusCode: 500,
-    //       message: { msg: "bet.resultApprove" },
-    //     },
-    //     req,
-    //     res
-    //   );
-    // }
+    await updateSessionBetting(
+      { id: betId },
+      {
+        activeStatus: betStatus.result,
+        result: score,
+      }
+    );
 
-    // await updateSessionBetting({id:betId},{
-    //     activeStatus: betStatus.result,
-    //     result: score
-    // });
-
-
-    try {
-      await apiCall(
+    let fwProfitLoss;
+  
+      const response = await apiCall(
         apiMethod.post,
         walletDomain + allApiRoutes.wallet.declareSessionResult,
         {
@@ -82,11 +104,70 @@ exports.declareSessionResult = async (req, res) => {
           userId,
           matchId,
         }
-      );
-    } catch (err) {
-      console.log(err);
-    }
+      )
+        .then((data) => {
+          return data;
+        })
+        .catch(async (err) => {
+          logger.error({
+            error: `Error at result declare match wallet side`,
+            stack: err.stack,
+            message: err.message,
+          });
+          let bet = await getSessionBettingById(betId);
+          bet.activeStatus = betStatusType.save;
+          bet.result = null;
+          await addSessionBetting(bet);
+          await deleteExpertResult(betId, userId);
+          throw err;
+        });
 
+      fwProfitLoss = response?.data?.profitLoss
+        ? parseFloat(response?.data?.profitLoss).toFixed(2)
+        : 0;
+
+    
+    
+
+    await addResult({
+        betType: bettingType.session,
+        betId: betId,
+        matchId: matchId,
+        result: score,
+        profitLoss: fwProfitLoss,
+      });
+
+      sendMessageToUser(
+        socketData.expertRoomSocket,
+        socketData.sessionResultDeclared,
+        {
+          matchId: matchId,
+          betId: betId,
+          score,
+          profitLoss: fwProfitLoss,
+          stopAt: match.stopAt,
+        }
+      );
+
+    await deleteKeyFromManualSessionId(matchId, betId);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "success",
+          keys: {
+            name: "Bet Result declared",
+          },
+        },
+        data: {
+          score,
+          profitLoss: fwProfitLoss,
+        },
+      },
+      req,
+      res
+    );
   } catch (err) {
     logger.error({
       error: `Error at result declare match`,
@@ -98,91 +179,85 @@ exports.declareSessionResult = async (req, res) => {
   }
 };
 
+const checkResult = async (body) => {
+  const { betId, matchId, isSessionBet, userId, result, selectionId } = body;
+  let checkExistResult = await getExpertResult({
+    betId: betId,
+    isApprove: true,
+    isReject: false,
+  });
 
-const checkResult =async (body)=> {
-    const {
-      betId,
-      matchId,
-      isSessionBet,
-      userId,
-      result,
-      selectionId,
-    } = body;
-    let checkExistResult = await getExpertResult( { betId: betId, isApprove: 1, isReject: 0 });
+  if (isSessionBet) {
+    if (selectionId) {
+      deleteKeyFromMarketSessionId(matchId, selectionId);
+    } else {
+      let redisSession = await getSessionFromRedis(matchId, betId);
+      if (redisSession) {
+        try {
+          let redisSessionData = JSON.parse(redisSession);
+          if (redisSessionData["noRate"] || redisSessionData["yesRate"]) {
+            sendMessageToUser(
+              socketData.expertRoomSocket,
+              "updateSessionRateClient",
+              { matchId, betId, status: teamStatus.suspended }
+            );
 
-    if (isSessionBet) {
-      if (selectionId) {
-        deleteKeyFromMarketSessionId(matchId, selectionId);
-      } else {
-        let redisSession = await getSessionFromRedis(matchId, betId);
-        if (redisSession) {
-          try {
-            let redisSessionData = JSON.parse(redisSession);
-            if (redisSessionData["noRate"] || redisSessionData["yesRate"]) {
-              sendMessageToUser(
-                socketData.expertRoomSocket,
-                "updateSessionRateClient",
-                { matchId, betId, status: teamStatus.suspended }
-              );
+            redisSessionData["noRate"] = null;
+            redisSessionData["yesRate"] = null;
+            redisSessionData["yesPercent"] = null;
+            redisSessionData["noPercent"] = null;
+            redisSessionData["status"] = teamStatus.suspended;
 
-              redisSessionData["noRate"] = null;
-              redisSessionData["yesRate"] = null;
-              redisSessionData["yesPercent"] = null;
-              redisSessionData["noPercent"] = null;
-              redisSessionData["status"] = teamStatus.suspended;
-
-              updateSessionBetting({ id: betId }, redisSessionData);
-              updateSessionMatchRedis(matchId, betId, redisSession);
-            }
-          } catch {
-            
+            updateSessionBetting({ id: betId }, redisSessionData);
+            updateSessionMatchRedis(matchId, betId, redisSession);
           }
-        }
+        } catch {}
       }
-    }
-
-    if (!checkExistResult) {
-        await addExpertResult({
-            betId:betId,
-            matchId:matchId,
-            result:result,
-            userId:userId,
-            isApprove:1,
-            isReject:0
-        });
-
-      return true;
-    } else if (checkExistResult && checkExistResult.userId == userId) {
-      throw {
-        statusCode: 400,
-        message: { msg: "bet.resultDuplicate" },
-      }
-    } else if (checkExistResult && checkExistResult.result != result) {
-      checkExistResult.isReject = 1;
-      addExpertResult(checkExistResult);
-      await addExpertResult({
-        betId:betId,
-        matchId:matchId,
-        result:result,
-        userId:userId,
-        isApprove:0,
-        isReject:1
-    });
-     
-      throw {
-        statusCode: 400,
-        message: { msg: "bet.resultReject" },
-      }
-    } else if (checkExistResult && checkExistResult.result == result) {
-      checkExistResult.isReject = 0;
-      addExpertResult(checkExistResult);
-      await addExpertResult({
-        betId:betId,
-        matchId:matchId,
-        result:result,
-        userId:userId,
-        isApprove:1,
-        isReject:0
-    });
     }
   }
+
+  if (!checkExistResult) {
+    await addExpertResult({
+      betId: betId,
+      matchId: matchId,
+      result: result,
+      userId: userId,
+      isApprove: true,
+      isReject: false,
+    });
+
+    return true;
+  } else if (checkExistResult && checkExistResult.userId == userId) {
+    throw {
+      statusCode: 400,
+      message: { msg: "bet.resultDuplicate" },
+    };
+  } else if (checkExistResult && checkExistResult.result != result) {
+    checkExistResult.isReject = true;
+    addExpertResult(checkExistResult);
+    await addExpertResult({
+      betId: betId,
+      matchId: matchId,
+      result: result,
+      userId: userId,
+      isApprove: false,
+      isReject: true,
+    });
+
+    throw {
+      statusCode: 400,
+      message: { msg: "bet.resultReject" },
+    };
+  } else if (checkExistResult && checkExistResult.result == result) {
+    checkExistResult.isReject = 0;
+    addExpertResult(checkExistResult);
+    await addExpertResult({
+      betId: betId,
+      matchId: matchId,
+      result: result,
+      userId: userId,
+      isApprove: true,
+      isReject: false,
+    });
+  }
+};

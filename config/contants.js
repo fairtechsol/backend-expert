@@ -121,7 +121,7 @@ module.exports.socketData ={
   sessionUpdatedEvent :"sessionUpdated",
   SessionBetPlaced:"userSessionBetPlaced",
   MatchBetPlaced:"userMatchBetPlaced",
-
+  sessionResultDeclared:"sessionResultDeclared"
 };
 
 module.exports.redisKeys = {

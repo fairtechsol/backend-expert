@@ -15,3 +15,12 @@ exports.addExpertResult = async (body)=>{
     let expertResult = await expertResultRepo.save(body);
     return expertResult;
 }
+
+
+exports.deleteExpertResult = async (betId,userId)=>{
+    let expertResult = await expertResultRepo.delete({
+        betId:betId,
+        userId:userId
+    });
+    return expertResult;
+}

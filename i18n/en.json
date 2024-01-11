@@ -5,7 +5,7 @@
   "invalid":"Invalid {name}.",
   "invalidId": "Given id is invalid.",
   "userNotSelect": "User not selected.",
-  
+  "success":"{name} successfully",
   "updated":"{name} updated successfully.",
   "created":"{name} created successfully.",
   "alreadyExist":"{name} already exist.",

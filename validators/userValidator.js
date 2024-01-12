@@ -17,7 +17,7 @@ module.exports.CreateUser = Joi.object({
   bookmakerMatchPrivilege:Joi.boolean(),
   sessionMatchPrivilege:Joi.boolean(),
   createBy:Joi.string().required(),
-  id:Joi.string().guid({ version: 'uuidv4' }).required(),
+  id:Joi.string().guid({ version: 'uuidv4' }),
   confirmPassword: Joi.string().required().valid(Joi.ref('password')).label('Confirm Password').messages({
     'string.base': 'Confirm Password must be a string',
     'any.required': 'Confirm Password is required',

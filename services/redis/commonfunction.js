@@ -450,7 +450,6 @@ exports.deleteKeyFromManualSessionId = async(matchId,sessionId) => {
 
 exports.setExpertsRedisData = async(data)=>{
   await internalRedis.hset(redisKeys.expertRedisData, data)
-
 }
 
 exports.getExpertsRedisData = async()=>{

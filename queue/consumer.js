@@ -111,7 +111,7 @@ ExpertSessionBetQueue.process(async function (job, done) {
             let expertRedisData = (await getExpertsRedisData()) || {};
               // Calculate profit loss session and update Redis data
               const redisBetData = expertRedisData[`${placedBetObject?.betPlacedData?.betId}_profitLoss`]
-                ? JSON.parse(masterRedisData[`${placedBetObject?.betPlacedData?.betId}_profitLoss`])
+                ? JSON.parse(expertRedisData[`${placedBetObject?.betPlacedData?.betId}_profitLoss`])
                 : null;
   
               let redisData = await calculateProfitLossSession(
@@ -180,7 +180,6 @@ ExpertSessionBetQueue.process(async function (job, done) {
               let oldProfitLossParent = JSON.parse(expertRedisData[redisName]);
               let parentPLbetPlaced = oldProfitLossParent?.betPlaced || [];
               let newMaxLossParent = 0;
-
               userDeleteProfitLoss.betData.map((ob, index) => {
                 let partnershipData = (ob.profitLoss * partnership) / 100;
                 if (ob.odds == parentPLbetPlaced[index].odds) {
@@ -219,11 +218,11 @@ ExpertSessionBetQueue.process(async function (job, done) {
 
       return done(null, {});
     } catch (error) {
-      logger.info({
-        file: "error in session bet delete Queue",
-        info: `process job for user id ${userId}`,
-        
-        jobData,
+      logger.error({
+        context: "error in session bet delete Queue",
+        process: `process job for user id ${userId}`,
+        error: error.message,
+        stake: error.stack,
       });
       return done(null, {});
     }

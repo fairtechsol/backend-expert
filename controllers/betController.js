@@ -6,6 +6,7 @@ const {
   betStatusType,
   bettingType,
   noResult,
+  redisKeys,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { addResult, deleteResult } = require("../services/betService");
@@ -154,6 +155,7 @@ exports.declareSessionResult = async (req, res) => {
       );
 
     await deleteKeyFromManualSessionId(matchId, betId);
+    await deleteKeyFromExpertRedisData(betId + redisKeys.profitLoss);
 
     return SuccessResponse(
       {
@@ -294,7 +296,7 @@ exports.declareSessionNoResult = async (req, res) => {
       }
     );
 
-    await deleteKeyFromExpertRedisData(`${betId}_profitLoss`);
+    await deleteKeyFromExpertRedisData(`${betId}${redisKeys.profitLoss}`);
     await deleteKeyFromManualSessionId(matchId, betId);
 
     return SuccessResponse(

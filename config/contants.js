@@ -134,5 +134,6 @@ module.exports.redisKeys = {
   userTeamBRate : "teamBRate_",
   userTeamCRate : "teamCRate_",
   userExposureLimit : "exposureLimit",
-  expertRedisData:"expertRedisData"
+  expertRedisData:"expertRedisData",
+  profitLoss:"_profitLoss"
 }

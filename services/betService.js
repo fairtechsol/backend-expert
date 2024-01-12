@@ -14,3 +14,8 @@ exports.addResult = async (body)=>{
     let expertResult = await resultRepo.save(body);
     return expertResult;
 }
+
+
+exports.deleteResult = async (betId)=>{
+    await resultRepo.delete({betId:betId});
+}

@@ -8,11 +8,12 @@ const {
   noResult,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { addResult } = require("../services/betService");
+const { addResult, deleteResult } = require("../services/betService");
 const {
   getExpertResult,
   addExpertResult,
   deleteExpertResult,
+  updateExpertResult,
 } = require("../services/expertResultService");
 const { getMatchById } = require("../services/matchService");
 const {
@@ -21,6 +22,7 @@ const {
   deleteKeyFromMarketSessionId,
   deleteKeyFromManualSessionId,
   deleteKeyFromExpertRedisData,
+  updateMarketSessionIdRedis,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -377,8 +379,9 @@ exports.unDeclareSessionResult = async (req, res) => {
           result: null,
         }
       );
+      
   
-      await apiCall(
+      let response = await apiCall(
         apiMethod.post,
         walletDomain + allApiRoutes.wallet.unDeclareSessionResult,
         {
@@ -396,21 +399,21 @@ exports.unDeclareSessionResult = async (req, res) => {
             stack: err.stack,
             message: err.message,
           });
-          let bet = await getSessionBettingById(betId);
-          bet.activeStatus = betStatusType.save;
-          bet.result = null;
-          await addSessionBetting(bet);
-          await deleteExpertResult(betId, userId);
+          let bettingGame = await getSessionBettingById(betId);
+          bettingGame.activeStatus = betStatusType.result;
+          bettingGame.result = bet.result;
+          await addSessionBetting(bettingGame);
           throw err;
         });
   
-      await addResult({
-        betType: bettingType.session,
-        betId: betId,
-        matchId: matchId,
-        result: noResult,
-        profitLoss: 0,
-      });
+      await deleteResult(betId);
+      await updateExpertResult({ betId: betId },{ isApprove: false, isReject: false });
+
+      if (bet?.selectionId && bet?.selectionId != "") {
+        await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet);
+      } else {
+        await updateSessionMatchRedis(bet.matchId, bet.id, bet);
+      }
   
       sendMessageToUser(
         socketData.expertRoomSocket,
@@ -418,26 +421,20 @@ exports.unDeclareSessionResult = async (req, res) => {
         {
           matchId: matchId,
           betId: betId,
-          score:noResult,
-          profitLoss: fwProfitLoss,
-          stopAt: match.stopAt,
+          profitLoss: response?.data?.profitLoss
         }
       );
-  
-      await deleteKeyFromExpertRedisData(`${betId}_profitLoss`);
-      await deleteKeyFromManualSessionId(matchId, betId);
-  
+
       return SuccessResponse(
         {
           statusCode: 200,
           message: {
             msg: "success",
             keys: {
-              name: "Bet no result declared",
+              name: "Bet result undeclared",
             },
           },
           data: {
-            score: noResult,
             betId,
             matchId,
           },
@@ -447,7 +444,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       );
     } catch (err) {
       logger.error({
-        error: `Error at no result declare match`,
+        error: `Error at result undeclare match`,
         stack: err.stack,
         message: err.message,
       });

@@ -16,6 +16,10 @@ exports.addExpertResult = async (body)=>{
     return expertResult;
 }
 
+exports.updateExpertResult = async (where,body)=>{
+    let expertResult = await expertResultRepo.update(where,body);
+    return expertResult;
+}
 
 exports.deleteExpertResult = async (betId,userId)=>{
     let expertResult = await expertResultRepo.delete({

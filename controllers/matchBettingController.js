@@ -82,91 +82,98 @@ exports.getMatchBetting = async (req, res) => {
 
 
 exports.getMatchBettingDetails = async (req, res) => {
-    try {
-        const { matchId, } = req.params;
-        const { type } = req.query;
-        let matchBetting,matchDetails;
-        let manualBets = Object.values(manualMatchBettingType);
-        matchDetails = await getMatchFromCache(matchId);
-        let match= {
-            id : matchDetails.id,
-            eventId : matchDetails.eventId,
-            competitionName : matchDetails.competitionName,
-            teamA : matchDetails.teamA,
-            teamB: matchDetails.teamB,
-            teamC : matchDetails.teamC ? matchDetails.teamC : null,
-            competitionId : matchDetails.competitionId,
-            startAt : matchDetails.startAt,
-            title : matchDetails.title,                
-        }
-        if (manualBets.includes(type)) {
-            matchBetting = await getBettingFromRedis(matchId, type);
-        } else {
-            matchBetting = matchDetails[marketBettingTypeByBettingType[type]];
-            // fetch third party api for market rate
-        }
-        let response = {
-            match: match,
-            matchBetting: matchBetting
-        }
-        return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Session" } }, data: response }, req, res);
-    } catch (error) {
-        logger.error({
-            error: `Error at get list match betting.`,
-            stack: error.stack,
-            message: error.message,
-        });
-        return ErrorResponse(error, req, res);
+  try {
+    const { matchId } = req.params;
+    const { type } = req.query;
+    let matchBetting, matchDetails;
+    let manualBets = Object.values(manualMatchBettingType);
+    matchDetails = await getMatchFromCache(matchId);
+    let match = {
+      id: matchDetails.id,
+      eventId: matchDetails.eventId,
+      competitionName: matchDetails.competitionName,
+      teamA: matchDetails.teamA,
+      teamB: matchDetails.teamB,
+      teamC: matchDetails.teamC ? matchDetails.teamC : null,
+      competitionId: matchDetails.competitionId,
+      startAt: matchDetails.startAt,
+      title: matchDetails.title,
+    };
+    if (manualBets.includes(type)) {
+      matchBetting = await getBettingFromRedis(matchId, type);
+    } else {
+      matchBetting = matchDetails[marketBettingTypeByBettingType[type]];
+      // fetch third party api for market rate
     }
-}
+    let response = {
+      match: match,
+      matchBetting: matchBetting,
+    };
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "success", keys: { name: "Session" } },
+        data: response,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at get list match betting.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
+  }
+};
 
-exports.matchBettingStatusChange = async (req, res)=>{
-    try{
-        const {isStop, betId }=req.body;
+exports.matchBettingStatusChange = async (req, res) => {
+  try {
+    const { isStop, betId } = req.body;
 
-        const matchBettingUpdate = await getMatchBettingById(betId); 
+    const matchBettingUpdate = await getMatchBettingById(betId);
 
-        if(isStop){
-            matchBettingUpdate.activeStatus=betStatusType.save;
-        }
-        else{
-            matchBettingUpdate.activeStatus=betStatusType.live;
-        }
-
-        await addMatchBetting(matchBettingUpdate);
-
-        const hasMatchDetailsInCache = await hasMatchInCache(
-          matchBettingUpdate?.matchId
-        );
-
-        if (hasMatchDetailsInCache) {
-          await settingMatchKeyInCache(matchBettingUpdate?.matchId, {
-            [marketBettingTypeByBettingType[matchBettingUpdate?.type]]:
-              JSON.stringify(matchBettingUpdate),
-          });
-        }
-
-
-        sendMessageToUser(socketData.expertRoomSocket,socketData.matchBettingStatusChange,matchBettingUpdate);
-
-        return SuccessResponse(
-          {
-            statusCode: 200,
-            message: { msg: "updated", keys: { name: "Status" } },
-            data: matchBettingUpdate,
-          },
-          req,
-          res
-        );
-
-
+    if (isStop) {
+      matchBettingUpdate.activeStatus = betStatusType.save;
+    } else {
+      matchBettingUpdate.activeStatus = betStatusType.live;
     }
-    catch (error) {
-        logger.error({
-            error: `Error at change match betting status.`,
-            stack: error.stack,
-            message: error.message,
-        });
-        return ErrorResponse(error, req, res);
+
+    await addMatchBetting(matchBettingUpdate);
+
+    const hasMatchDetailsInCache = await hasMatchInCache(
+      matchBettingUpdate?.matchId
+    );
+
+    if (hasMatchDetailsInCache) {
+      await settingMatchKeyInCache(matchBettingUpdate?.matchId, {
+        [marketBettingTypeByBettingType[matchBettingUpdate?.type]]:
+          JSON.stringify(matchBettingUpdate),
+      });
     }
-}
+
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchBettingStatusChange,
+      matchBettingUpdate
+    );
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "updated", keys: { name: "Status" } },
+        data: matchBettingUpdate,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at change match betting status.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
+  }
+};

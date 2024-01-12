@@ -36,10 +36,10 @@
     "matchAddFail" : "Match add operation failed due to invalid data."
   },
   "bet":{
-    "matchDeclare":"Match Result already declared.",
-    "resultDuplicate":"You cannot declare result multiple times",
+    "matchDeclare": "Match Result already declared.",
+    "resultDuplicate": "You cannot declare result multiple times",
     "resultReject": "Your result has been rejected because of difference in result.",
-    "resultApprove": "Your result has been saved but need to be approve by other expert"
-
+    "resultApprove": "Your result has been saved but need to be approve by other expert.",
+    "notDeclared": "Result is not declared yet."
   }
 }

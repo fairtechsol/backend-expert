@@ -31,5 +31,6 @@ exports.allApiRoutes = {
   wallet:{
     declareSessionResult:"/expert/declare/result/session",
     declareSessionNoResult:"/expert/declare/noResult/session",
+    unDeclareSessionResult:"/expert/unDeclare/result/session",
   }
 };

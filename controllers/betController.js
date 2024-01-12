@@ -6,13 +6,15 @@ const {
   betStatusType,
   bettingType,
   noResult,
+  redisKeys,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { addResult } = require("../services/betService");
+const { addResult, deleteResult } = require("../services/betService");
 const {
   getExpertResult,
   addExpertResult,
   deleteExpertResult,
+  updateExpertResult,
 } = require("../services/expertResultService");
 const { getMatchById } = require("../services/matchService");
 const {
@@ -21,6 +23,7 @@ const {
   deleteKeyFromMarketSessionId,
   deleteKeyFromManualSessionId,
   deleteKeyFromExpertRedisData,
+  updateMarketSessionIdRedis,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -152,6 +155,7 @@ exports.declareSessionResult = async (req, res) => {
       );
 
     await deleteKeyFromManualSessionId(matchId, betId);
+    await deleteKeyFromExpertRedisData(betId + redisKeys.profitLoss);
 
     return SuccessResponse(
       {
@@ -292,7 +296,7 @@ exports.declareSessionNoResult = async (req, res) => {
       }
     );
 
-    await deleteKeyFromExpertRedisData(`${betId}_profitLoss`);
+    await deleteKeyFromExpertRedisData(`${betId}${redisKeys.profitLoss}`);
     await deleteKeyFromManualSessionId(matchId, betId);
 
     return SuccessResponse(
@@ -323,6 +327,133 @@ exports.declareSessionNoResult = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+exports.unDeclareSessionResult = async (req, res) => {
+    try {
+      const { betId, matchId } = req.body;
+      const { id: userId } = req.user;
+  
+    
+      // check result already declare
+      let bet = await getSessionBettingById(betId);
+      if (!bet) {
+        logger.error({
+            message:"Error in unDeclare no bet found",
+            data:{
+                betId
+            }
+        });
+        return ErrorResponse(
+          {
+            statusCode: 404,
+            message: { msg: "notFound",keys:{
+                name:"Bet"
+            } },
+          },
+          req,
+          res
+        );
+      }
+
+
+      if(bet.activeStatus==betStatusType.live){
+        logger.error({
+            message:"Error in unDeclare no bet found",
+            data:{
+                betId
+            }
+        });
+
+        return ErrorResponse(
+            {
+              statusCode: 404,
+              message: { msg: "bet.notDeclared"},
+            },
+            req,
+            res
+          );
+      }
+
+      await updateSessionBetting(
+        { id: betId },
+        {
+          activeStatus: betStatus.live,
+          result: null,
+        }
+      );
+      
+  
+      let response = await apiCall(
+        apiMethod.post,
+        walletDomain + allApiRoutes.wallet.unDeclareSessionResult,
+        {
+          betId,
+          userId,
+          matchId,
+        }
+      )
+        .then((data) => {
+          return data;
+        })
+        .catch(async (err) => {
+          logger.error({
+            error: `Error at no result declare match wallet side`,
+            stack: err.stack,
+            message: err.message,
+          });
+          let bettingGame = await getSessionBettingById(betId);
+          bettingGame.activeStatus = betStatusType.result;
+          bettingGame.result = bet.result;
+          await addSessionBetting(bettingGame);
+          throw err;
+        });
+  
+      await deleteResult(betId);
+      await updateExpertResult({ betId: betId },{ isApprove: false, isReject: false });
+
+      if (bet?.selectionId && bet?.selectionId != "") {
+        await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet);
+      } else {
+        await updateSessionMatchRedis(bet.matchId, bet.id, bet);
+      }
+  
+      sendMessageToUser(
+        socketData.expertRoomSocket,
+        socketData.sessionResultDeclared,
+        {
+          matchId: matchId,
+          betId: betId,
+          profitLoss: response?.data?.profitLoss
+        }
+      );
+
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: {
+            msg: "success",
+            keys: {
+              name: "Bet result undeclared",
+            },
+          },
+          data: {
+            betId,
+            matchId,
+          },
+        },
+        req,
+        res
+      );
+    } catch (err) {
+      logger.error({
+        error: `Error at result undeclare match`,
+        stack: err.stack,
+        message: err.message,
+      });
+      // Handle any errors and return an error response
+      return ErrorResponse(err, req, res);
+    }
+  };
   
 
 const checkResult = async (body) => {

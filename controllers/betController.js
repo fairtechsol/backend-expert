@@ -295,6 +295,7 @@ exports.declareSessionNoResult = async (req, res) => {
         score:noResult,
         profitLoss: fwProfitLoss,
         stopAt: match.stopAt,
+        activeStatus: betStatusType.result
       }
     );
 
@@ -433,7 +434,8 @@ exports.unDeclareSessionResult = async (req, res) => {
           matchId: matchId,
           betId: betId,
           profitLoss: response?.data?.profitLoss,
-          profitLossObj: response?.data?.profitLossObj
+          profitLossObj: response?.data?.profitLossObj,
+          activeStatus: betStatusType.live
         }
       );
 

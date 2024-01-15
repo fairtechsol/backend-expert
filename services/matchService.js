@@ -43,8 +43,7 @@ exports.getMatch = async (filters, select, query) => {
           "match.matchBettings",
           "matchBetting"
         )
-        .orderBy("match.startAt", "DESC")
-        .addOrderBy("matchBetting.marketId", "ASC"),
+        .orderBy("match.startAt", "DESC"),
       query
     )
       .search()

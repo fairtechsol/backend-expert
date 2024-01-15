@@ -129,7 +129,6 @@ module.exports.socketData ={
 module.exports.redisKeys = {
   userAllExposure : "exposure",
   userMatchExposure : "matchExposure_",
-  userSessionExposure : "sessionExposure_",
   userTeamARate : "teamARate_",
   userTeamBRate : "teamBRate_",
   userTeamCRate : "teamCRate_",

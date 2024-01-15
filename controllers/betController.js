@@ -24,6 +24,7 @@ const {
   deleteKeyFromManualSessionId,
   deleteKeyFromExpertRedisData,
   updateMarketSessionIdRedis,
+  setExpertsRedisData,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -151,6 +152,7 @@ exports.declareSessionResult = async (req, res) => {
           score,
           profitLoss: fwProfitLoss,
           stopAt: match.stopAt,
+          activeStatus: betStatusType.result
         }
       );
 
@@ -411,13 +413,18 @@ exports.unDeclareSessionResult = async (req, res) => {
       await deleteResult(betId);
       await updateExpertResult({ betId: betId },{ isApprove: false, isReject: false });
 
+      bet.activeStatus=betStatusType.live;
+      bet.result=null;
+
       if (bet?.selectionId && bet?.selectionId != "") {
         await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet);
       } else {
-        bet.activeStatus=betStatusType.live;
-        bet.result=null;
         await updateSessionMatchRedis(bet.matchId, bet.id, bet);
       }
+
+      await setExpertsRedisData({
+        [`${bet.id}${redisKeys.profitLoss}`]: JSON.stringify(response?.data?.profitLossObj),
+      });
   
       sendMessageToUser(
         socketData.expertRoomSocket,
@@ -425,7 +432,8 @@ exports.unDeclareSessionResult = async (req, res) => {
         {
           matchId: matchId,
           betId: betId,
-          profitLoss: response?.data?.profitLoss
+          profitLoss: response?.data?.profitLoss,
+          profitLossObj: response?.data?.profitLossObj
         }
       );
 

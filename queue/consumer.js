@@ -122,10 +122,7 @@ ExpertSessionBetQueue.process(async function (job, done) {
   
               await setExpertsRedisData({
                 [`${placedBetObject?.betPlacedData?.betId}_profitLoss`]: JSON.stringify(redisData),
-                [`${redisKeys.userSessionExposure}${placedBetObject?.betPlacedData?.matchId}`]:
-                  parseFloat(
-                    expertRedisData[`${redisKeys.userSessionExposure}${placedBetObject?.betPlacedData?.matchId}`] || 0
-                  ) + partnerSessionExposure,
+                
               });
 
               // Update jobData with calculated stake

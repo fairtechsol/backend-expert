@@ -2,7 +2,7 @@ const { AppDataSource } = require("../config/postGresConnection");
 const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
-const { matchBettingType } = require("../config/contants");
+const { matchBettingType, betStatusType } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
 
 
@@ -146,7 +146,7 @@ exports.getMatchWithBettingAndSession = async (
           "match.sessions",
           "match.sessionBettings",
           "sessions",
-          "sessions.isManual = true"
+          `sessions.isManual = true AND sessions.activeStatus <> '${betStatusType.result}'`
         );
     }
 

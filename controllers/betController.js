@@ -397,7 +397,7 @@ exports.unDeclareSessionResult = async (req, res) => {
         })
         .catch(async (err) => {
           logger.error({
-            error: `Error at no result declare match wallet side`,
+            error: `Error at result undeclare match wallet side`,
             stack: err.stack,
             message: err.message,
           });
@@ -414,6 +414,8 @@ exports.unDeclareSessionResult = async (req, res) => {
       if (bet?.selectionId && bet?.selectionId != "") {
         await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet);
       } else {
+        bet.activeStatus=betStatusType.live;
+        bet.result=null;
         await updateSessionMatchRedis(bet.matchId, bet.id, bet);
       }
   

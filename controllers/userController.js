@@ -13,6 +13,7 @@ const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
 const { verifyToken } = require("../utils/authUtils");
 const { logger } = require("../config/logger");
+const { ILike } = require("typeorm");
 
 /**
  * Creates or updates a user based on the provided request data.
@@ -314,7 +315,7 @@ exports.changePassword = async (req, res, next) => {
 
 exports.expertList = async (req, res, next) => {
   try {
-    let { userName, loginId, offset, limit } = req.query
+    let { searchBy,keyword, loginId, offset, limit } = req.query
     
 if(!loginId){
   return ErrorResponse(
@@ -331,7 +332,7 @@ if(!loginId){
     let where = {
       createBy: loginId
     }
-    if (userName) where.userName = ILike(`%${userName}%`);
+    if (searchBy) where[searchBy] = ILike(`%${keyword}%`);
 
     
     let users = await getUsers(

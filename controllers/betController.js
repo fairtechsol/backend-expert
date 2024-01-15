@@ -24,6 +24,7 @@ const {
   deleteKeyFromManualSessionId,
   deleteKeyFromExpertRedisData,
   updateMarketSessionIdRedis,
+  setExpertsRedisData,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -151,6 +152,7 @@ exports.declareSessionResult = async (req, res) => {
           score,
           profitLoss: fwProfitLoss,
           stopAt: match.stopAt,
+          activeStatus: betStatusType.result
         }
       );
 
@@ -293,6 +295,7 @@ exports.declareSessionNoResult = async (req, res) => {
         score:noResult,
         profitLoss: fwProfitLoss,
         stopAt: match.stopAt,
+        activeStatus: betStatusType.result
       }
     );
 
@@ -397,7 +400,7 @@ exports.unDeclareSessionResult = async (req, res) => {
         })
         .catch(async (err) => {
           logger.error({
-            error: `Error at no result declare match wallet side`,
+            error: `Error at result undeclare match wallet side`,
             stack: err.stack,
             message: err.message,
           });
@@ -411,11 +414,18 @@ exports.unDeclareSessionResult = async (req, res) => {
       await deleteResult(betId);
       await updateExpertResult({ betId: betId },{ isApprove: false, isReject: false });
 
+      bet.activeStatus=betStatusType.live;
+      bet.result=null;
+
       if (bet?.selectionId && bet?.selectionId != "") {
         await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet);
       } else {
         await updateSessionMatchRedis(bet.matchId, bet.id, bet);
       }
+
+      await setExpertsRedisData({
+        [`${bet.id}${redisKeys.profitLoss}`]: JSON.stringify(response?.data?.profitLossObj),
+      });
   
       sendMessageToUser(
         socketData.expertRoomSocket,
@@ -423,7 +433,9 @@ exports.unDeclareSessionResult = async (req, res) => {
         {
           matchId: matchId,
           betId: betId,
-          profitLoss: response?.data?.profitLoss
+          profitLoss: response?.data?.profitLoss,
+          profitLossObj: response?.data?.profitLossObj,
+          activeStatus: betStatusType.live
         }
       );
 

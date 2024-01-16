@@ -329,8 +329,11 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
 exports.getSessionProfitLoss = async (req, res, next) => {
   try {
     const { sessionId } = req.params;
-    
-    const sessionProfitLoss=await getExpertsRedisSessionData(sessionId);
+
+    let sessionProfitLoss = await getExpertsRedisSessionData(sessionId);
+    if (sessionProfitLoss) {
+      sessionProfitLoss = JSON.parse(sessionProfitLoss);
+    }
     return SuccessResponse(
       {
         statusCode: 200,

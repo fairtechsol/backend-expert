@@ -464,7 +464,7 @@ exports.getExpertsRedisData = async()=>{
 
 exports.getExpertsRedisSessionData = async(sessionId)=>{
   // Retrieve session data from Redis
-  const sessionData = await internalRedis.hget(redisKeys.expertRedisData, sessionId);
+  const sessionData = await internalRedis.hget(redisKeys.expertRedisData, sessionId + redisKeys.profitLoss);
 
   // Parse and return the session data or null if it doesn't exist
   return sessionData;

@@ -35,6 +35,46 @@ const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
+
+exports.getPlacedBets=async (req,res,next)=>{
+  try {
+    const result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.wallet.bets, null, {}, req.query)
+      .then((data) => {
+        return data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at get bet wallet side`,
+          stack: err.stack,
+          message: err.message,
+        });
+        throw err;
+      });
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: result?.data,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at get bet.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
 exports.declareSessionResult = async (req, res) => {
   try {
     const { betId, matchId, score } = req.body;

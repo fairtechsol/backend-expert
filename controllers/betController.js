@@ -86,7 +86,7 @@ exports.declareSessionResult = async (req, res) => {
       data: match,
     });
 
-    if (match.stopAt) {
+    if (match?.stopAt) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -238,7 +238,7 @@ exports.declareSessionNoResult = async (req, res) => {
       data: match,
     });
 
-    if (match.stopAt) {
+    if (match?.stopAt) {
       return ErrorResponse(
         {
           statusCode: 403,

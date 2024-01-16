@@ -461,6 +461,15 @@ exports.getExpertsRedisData = async()=>{
 
 }
 
+
+exports.getExpertsRedisSessionData = async(sessionId)=>{
+  // Retrieve session data from Redis
+  const sessionData = await internalRedis.hget(redisKeys.expertRedisData, sessionId);
+
+  // Parse and return the session data or null if it doesn't exist
+  return sessionData;
+
+}
 // create function for remove key from market session
 exports.deleteKeyFromExpertRedisData = async(key) => {
   const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData,key);

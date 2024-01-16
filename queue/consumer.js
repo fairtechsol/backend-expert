@@ -1,5 +1,5 @@
 const Queue = require('bee-queue');
-const { calculateExpertRate, calculateProfitLossSession } = require('../services/commonService');
+const { calculateExpertRate, calculateProfitLossSession, mergeProfitLoss } = require('../services/commonService');
 const { logger } = require('../config/logger');
 const { redisKeys, socketData } = require('../config/contants');
 const { sendMessageToUser } = require('../sockets/socketManager');
@@ -176,6 +176,7 @@ ExpertSessionBetQueue.process(async function (job, done) {
 
               let oldProfitLossParent = JSON.parse(expertRedisData[redisName]);
               let parentPLbetPlaced = oldProfitLossParent?.betPlaced || [];
+              await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
               let newMaxLossParent = 0;
               userDeleteProfitLoss.betData.map((ob, index) => {
                 let partnershipData = (ob.profitLoss * partnership) / 100;

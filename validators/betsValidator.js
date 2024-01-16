@@ -1,0 +1,50 @@
+const Joi = require("joi");
+
+exports.sessionDeclareValidator = Joi.object({
+  betId: Joi.string().guid({ version: "uuidv4" }).required().messages({
+    "string.base": `Bet id should be a type of 'text'`,
+    "string.empty": `Bet id cannot be an empty field`,
+    "string.guid": `Bet id must be a valid GUID`,
+    "any.required": `Bet id is a required field`,
+  }),
+  matchId: Joi.string().guid({ version: "uuidv4" }).required().messages({
+    "string.base": `Match id should be a type of 'text'`,
+    "string.empty": `Match id cannot be an empty field`,
+    "string.guid": `Match id must be a valid GUID`,
+    "any.required": `Match id is a required field`,
+  }),
+  score: Joi.string().required().messages({
+    "string.base": `Score should be a type of 'text'`,
+    "string.empty": `Score cannot be an empty field`,
+  }),
+});
+
+exports.sessionDeclareNoResultValidator = Joi.object({
+  betId: Joi.string().guid({ version: "uuidv4" }).required().messages({
+    "string.base": `Bet id should be a type of 'text'`,
+    "string.empty": `Bet id cannot be an empty field`,
+    "string.guid": `Bet id must be a valid GUID`,
+    "any.required": `Bet id is a required field`,
+  }),
+  matchId: Joi.string().guid({ version: "uuidv4" }).required().messages({
+    "string.base": `Match id should be a type of 'text'`,
+    "string.empty": `Match id cannot be an empty field`,
+    "string.guid": `Match id must be a valid GUID`,
+    "any.required": `Match id is a required field`,
+  }),
+});
+
+exports.sessionUnDeclareValidator = Joi.object({
+  betId: Joi.string().guid({ version: "uuidv4" }).required().messages({
+    "string.base": `Bet id should be a type of 'text'`,
+    "string.empty": `Bet id cannot be an empty field`,
+    "string.guid": `Bet id must be a valid GUID`,
+    "any.required": `Bet id is a required field`,
+  }),
+  matchId: Joi.string().guid({ version: "uuidv4" }).required().messages({
+    "string.base": `Match id should be a type of 'text'`,
+    "string.empty": `Match id cannot be an empty field`,
+    "string.guid": `Match id must be a valid GUID`,
+    "any.required": `Match id is a required field`,
+  }),
+});

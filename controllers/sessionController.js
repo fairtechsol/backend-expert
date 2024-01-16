@@ -5,7 +5,7 @@ const {getUserById} = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData, betStatusType } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId, getExpertsRedisSessionData } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 
 
@@ -325,3 +325,38 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       return ErrorResponse(error, req, res);
   }
 }
+
+exports.getSessionProfitLoss = async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+
+    let sessionProfitLoss = await getExpertsRedisSessionData(sessionId);
+    if (sessionProfitLoss) {
+      sessionProfitLoss = JSON.parse(sessionProfitLoss);
+    }
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Session profit/loss" } },
+        data: sessionProfitLoss,
+      },
+      req,
+      res
+    );
+
+  } catch (error) {
+    logger.error({
+      error: `Error at get session profit loss.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+};

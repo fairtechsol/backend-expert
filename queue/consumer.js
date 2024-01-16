@@ -134,6 +134,7 @@ ExpertSessionBetQueue.process(async function (job, done) {
               // Send data to socket for session bet placement
               sendMessageToUser(socketData.expertRoomSocket, socketData.SessionBetPlaced, {
                 jobData,
+                redisData
               });
             
 

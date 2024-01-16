@@ -241,5 +241,4 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
       newbetPlaced.push(newEntry);
     }
   }
-  return { newbetPlaced, oldbetPlaced };
 };

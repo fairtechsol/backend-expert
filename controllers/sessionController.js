@@ -5,7 +5,7 @@ const {getUserById} = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData, betStatusType } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId, getExpertsRedisSessionData } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 
 
@@ -213,13 +213,18 @@ exports.getSessions = async (req, res) => {
           );
         }
         let result = {};
+        let apiSelectionIdObj = {};
         for (let index = 0; index < session?.length; index++) {
           if (session[index]?.activeStatus == betStatusType.live) {
+            if(session?.[index]?.selectionId){
+              apiSelectionIdObj[session?.[index]?.selectionId] = session?.[index]?.id;
+            }
             result[session?.[index]?.id] = JSON.stringify(session?.[index]);
           }
           session[index] = JSON.stringify(session?.[index]);
         }
-        await settingAllSessionMatchRedis(matchId, result);
+        settingAllSessionMatchRedis(matchId, result);
+        addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
       }
     } else {
       const redisMatchData = await getSessionFromRedis(matchId, sessionId);

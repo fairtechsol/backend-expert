@@ -77,7 +77,7 @@ exports.updateMatchInCache = async (matchId, data) => {
     matchOdd: JSON.stringify(data.matchOdd) || match.matchOdd,
     marketBookmaker: JSON.stringify(data.marketBookmaker) || match.marketBookmaker,
     marketTiedMatch: JSON.stringify(data.marketTiedMatch) || match.marketTiedMatch,
-    marketCompleteMatch : JSON.stringify(data.marketCompleteMatch) || match.marketCompleteMatch
+    marketCompleteMatch: JSON.stringify(data.marketCompleteMatch) || match.marketCompleteMatch
   }
   if (data.teamC || match.teamC) {
     payload.teamC = data.teamC || match.teamC;
@@ -163,9 +163,9 @@ exports.updateSessionMatchRedis = async (matchId, sessionId, data) => {
 
 
 exports.hasSessionInCache = async (matchId) => {
-    let sessionKey = `${matchId}_session`;
-    return await internalRedis.exists(sessionKey);
-  }
+  let sessionKey = `${matchId}_session`;
+  return await internalRedis.exists(sessionKey);
+}
 
 /**
  * Updates session match data in Redis.
@@ -310,16 +310,16 @@ exports.updateExpiryTimeBetting = async (matchId) => {
 
 
 exports.hasBettingInCache = async (matchId) => {
-    let bettingKey = `${matchId}_manualBetting`;
-    return await internalRedis.exists(bettingKey);
-  }
+  let bettingKey = `${matchId}_manualBetting`;
+  return await internalRedis.exists(bettingKey);
+}
 
 
 exports.getMatchFromCache = async (matchId) => {
   let matchKey = `${matchId}_match`;
   let MatchData = await internalRedis.hgetall(matchKey);
   if (Object.keys(MatchData)?.length) {
-    let {validated} = await joiValidator.jsonValidator(getMatchSchema, MatchData);
+    let { validated } = await joiValidator.jsonValidator(getMatchSchema, MatchData);
     if (validated?.matchOdd)
       validated.matchOdd = JSON.parse(validated.matchOdd);
     if (validated?.marketBookmaker)
@@ -360,23 +360,27 @@ exports.hasMatchInCache = async (matchId) => {
   return await internalRedis.exists(key);
 }
 
-exports.settingMatchKeyInCache = async (matchId,data) => {
+exports.settingMatchKeyInCache = async (matchId, data) => {
   let key = `${matchId}_match`;
-  return await internalRedis.hset(key,data);
+  return await internalRedis.hset(key, data);
 }
 
 exports.addAllsessionInRedis = async (matchId, result) => {
   if (!result)
-      result = await getSessionBettings({ matchId,activeStatus:betStatusType?.live });
+    result = await getSessionBettings({ matchId, activeStatus: betStatusType?.live });
   if (!result) {
-      throw {
-          error: true,
-          message: { msg: "notFound", keys: { name: "Session" } },
-          statusCode: 404,
-      };
+    throw {
+      error: true,
+      message: { msg: "notFound", keys: { name: "Session" } },
+      statusCode: 404,
+    };
   }
   let session = {};
+  let apiSelectionIdObj = {};
   for (let index = 0; index < result?.length; index++) {
+    if (result?.[index]?.activeStatus == betStatusType.live && result?.[index]?.selectionId) {
+      apiSelectionIdObj[result?.[index]?.selectionId] = result?.[index]?.id;
+    }
     session[result[index].id] = JSON.stringify(result[index]);
   }
   await this.settingAllSessionMatchRedis(matchId, session);
@@ -386,17 +390,17 @@ exports.addAllsessionInRedis = async (matchId, result) => {
 
 exports.addAllMatchBetting = async (matchId, result) => {
   if (!result)
-      result = await getMatchAllBettings({ matchId });
+    result = await getMatchAllBettings({ matchId });
   if (!result) {
-      throw {
-          error: true,
-          message: { msg: "notFound", keys: { name: "Match betting" } },
-          statusCode: 404,
-      };
+    throw {
+      error: true,
+      message: { msg: "notFound", keys: { name: "Match betting" } },
+      statusCode: 404,
+    };
   }
   let matchBetting = {};
   for (let index = 0; index < result?.length; index++) {
-      matchBetting[result[index].type] = JSON.stringify(result[index]);
+    matchBetting[result[index].type] = JSON.stringify(result[index]);
   }
   await this.settingAllBettingMatchRedis(matchId, matchBetting);
 }
@@ -411,7 +415,7 @@ exports.getAllMarketSessionIdsRedis = async (matchId) => {
   const MarketSessionIds = await internalRedis.hgetall(`${matchId}_selectionId`);
 
   // Return the betting data as an object or null if no data is found
-  return lodash.isEmpty(MarketSessionIds)? null : MarketSessionIds;
+  return lodash.isEmpty(MarketSessionIds) ? null : MarketSessionIds;
 };
 
 exports.getMarketSessionIdFromRedis = async (matchId, selectionId) => {
@@ -424,11 +428,16 @@ exports.getMarketSessionIdFromRedis = async (matchId, selectionId) => {
 
 exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis.hset(`${matchId}_selectionId`, selectionId, data)
+  await internalRedis.hset(`${matchId}_selectionId`, selectionId, data);
 };
 
-exports.getUserRedisData = async (userId)=>{
-  
+exports.addDataInRedis = async (key, dataObj) => {
+  // Use a Redis pipeline for atomicity and efficiency
+  await internalRedis.hset(key, dataObj);
+};
+
+exports.getUserRedisData = async (userId) => {
+
   // Retrieve all user data for the match from Redis
   const userData = await internalRedis.hgetall(userId);
 
@@ -437,32 +446,32 @@ exports.getUserRedisData = async (userId)=>{
 }
 
 // create function for remove key from market session
-exports.deleteKeyFromMarketSessionId = async(matchId,selectionId) => {
-  const deleteKey = await internalRedis.hdel(`${matchId}_selectionId`,selectionId);
+exports.deleteKeyFromMarketSessionId = async (matchId, selectionId) => {
+  const deleteKey = await internalRedis.hdel(`${matchId}_selectionId`, selectionId);
   return deleteKey;
 }
 
 // create function for remove key from market session
-exports.deleteKeyFromManualSessionId = async(matchId,sessionId) => {
-  const deleteKey = await internalRedis.hdel(`${matchId}_session`,sessionId);
+exports.deleteKeyFromManualSessionId = async (matchId, sessionId) => {
+  const deleteKey = await internalRedis.hdel(`${matchId}_session`, sessionId);
   return deleteKey;
 }
 
-exports.setExpertsRedisData = async(data)=>{
+exports.setExpertsRedisData = async (data) => {
   await internalRedis.hset(redisKeys.expertRedisData, data)
 }
 
-exports.getExpertsRedisData = async()=>{
-   // Retrieve expert data from Redis
-   const expertData = await internalRedis.hgetall(redisKeys.expertRedisData);
+exports.getExpertsRedisData = async () => {
+  // Retrieve expert data from Redis
+  const expertData = await internalRedis.hgetall(redisKeys.expertRedisData);
 
-   // Parse and return the betting data or null if it doesn't exist
-   return lodash.isEmpty(expertData) ? null : expertData;
+  // Parse and return the betting data or null if it doesn't exist
+  return lodash.isEmpty(expertData) ? null : expertData;
 
 }
 
 
-exports.getExpertsRedisSessionData = async(sessionId)=>{
+exports.getExpertsRedisSessionData = async (sessionId) => {
   // Retrieve session data from Redis
   const sessionData = await internalRedis.hget(redisKeys.expertRedisData, sessionId + redisKeys.profitLoss);
 
@@ -471,7 +480,7 @@ exports.getExpertsRedisSessionData = async(sessionId)=>{
 
 }
 // create function for remove key from market session
-exports.deleteKeyFromExpertRedisData = async(key) => {
-  const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData,key);
+exports.deleteKeyFromExpertRedisData = async (key) => {
+  const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData, key);
   return deleteKey;
 }

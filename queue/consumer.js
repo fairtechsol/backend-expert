@@ -48,9 +48,12 @@ let calculateRateAmount = async (jobData, userId) => {
         let mPartenerShipId = partnership['fwPartnershipId'];
         let mPartenerShip = partnership['fwPartnership'];
         try {
-           
-            
-            
+          let masterRedisData = await getExpertsRedisData();
+          let teamRates = {
+            teamA: parseFloat(masterRedisData[jobData.teamArateRedisKey]) || 0.0,
+            teamB: parseFloat(masterRedisData[jobData.teamBrateRedisKey]) || 0.0,
+            teamC:jobData.teamCrateRedisKey ? parseFloat(masterRedisData[jobData.teamCrateRedisKey]) || 0.0:0.0
+          }
                 let teamData = await calculateExpertRate(teamRates, obj, mPartenerShip);
                 let userRedisObj = {
                     [jobData.teamArateRedisKey]: teamData.teamA,

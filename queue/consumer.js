@@ -66,7 +66,7 @@ let calculateRateAmount = async (jobData, userId) => {
         process: `User ID : ${userId} expert`,
       });
       //send Data to socket
-      jobData.myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
+      jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
       sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData });
     }
     catch (error) {

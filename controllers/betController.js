@@ -19,7 +19,7 @@ const {
   updateExpertResult,
 } = require("../services/expertResultService");
 const { getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
-const { getMatchById } = require("../services/matchService");
+const { getMatchById, addMatch } = require("../services/matchService");
 const {
   getSessionFromRedis,
   updateSessionMatchRedis,
@@ -28,6 +28,7 @@ const {
   deleteKeyFromExpertRedisData,
   updateMarketSessionIdRedis,
   setExpertsRedisData,
+  deleteAllMatchRedis,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -731,15 +732,19 @@ exports.declareMatchResult = async (req, res) => {
         socketData.matchResultDeclared,
         {
           matchId: matchId,
-          betId: betId,
           result,
           profitLoss: fwProfitLoss,
           stopAt: match.stopAt,
           activeStatus: betStatusType.result
         }
       );
+      await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.result, result: result });
 
-    await deleteKeyFromManualSessionId(matchId, betId);
+      deleteAllMatchRedis(matchId);
+      deleteKeyFromExpertRedisData(redisKeys.userTeamARate + matchId,redisKeys.userTeamBRate + matchId,redisKeys.userTeamCRate + matchId,redisKeys.yesRateTie + matchId,redisKeys.noRateTie + matchId,redisKeys.yesRateComplete + matchId,redisKeys.noRateComplete + matchId)
+      match.stopAt=new Date();
+
+      addMatch(match);
 
     return SuccessResponse(
       {

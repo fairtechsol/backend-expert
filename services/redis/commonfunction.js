@@ -433,7 +433,9 @@ exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
 
 exports.addDataInRedis = async (key, dataObj) => {
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis.hset(key, dataObj);
+  if (!lodash.isEmpty(dataObj)) {
+    await internalRedis.hmset(key, dataObj);
+  }
 };
 
 exports.getUserRedisData = async (userId) => {
@@ -483,4 +485,9 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
 exports.deleteKeyFromExpertRedisData = async (key) => {
   const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData, key);
   return deleteKey;
+}
+
+// create function for remove key from redis
+exports.deleteAllMatchRedis= async (matchId) => {
+  await internalRedis.del(matchId + "_match", matchId + "_manualBetting", matchId + "_session", matchId + "_selectionId");
 }

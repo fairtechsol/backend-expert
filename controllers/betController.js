@@ -607,6 +607,20 @@ exports.declareMatchResult = async (req, res) => {
       data: match,
     });
 
+    if(!match){
+      
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "notFound",keys:{
+            name:"Match"
+          } },
+        },
+        req,
+        res
+      );
+    }
+
     if (match?.stopAt) {
       return ErrorResponse(
         {

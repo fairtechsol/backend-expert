@@ -124,7 +124,8 @@ module.exports.socketData ={
   MatchBetPlaced:"userMatchBetPlaced",
   sessionResultDeclared:"sessionResultDeclared",
   matchResultDeclared:"sessionResultDeclared",
-  matchBettingStatusChange:"matchBettingStatusChange"
+  matchBettingStatusChange:"matchBettingStatusChange",
+  sessionDeleteBet: "sessionDeleteBet"
 };
 
 module.exports.redisKeys = {
@@ -135,5 +136,9 @@ module.exports.redisKeys = {
   userTeamCRate : "teamCRate_",
   userExposureLimit : "exposureLimit",
   expertRedisData:"expertRedisData",
-  profitLoss:"_profitLoss"
+  profitLoss:"_profitLoss",
+  yesRateTie: "yesRateTie_",
+  noRateTie: "noRateTie_",
+  yesRateComplete: "yesRateComplete_",
+  noRateComplete: "noRateComplete_",
 }

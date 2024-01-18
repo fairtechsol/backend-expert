@@ -1,5 +1,5 @@
 
-const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBetting, getSessionBettings, getSessionBattingByMatchId } = require("../services/sessionBettingService");
+const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData, betStatusType } = require("../config/contants");
@@ -201,7 +201,7 @@ exports.getSessions = async (req, res) => {
       if (redisMatchData) {
         session = Object.values(redisMatchData);
       } else {
-        session = await getSessionBettings({ matchId });
+        session = await getSessionBettings({ matchId, activeStatus: betStatusType.live });
         if (!session) {
           return ErrorResponse(
             {

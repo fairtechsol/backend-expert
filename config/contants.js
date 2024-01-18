@@ -124,7 +124,8 @@ module.exports.socketData ={
   MatchBetPlaced:"userMatchBetPlaced",
   sessionResultDeclared:"sessionResultDeclared",
   matchResultDeclared:"sessionResultDeclared",
-  matchBettingStatusChange:"matchBettingStatusChange"
+  matchBettingStatusChange:"matchBettingStatusChange",
+  sessionDeleteBet: "sessionDeleteBet"
 };
 
 module.exports.redisKeys = {

@@ -14,7 +14,7 @@ const internalRedis = require("../config/internalRedisConnection");
 const { verifyToken } = require("../utils/authUtils");
 const { logger } = require("../config/logger");
 const { ILike } = require("typeorm");
-const { count} = require('../services/redis/commonfunction')
+const { loginCount} = require('../services/redis/commonfunction')
 
 /**
  * Creates or updates a user based on the provided request data.
@@ -398,7 +398,7 @@ if(!loginId){
 
 exports.totalLoginCount = async (req, res) => {
   try {
-    let totalCount = await count("loginUserCount");
+    let totalCount = await loginCount("loginUserCount");
 
     return SuccessResponse(
       {

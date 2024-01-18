@@ -201,7 +201,7 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
         await setExpertsRedisData(redisObj);
 
         // Send data to socket for session bet placement
-        sendMessageToUser(socketData.expertRoomSocket, socketData.SessionBetPlaced, {
+        sendMessageToUser(socketData.expertRoomSocket, socketData.sessionDeleteBet, {
           profitLoss: oldProfitLossParent,
           matchId: matchId,
           betPlacedId: betPlacedId,

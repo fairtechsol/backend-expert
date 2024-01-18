@@ -484,3 +484,9 @@ exports.deleteKeyFromExpertRedisData = async (key) => {
   const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData, key);
   return deleteKey;
 }
+
+exports.count = async (key) => {
+  let totalCount = await internalRedis.get(key);
+  totalCount = parseInt(totalCount) || 0
+  return totalCount
+}

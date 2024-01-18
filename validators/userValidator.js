@@ -4,13 +4,13 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#
 
 module.exports.CreateUser = Joi.object({
   userName: Joi.string().trim().required(),
-  fullName: Joi.string().min(3).max(255),
+  fullName: Joi.string().trim().allow("").min(3).max(255),
   password: Joi.string().pattern(passwordRegex).required().label('password').messages({
     'string.pattern.base': 'user.passwordMatch',
     'any.required': 'Password is required',
   }),
-  phoneNumber: Joi.string().allow(""),
-  city: Joi.string().max(255).allow(""),
+  phoneNumber: Joi.string().trim().allow(""),
+  city: Joi.string().trim().allow("").max(255),
   allPrivilege:Joi.boolean(),
   addMatchPrivilege:Joi.boolean(),
   betFairMatchPrivilege:Joi.boolean(),
@@ -26,16 +26,16 @@ module.exports.CreateUser = Joi.object({
 })
 
 module.exports.UpdateUser = Joi.object({
-  fullName: Joi.string().min(3).max(255),
-  phoneNumber: Joi.string().allow(""),
-  city: Joi.string().max(255).allow(""),
+  fullName: Joi.string().trim().allow("").min(3).max(255),
+  phoneNumber: Joi.string().trim().allow(""),
+  city: Joi.string().max(255).trim().allow(""),
   allPrivilege:Joi.boolean(),
   addMatchPrivilege:Joi.boolean(),
   betFairMatchPrivilege:Joi.boolean(),
   bookmakerMatchPrivilege:Joi.boolean(),
   sessionMatchPrivilege:Joi.boolean(),
   createBy:Joi.string().required(),
-  id:Joi.string().guid({ version: 'uuidv4' })
+  id:Joi.string().guid({ version: 'uuidv4' }).required()
 })
 
 module.exports.ChangeSelfPassword=Joi.object({

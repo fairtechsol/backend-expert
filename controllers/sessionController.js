@@ -5,7 +5,7 @@ const {getUserById} = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData, betStatusType } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 
 
@@ -213,11 +213,18 @@ exports.getSessions = async (req, res) => {
           );
         }
         let result = {};
+        let apiSelectionIdObj = {};
         for (let index = 0; index < session?.length; index++) {
-          result[session?.[index]?.id] = JSON.stringify(session?.[index]);
+          if (session[index]?.activeStatus == betStatusType.live) {
+            if(session?.[index]?.selectionId){
+              apiSelectionIdObj[session?.[index]?.selectionId] = session?.[index]?.id;
+            }
+            result[session?.[index]?.id] = JSON.stringify(session?.[index]);
+          }
           session[index] = JSON.stringify(session?.[index]);
         }
-        await settingAllSessionMatchRedis(matchId, result);
+        settingAllSessionMatchRedis(matchId, result);
+        addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
       }
     } else {
       const redisMatchData = await getSessionFromRedis(matchId, sessionId);
@@ -242,14 +249,19 @@ exports.getSessions = async (req, res) => {
       const isMatch = await hasMatchInCache(matchId);
       let match;
       if (isMatch) {
-        match = await getMultipleMatchKey(matchId, [
-          "apiSessionActive",
-          "manualSessionActive",
-        ]);
+        match = await getMultipleMatchKey(matchId);
+        match = {
+          apiSessionActive: JSON.parse(match?.apiSessionActive),
+          manualSessionActive: JSON.parse(match?.manualSessionActive),
+          marketId: match?.marketId,
+        };
+
+
       } else {
-        match = getMatchById(matchId, [
+        match =await getMatchById(matchId, [
           "apiSessionActive",
           "manualSessionActive",
+          "marketId"
         ]);
       }
 
@@ -318,3 +330,38 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       return ErrorResponse(error, req, res);
   }
 }
+
+exports.getSessionProfitLoss = async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+
+    let sessionProfitLoss = await getExpertsRedisSessionData(sessionId);
+    if (sessionProfitLoss) {
+      sessionProfitLoss = JSON.parse(sessionProfitLoss);
+    }
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Session profit/loss" } },
+        data: sessionProfitLoss,
+      },
+      req,
+      res
+    );
+
+  } catch (error) {
+    logger.error({
+      error: `Error at get session profit loss.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+};

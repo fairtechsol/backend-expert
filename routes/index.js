@@ -8,7 +8,8 @@ const matchRoutes = require("./matchRouter");
 const superAdminRoutes = require("./superAdminRouter");
 const sessionRoute = require("./sessionRoutes");
 const generalRoute = require("./generalRoute");
-const matchBettingRoute = require('./matchBettingRoutes')
+const matchBettingRoute = require('./matchBettingRoutes');
+const betRoutes = require('./betRoutes');
 
 router.use("/auth", authRoutes);
 router.use("/user", userRoutes);
@@ -17,5 +18,6 @@ router.use("/superAdmin", superAdminRoutes);
 router.use('/session',sessionRoute);
 router.use('/general', generalRoute);
 router.use('/matchBeting', matchBettingRoute);
+router.use('/bet', betRoutes);
 
 module.exports = router;

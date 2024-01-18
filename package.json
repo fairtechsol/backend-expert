@@ -14,7 +14,9 @@
     "migration:revert": "typeorm migration:revert -d ./orm.config.js"
   },
   "dependencies": {
+    "axios": "^1.6.5",
     "bcryptjs": "^2.4.3",
+    "bee-queue": "^1.7.1",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -27,6 +29,7 @@
     "pdfmake": "^0.2.8",
     "pg": "^8.11.3",
     "socket.io": "^4.7.2",
+    "socket.io-redis": "^6.1.1",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.0",
     "typeorm": "^0.3.17",

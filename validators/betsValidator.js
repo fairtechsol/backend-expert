@@ -48,3 +48,16 @@ exports.sessionUnDeclareValidator = Joi.object({
     "any.required": `Match id is a required field`,
   }),
 });
+
+exports.matchDeclareValidator = Joi.object({
+    matchId: Joi.string().guid({ version: "uuidv4" }).required().messages({
+      "string.base": `Match id should be a type of 'text'`,
+      "string.empty": `Match id cannot be an empty field`,
+      "string.guid": `Match id must be a valid GUID`,
+      "any.required": `Match id is a required field`,
+    }),
+    result: Joi.string().required().messages({
+      "string.base": `Score should be a type of 'text'`,
+      "string.empty": `Score cannot be an empty field`,
+    }),
+  });

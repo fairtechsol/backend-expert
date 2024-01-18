@@ -40,6 +40,8 @@
     "resultDuplicate": "You cannot declare result multiple times",
     "resultReject": "Your result has been rejected because of difference in result.",
     "resultApprove": "Your result has been saved but need to be approve by other expert.",
-    "notDeclared": "Result is not declared yet."
+    "notDeclared": "Result is not declared yet.",
+    "sessionAllResult": "Please declare all session result first."
+
   }
 }

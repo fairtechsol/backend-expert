@@ -123,7 +123,8 @@ module.exports.socketData ={
   SessionBetPlaced:"userSessionBetPlaced",
   MatchBetPlaced:"userMatchBetPlaced",
   sessionResultDeclared:"sessionResultDeclared",
-  matchResultDeclared:"sessionResultDeclared",
+  matchResultDeclared:"matchResultDeclared",
+  matchResultUnDeclared:"matchResultUnDeclared",
   matchBettingStatusChange:"matchBettingStatusChange",
   sessionDeleteBet: "sessionDeleteBet"
 };

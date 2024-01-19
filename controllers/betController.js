@@ -708,7 +708,7 @@ exports.declareMatchResult = async (req, res) => {
             stack: err.stack,
             message: err.message,
           });
-          await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.save, result: null });
+          await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.save, result: null, stopAt: null });
           await deleteExpertResult(matchOddBetting.id, userId);
           throw err;
         });

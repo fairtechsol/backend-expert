@@ -7,7 +7,16 @@ exports.getResult=async (where,select)=>{
     return await resultRepo.findOne({
         where:  where,
         select: select,
-      })
+      });
+}
+
+exports.getSpecificResultsSession = async (where, select) => {
+    let data = await resultRepo.createQueryBuilder()
+    .leftJoinAndMapOne("result.betId", "sessionBettings", "sessionBettings", "result.betId = sessionBettings.id")
+    .where(where)
+    .select(select)
+    .getMany()
+    return data;
 }
 
 exports.addResult = async (body)=>{

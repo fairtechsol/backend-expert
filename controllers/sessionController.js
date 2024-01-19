@@ -2,11 +2,12 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService");
-const { sessionBettingType, teamStatus, socketData, betStatusType } = require("../config/contants");
+const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
+const {  getSpecificResultsSession } = require("../services/betService");
 
 
 
@@ -254,6 +255,7 @@ exports.getSessions = async (req, res) => {
           apiSessionActive: JSON.parse(match?.apiSessionActive),
           manualSessionActive: JSON.parse(match?.manualSessionActive),
           marketId: match?.marketId,
+          stopAt: match?.stopAt
         };
 
 
@@ -261,7 +263,8 @@ exports.getSessions = async (req, res) => {
         match =await getMatchById(matchId, [
           "apiSessionActive",
           "manualSessionActive",
-          "marketId"
+          "marketId",
+          "stopAt"
         ]);
       }
 
@@ -365,3 +368,33 @@ exports.getSessionProfitLoss = async (req, res, next) => {
     );
   }
 };
+
+exports.getSessionBetResult = async (req, res) => {
+  try {
+    const { matchId } = req.params;
+
+    const sessionResults = await getSpecificResultsSession({
+      matchId: matchId,
+      betType: bettingType.session
+    });
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: sessionResults
+      },
+      req,
+      res
+    );
+
+  } catch (error) {
+    logger.error({
+      error: `Error at get session results`,
+      stack: error.stack,
+      message: error.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(error, req, res);
+  }
+
+}

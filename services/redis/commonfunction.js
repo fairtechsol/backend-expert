@@ -486,7 +486,11 @@ exports.deleteKeyFromExpertRedisData = async (...key) => {
   const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData, key);
   return deleteKey;
 }
-
+// create function for remove key from market session
+exports.deleteKeyFromMatchRedisData = async (matchId,...key) => {
+  const deleteKey = await internalRedis.hdel(`${matchId}_match`, key);
+  return deleteKey;
+}
 // create function for remove key from redis
 exports.deleteAllMatchRedis= async (matchId) => {
   await internalRedis.del(matchId + "_match", matchId + "_manualBetting", matchId + "_session", matchId + "_selectionId");

@@ -98,7 +98,8 @@ exports.getMatchBettingDetails = async (req, res) => {
       competitionId: matchDetails.competitionId,
       startAt: matchDetails.startAt,
       title: matchDetails.title,
-      matchType: matchDetails.matchType
+      matchType: matchDetails.matchType,
+      stopAt: matchDetails.stopAt
     };
     if (manualBets.includes(type)) {
       matchBetting = await getBettingFromRedis(matchId, type);

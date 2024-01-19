@@ -30,6 +30,7 @@ const {
   setExpertsRedisData,
   deleteAllMatchRedis,
   updateMatchKeyInCache,
+  deleteKeyFromMatchRedisData,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -534,7 +535,7 @@ const checkResult = async (body) => {
           if (redisSessionData["noRate"] || redisSessionData["yesRate"]) {
             sendMessageToUser(
               socketData.expertRoomSocket,
-              "updateSessionRateClient",
+              socketData.updateSessionRateClient,
               { matchId, betId, status: teamStatus.suspended }
             );
 
@@ -637,7 +638,7 @@ exports.declareMatchResult = async (req, res) => {
     // check result already declare
     let resultDeclare = await getMatchBattingByMatchId(matchId);
     const matchOddBetting = resultDeclare?.find(
-      (item) => item.type == matchBettingType.matchOdd
+      (item) => item.type == matchBettingType.quickbookmaker1
     );
     if (resultDeclare?.length > 0 && matchOddBetting.activeStatus == betStatus.result) {
       return ErrorResponse(
@@ -718,8 +719,6 @@ exports.declareMatchResult = async (req, res) => {
         : 0;
 
     
-    
-
     await addResult({
         betType: bettingType.match,
         betId: matchOddBetting.id,
@@ -812,7 +811,7 @@ exports.unDeclareMatchResult = async (req, res) => {
     // check result already declare
     let bet = await getMatchBattingByMatchId(matchId);
     const matchOddBetting = bet?.find(
-      (item) => item.type == matchBettingType.matchOdd
+      (item) => item.type == matchBettingType.quickbookmaker1
     );
     if (bet?.length == 0) {
       logger.error({
@@ -876,7 +875,7 @@ exports.unDeclareMatchResult = async (req, res) => {
 
     await deleteResult(matchOddBetting.id);
     await updateExpertResult({ betId: matchOddBetting.id },{ isApprove: false, isReject: false });
-    await updateMatchKeyInCache(matchId, "stopAt", null);
+    await deleteKeyFromMatchRedisData(matchId, "stopAt");
 
     await setExpertsRedisData(response?.data?.profitLossWallet);
 

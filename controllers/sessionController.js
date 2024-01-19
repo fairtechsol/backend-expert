@@ -254,6 +254,7 @@ exports.getSessions = async (req, res) => {
           apiSessionActive: JSON.parse(match?.apiSessionActive),
           manualSessionActive: JSON.parse(match?.manualSessionActive),
           marketId: match?.marketId,
+          stopAt: match?.stopAt
         };
 
 
@@ -261,7 +262,8 @@ exports.getSessions = async (req, res) => {
         match =await getMatchById(matchId, [
           "apiSessionActive",
           "manualSessionActive",
-          "marketId"
+          "marketId",
+          "stopAt"
         ]);
       }
 

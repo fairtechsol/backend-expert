@@ -320,8 +320,7 @@ exports.updateMatch = async (req, res) => {
     await updateMatchBetting({ matchId: id, type: matchBettingType.completeMatch }, { maxBet: completeMatchMaxBet, minBet: minBet });
 
     if (bookmakers && bookmakers.length) {
-      
-      await Promise.all[bookmakers.map(item => updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item.maxBet, minBet:minBet }))];
+      await Promise.all[bookmakers.map(item => updateMatchBetting({ id: item.id }, { maxBet: item.maxBet, minBet:minBet }))];
     }
 
 

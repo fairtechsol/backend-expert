@@ -61,3 +61,12 @@ exports.matchDeclareValidator = Joi.object({
       "string.empty": `Score cannot be an empty field`,
     }),
   });
+
+  exports.matchUnDeclareValidator = Joi.object({
+    matchId: Joi.string().guid({ version: "uuidv4" }).required().messages({
+      "string.base": `Match id should be a type of 'text'`,
+      "string.empty": `Match id cannot be an empty field`,
+      "string.guid": `Match id must be a valid GUID`,
+      "any.required": `Match id is a required field`,
+    })
+  });

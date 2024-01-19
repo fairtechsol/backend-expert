@@ -29,6 +29,7 @@ const {
   updateMarketSessionIdRedis,
   setExpertsRedisData,
   deleteAllMatchRedis,
+  updateMatchKeyInCache,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -738,7 +739,7 @@ exports.declareMatchResult = async (req, res) => {
           activeStatus: betStatusType.result
         }
       );
-      await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.result, result: result });
+      await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.result, result: result, stopAt: new Date() });
 
       deleteAllMatchRedis(matchId);
       deleteKeyFromExpertRedisData(redisKeys.userTeamARate + matchId,redisKeys.userTeamBRate + matchId,redisKeys.userTeamCRate + matchId,redisKeys.yesRateTie + matchId,redisKeys.noRateTie + matchId,redisKeys.yesRateComplete + matchId,redisKeys.noRateComplete + matchId)
@@ -752,7 +753,7 @@ exports.declareMatchResult = async (req, res) => {
         message: {
           msg: "success",
           keys: {
-            name: "Bet Result declared",
+            name: "Match Result declared",
           },
         },
         data: {
@@ -827,7 +828,7 @@ exports.unDeclareMatchResult = async (req, res) => {
         res
       );
     }
-    
+
     if (matchOddBetting.activeStatus != betStatus.result) {
       logger.error({
         message: "Error in unDeclare match no bet found",
@@ -846,7 +847,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       );
     }
 
-    await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.live, result: null });
+    await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.live, result: null, stopAt: null });
     
 
     let response = await apiCall(
@@ -869,13 +870,13 @@ exports.unDeclareMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
-        await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.result, result: matchOddBetting.result });
+        await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: match?.stopAt });
         throw err;
       });
 
     await deleteResult(matchOddBetting.id);
     await updateExpertResult({ betId: matchOddBetting.id },{ isApprove: false, isReject: false });
-
+    await updateMatchKeyInCache(matchId, "stopAt", null);
 
     await setExpertsRedisData(response?.data?.profitLossWallet);
 
@@ -899,7 +900,7 @@ exports.unDeclareMatchResult = async (req, res) => {
         message: {
           msg: "success",
           keys: {
-            name: "Bet result undeclared",
+            name: "Match result undeclared",
           },
         },
         data: {

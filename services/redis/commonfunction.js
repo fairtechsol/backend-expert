@@ -40,7 +40,7 @@ exports.addMatchInCache = async (matchId, data) => {
     payload.teamC = data.teamC;
   }
   if (data.stopAt) {
-    payload.stopAt = stopAt;
+    payload.stopAt = data.stopAt;
   }
   let res = await internalRedis
     .pipeline()
@@ -482,7 +482,7 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
 
 }
 // create function for remove key from market session
-exports.deleteKeyFromExpertRedisData = async (key) => {
+exports.deleteKeyFromExpertRedisData = async (...key) => {
   const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData, key);
   return deleteKey;
 }

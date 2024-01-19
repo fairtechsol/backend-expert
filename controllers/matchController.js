@@ -359,7 +359,6 @@ exports.updateMatch = async (req, res) => {
   }
 };
 
-
 const updateMatchDataAndBettingInRedis=async (id)=>{
  const match = await getMatchById(id);
  const matchBatting = await getMatchBattingByMatchId(id);
@@ -394,7 +393,6 @@ const updateMatchDataAndBettingInRedis=async (id)=>{
   // Update Redis with the manual betting data for the current match
   await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
 }
-
 
 exports.listMatch = async (req, res) => {
   try {
@@ -459,7 +457,6 @@ exports.listMatch = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
-
 
 const commonGetMatchDetails=async (matchId)=>{
   let match = await getMatchFromCache(matchId);
@@ -695,9 +692,6 @@ exports.matchDetails = async (req, res) => {
   }
 };
 
-
-
-
 // Controller method for updating the active status of betting
 exports.matchActiveInActive = async (req, res) => {
   try {
@@ -898,7 +892,6 @@ exports.matchActiveInActive = async (req, res) => {
   }
 };
 
-
 exports.getMatchCompetitionsByType = async (req, res) => {
   try {
     const { type } = req.params;
@@ -923,7 +916,6 @@ exports.getMatchCompetitionsByType = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
-
 
 exports.getMatchDatesByCompetitionId = async (req, res) => {
   try {
@@ -974,7 +966,6 @@ exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
-
 
 exports.matchListWithManualBetting = async (req, res) => {
   try {
@@ -1030,7 +1021,6 @@ exports.matchListWithManualBetting = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
-
 
 function addIncrement(number, increment) {
   // Convert the number to a string to manipulate the decimal part

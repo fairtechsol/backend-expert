@@ -4,7 +4,7 @@ const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetti
 const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-
+const lodash = require('lodash');
 
 exports.getMatchBetting = async (req, res) => {
     try {
@@ -88,6 +88,9 @@ exports.getMatchBettingDetails = async (req, res) => {
     let matchBetting, matchDetails;
     let manualBets = Object.values(manualMatchBettingType);
     matchDetails = await getMatchFromCache(matchId);
+    if (!matchDetails || lodash.isEmpty(matchDetails)) {
+      return ErrorResponse({statusCode: 404,message: { msg: "notFound", keys: { name: "Match Betting" } }},req,res);
+  }
     let match = {
       id: matchDetails.id,
       eventId: matchDetails.eventId,

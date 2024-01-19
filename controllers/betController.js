@@ -11,7 +11,7 @@ const {
   matchBettingType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { addResult, deleteResult } = require("../services/betService");
+const { addResult, deleteResult, getSpecificResults } = require("../services/betService");
 const {
   getExpertResult,
   addExpertResult,

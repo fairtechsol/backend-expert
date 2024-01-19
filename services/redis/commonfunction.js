@@ -495,3 +495,9 @@ exports.deleteKeyFromMatchRedisData = async (matchId,...key) => {
 exports.deleteAllMatchRedis= async (matchId) => {
   await internalRedis.del(matchId + "_match", matchId + "_manualBetting", matchId + "_session", matchId + "_selectionId");
 }
+
+exports.loginCount = async (key) => {
+  let totalCount = await internalRedis.get(key);
+  totalCount = parseInt(totalCount) || 0
+  return totalCount
+}

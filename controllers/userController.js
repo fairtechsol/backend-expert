@@ -14,6 +14,7 @@ const internalRedis = require("../config/internalRedisConnection");
 const { verifyToken } = require("../utils/authUtils");
 const { logger } = require("../config/logger");
 const { ILike } = require("typeorm");
+const { loginCount} = require('../services/redis/commonfunction')
 
 /**
  * Creates or updates a user based on the provided request data.
@@ -393,4 +394,29 @@ if(!loginId){
     });
     return ErrorResponse(error, req, res);
   }
+}
+
+exports.totalLoginCount = async (req, res) => {
+  try {
+    let totalCount = await loginCount("loginUserCount");
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Total login count" } },
+        data: totalCount,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    console.error('Error:', error);
+    logger.error({
+      error: `Error at get login count.`,
+      stack: error.stack,
+      message: error.message
+    });
+    return ErrorResponse(error, req, res);
+  }
+
 }

@@ -7,7 +7,7 @@ const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
-const { getSpecificResults } = require("../services/betService");
+const {  getSpecificResultsSession } = require("../services/betService");
 
 
 
@@ -373,7 +373,7 @@ exports.getSessionBetResult = async (req, res) => {
   try {
     const { matchId } = req.params;
 
-    const sessionResults = await getSpecificResults({
+    const sessionResults = await getSpecificResultsSession({
       matchId: matchId,
       betType: bettingType.session
     });

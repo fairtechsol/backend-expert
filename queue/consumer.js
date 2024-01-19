@@ -15,6 +15,7 @@ const expertRedisOption = {
 const ExpertMatchBetQueue = new Queue('expertMatchBetQueue', expertRedisOption);
 const ExpertSessionBetQueue = new Queue('expertSessionBetQueue', expertRedisOption);
 const expertSessionBetDeleteQueue = new Queue('expertSessionBetDeleteQueue', expertRedisOption);
+const expertMatchBetDeleteQueue = new Queue('expertMatchBetDeleteQueue', expertRedisOption);
 
 ExpertMatchBetQueue.process(async function (job, done) {
   let jobData = job.data;
@@ -211,8 +212,8 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
       } catch (error) {
         // Log error if any during exposure update
         logger.error({
-          context: `error in ${item} exposure update at delete bet`,
-          process: `User ID : ${userId} and ${item} id ${partnershipId}`,
+          context: `error in exposure update at delete session bet expert`,
+          process: `User ID : ${userId} and expert id ${partnershipId}`,
           error: error.message,
           stake: error.stack,
         });
@@ -223,6 +224,92 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
   } catch (error) {
     logger.error({
       context: "error in session bet delete Queue",
+      process: `process job for user id ${userId}`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return done(null, {});
+  }
+});
+
+expertMatchBetDeleteQueue.process(async function (job, done) {
+  let jobData = job.data;
+  let userId = jobData.userId;
+  try {
+    // Parse partnerships from userRedisData
+    let partnershipObj = {};
+    try{
+      partnershipObj = JSON.parse(jobData.partnership);
+    } catch {
+      partnershipObj = jobData.partnership;
+    }
+
+    // Extract relevant data from jobData
+    let exposureDiff = jobData.exposureDiff;
+    let betId = jobData.betId;
+    let matchId = jobData.matchId;
+    let deleteReason = jobData.deleteReason;
+    let domainUrl = jobData.domainUrl;
+    let betPlacedId = jobData.betPlacedId;
+    let matchBetType = jobData.matchBetType;
+    let newTeamRate = jobData.newTeamRate;
+    let teamArateRedisKey = jobData.teamArateRedisKey;
+    let teamBrateRedisKey = jobData.teamBrateRedisKey;
+    let teamCrateRedisKey = jobData.teamCrateRedisKey;
+
+    // Iterate through partnerships based on role and update exposure
+    if (partnershipObj['fwPartnershipId']) {
+      let partnershipId = partnershipObj['fwPartnershipId'];
+      let partnership = partnershipObj[`fwPartnership`];
+      try {
+        // Get user data from Redis or balance data by userId
+        let expertRedisData = await getExpertsRedisData();
+        let masterTeamRates = {
+          teamA: Number(expertRedisData[teamArateRedisKey]) || 0,
+          teamB: Number(expertRedisData[teamBrateRedisKey]) || 0,
+          teamC: teamCrateRedisKey ? Number(expertRedisData[teamCrateRedisKey]) || 0 : 0
+        };
+        masterTeamRates.teamA = masterTeamRates.teamA + ((newTeamRate.teamA * partnership) / 100);
+        masterTeamRates.teamB = masterTeamRates.teamB + ((newTeamRate.teamB * partnership) / 100);
+        masterTeamRates.teamC = masterTeamRates.teamC + ((newTeamRate.teamC * partnership) / 100);
+
+        masterTeamRates.teamA = parseFloat((masterTeamRates.teamA).toFixed(2));
+        masterTeamRates.teamB = parseFloat((masterTeamRates.teamB).toFixed(2));
+        masterTeamRates.teamC = parseFloat((masterTeamRates.teamC).toFixed(2));
+
+        let redisObj = {
+          [teamArateRedisKey]: masterTeamRates.teamA,
+          [teamBrateRedisKey]: masterTeamRates.teamB,
+          ...(teamCrateRedisKey ? { [teamCrateRedisKey]: masterTeamRates.teamC } : {})
+        }
+
+        await setExpertsRedisData(redisObj);
+
+        // Send data to socket for session bet placement
+        sendMessageToUser(socketData.expertRoomSocket, socketData.matchDeleteBet, {
+          ...masterTeamRates,
+          betId: betId,
+          matchId: matchId,
+          betPlacedId: betPlacedId,
+          deleteReason: deleteReason,
+          domainUrl: domainUrl,
+          matchBetType
+        });
+      } catch (error) {
+        // Log error if any during exposure update
+        logger.error({
+          context: `error in exposure update at delete match bet expert`,
+          process: `User ID : ${userId} and expert id ${partnershipId}`,
+          error: error.message,
+          stake: error.stack,
+        });
+      }
+    }
+
+    return done(null, {});
+  } catch (error) {
+    logger.error({
+      context: "error in match bet delete Queue",
       process: `process job for user id ${userId}`,
       error: error.message,
       stake: error.stack,

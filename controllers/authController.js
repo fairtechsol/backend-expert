@@ -54,8 +54,18 @@ exports.login = async (req, res) => {
         req,
         res
       );
+    } else if (user.userBlock) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "user.blocked",
+          },
+        },
+        req,
+        res
+      );
     }
-
     // force logout user if already login on another device
     await forceLogoutIfLogin(user.id);
 

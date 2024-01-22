@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const validator = require('../middleware/joi.validator')
-const {CreateUser, ChangePassword, UpdateUser, ChangeSelfPassword} = require('../validators/userValidator');
-const {createUser, changePassword, updateUser, changeSelfPassword, expertList, getProfile, totalLoginCount} = require('../controllers/userController');
+const {CreateUser, ChangePassword, UpdateUser, ChangeSelfPassword, LockUnlockUser} = require('../validators/userValidator');
+const {createUser, changePassword, updateUser, changeSelfPassword, expertList, getProfile, totalLoginCount, lockUnlockUser} = require('../controllers/userController');
 
 const { isAuthenticate } = require('../middleware/auth');
 
@@ -17,5 +17,6 @@ router.post('/admin/password',validator(ChangePassword),changePassword);
 router.post('/password',isAuthenticate,validator(ChangeSelfPassword),changeSelfPassword);
 router.get('/list',expertList);
 router.get('/totalLoginCount', isAuthenticate, totalLoginCount)
+router.put('/lockUnlockUser', isAuthenticate, validator(LockUnlockUser), lockUnlockUser)
 
 module.exports = router;

@@ -72,4 +72,8 @@ module.exports.ChangePassword=Joi.object({
     }),
     createBy:Joi.string().required(),
 });
-
+module.exports.LockUnlockUser = Joi.object({
+  userId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  userBlock:  Joi.boolean().required(),
+  blockBy:Joi.string().required(),
+})

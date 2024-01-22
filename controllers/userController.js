@@ -420,3 +420,36 @@ exports.totalLoginCount = async (req, res) => {
   }
 
 }
+
+exports.lockUnlockUser = async (req, res) => {
+  try {
+    const { userId, userBlock, blockBy } = req.body;
+
+    const user = await getUserById(userId)
+
+    if (!user) {
+      throw {
+        msg: "notFound",
+        keys: { name: "User" },
+      };
+    } else {
+
+      await updateUser(user.id, { userBlock, blockBy })
+      await forceLogoutUser(user.id);
+    }
+
+    return SuccessResponse(
+      { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at lock unlock user.`,
+      stack: error.stack,
+      message: error.message
+    });
+    return ErrorResponse(error, req, res);
+
+  }
+}

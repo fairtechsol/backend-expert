@@ -433,9 +433,25 @@ exports.lockUnlockUser = async (req, res) => {
         keys: { name: "User" },
       };
     } else {
-
-      await updateUser(user.id, { userBlock, blockBy })
-      await forceLogoutUser(user.id);
+      if (user.userBlock == userBlock) {
+        throw new Error("user.cannotUpdate");
+      }
+      if (userBlock == true) {
+        await updateUser(user.id, { userBlock, blockBy })
+        await forceLogoutUser(user.id);
+      } else {
+        if (user?.blockBy != blockBy) {
+          return ErrorResponse(
+            {
+              statusCode: 403,
+              message: { msg: "user.blockCantAccess" },
+            },
+            req,
+            res
+          );
+        }
+        await updateUser(user.id, { userBlock, blockBy })
+      }
     }
 
     return SuccessResponse(
@@ -444,11 +460,6 @@ exports.lockUnlockUser = async (req, res) => {
       res
     );
   } catch (error) {
-    logger.error({
-      error: `Error at lock unlock user.`,
-      stack: error.stack,
-      message: error.message
-    });
     return ErrorResponse(error, req, res);
 
   }

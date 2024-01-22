@@ -17,6 +17,6 @@ router.post('/admin/password',validator(ChangePassword),changePassword);
 router.post('/password',isAuthenticate,validator(ChangeSelfPassword),changeSelfPassword);
 router.get('/list',expertList);
 router.get('/totalLoginCount', isAuthenticate, totalLoginCount)
-router.put('/lockUnlockUser', isAuthenticate, validator(LockUnlockUser), lockUnlockUser)
+router.put('/lockUnlockUser', validator(LockUnlockUser), lockUnlockUser)
 
 module.exports = router;

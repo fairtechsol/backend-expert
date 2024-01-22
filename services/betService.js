@@ -19,6 +19,20 @@ exports.getSpecificResultsSession = async (where, select) => {
     return data;
 }
 
+exports.getAllProfitLossResults = async (matchId) => {
+    let data = await resultRepo.createQueryBuilder()
+        .where({
+            matchId: matchId
+        })
+        .select([
+            'SUM(ROUND(result."profitLoss"::numeric, 2)) AS "totalProfitLoss"'
+        ]).addSelect('result."matchId"', "matchId")
+        .groupBy('result."matchId"')
+        .getRawMany();
+
+    return data;
+}
+
 exports.addResult = async (body)=>{
     let expertResult = await resultRepo.save(body);
     return expertResult;

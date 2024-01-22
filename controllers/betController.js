@@ -29,14 +29,12 @@ const {
   updateMarketSessionIdRedis,
   setExpertsRedisData,
   deleteAllMatchRedis,
-  updateMatchKeyInCache,
   deleteKeyFromMatchRedisData,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
   updateSessionBetting,
   addSessionBetting,
-  getSessionBattingByMatchId,
   getSessionBettings,
 } = require("../services/sessionBettingService");
 const { sendMessageToUser } = require("../sockets/socketManager");
@@ -341,7 +339,7 @@ exports.declareSessionNoResult = async (req, res) => {
         matchId: matchId,
         betId: betId,
         score:noResult,
-        profitLoss: fwProfitLoss,
+        profitLoss: 0,
         stopAt: match.stopAt,
         activeStatus: betStatusType.result
       }

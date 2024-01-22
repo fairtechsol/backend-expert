@@ -1,5 +1,6 @@
 const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType,socketData, betStatusType } = require("../config/contants");
 const { logger } = require("../config/logger");
+const { getAllProfitLossResults } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting,  addMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
 const {
   getMatchById,
@@ -435,6 +436,10 @@ exports.listMatch = async (req, res) => {
         req,
         res
       );
+    }
+
+    for(let i=0;i<match?.matches?.length;i++){
+      match.matches[i].pl=await getAllProfitLossResults(match.matches[i].id);
     }
 
     return SuccessResponse(

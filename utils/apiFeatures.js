@@ -135,8 +135,14 @@ class ApiFeature {
   }
 
   async getResult() {
+    console.log(this.query.getQuery());
     // Execute the final query and return the result
     return this.query.getManyAndCount();
+  }
+
+  async getRawAndMany() {
+    // Execute the final query and return the result
+    return this.query.getRawMany();
   }
 
   parseFilterValue(value) {

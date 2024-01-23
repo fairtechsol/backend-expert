@@ -410,7 +410,6 @@ exports.totalLoginCount = async (req, res) => {
       res
     );
   } catch (error) {
-    console.error('Error:', error);
     logger.error({
       error: `Error at get login count.`,
       stack: error.stack,

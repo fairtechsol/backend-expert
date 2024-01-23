@@ -1,6 +1,7 @@
 const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting } = require("../services/matchBettingService");
+const { getMatch, getMatchById } = require("../services/matchService");
 const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -88,6 +89,9 @@ exports.getMatchBettingDetails = async (req, res) => {
     let matchBetting, matchDetails;
     let manualBets = Object.values(manualMatchBettingType);
     matchDetails = await getMatchFromCache(matchId);
+    if (!matchDetails) {
+      matchDetails = await getMatchById(matchId);
+    }
     if (!matchDetails || lodash.isEmpty(matchDetails)) {
       return ErrorResponse({statusCode: 404,message: { msg: "notFound", keys: { name: "Match Betting" } }},req,res);
   }
@@ -110,6 +114,12 @@ exports.getMatchBettingDetails = async (req, res) => {
       matchBetting = matchDetails[marketBettingTypeByBettingType[type]];
       // fetch third party api for market rate
     }
+    if (!matchBetting) {
+      matchBetting = await getMatchBetting({
+        matchId: matchId,
+        type: type
+      });
+    }
     let response = {
       match: match,
       matchBetting: matchBetting,
@@ -117,7 +127,7 @@ exports.getMatchBettingDetails = async (req, res) => {
     return SuccessResponse(
       {
         statusCode: 200,
-        message: { msg: "success", keys: { name: "Session" } },
+        message: { msg: "success", keys: { name: "Match" } },
         data: response,
       },
       req,

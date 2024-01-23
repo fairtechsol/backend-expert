@@ -56,14 +56,8 @@ exports.getMatchBetting = async (req, res) => {
                 addAllMatchBetting(matchId, null);
             }
 
-          let expertData = await getExpertsRedisMatchData(matchId);
-          let redisIds = [`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`];
-          let teamRates = {};
-          expertData?.forEach((item, index) => {
-            if (item) {
-              teamRates[redisIds?.[index]?.split("_")[0]] = item;
-            }
-          });
+          let teamRates = await getExpertsRedisMatchData(matchId);
+         
           matchBetting.matchRates = teamRates;
         }
 

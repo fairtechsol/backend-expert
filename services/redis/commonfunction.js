@@ -484,10 +484,17 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
 
 exports.getExpertsRedisMatchData = async (matchId) => {
   // Retrieve match data from Redis
-  const matchData = await internalRedis.hmget(redisKeys.expertRedisData, `${redisKeys.userTeamARate}${matchId}`,`${redisKeys.userTeamBRate}${matchId}`,`${redisKeys.userTeamCRate}${matchId}`,`${redisKeys.yesRateComplete}${matchId}`,`${redisKeys.noRateComplete}${matchId}`,`${redisKeys.yesRateTie}${matchId}`,`${redisKeys.noRateTie}${matchId}`);
-
+  let redisIds = [`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`];
+  
+  const matchData = await internalRedis.hmget(redisKeys.expertRedisData, ...redisIds);
+  let teamRates = {};
+  matchData?.forEach((item, index) => {
+    if (item) {
+      teamRates[redisIds?.[index]?.split("_")[0]] = item;
+    }
+  });
   // Parse and return the match data or null if it doesn't exist
-  return matchData;
+  return teamRates;
 
 }
 // create function for remove key from market session

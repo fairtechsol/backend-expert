@@ -1,8 +1,8 @@
-const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData } = require("../config/contants");
+const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, redisKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting } = require("../services/matchBettingService");
-const { getMatch, getMatchById } = require("../services/matchService");
-const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache } = require("../services/redis/commonfunction");
+const { getMatchById } = require("../services/matchService");
+const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
@@ -55,6 +55,10 @@ exports.getMatchBetting = async (req, res) => {
                 }
                 addAllMatchBetting(matchId, null);
             }
+
+          let teamRates = await getExpertsRedisMatchData(matchId);
+         
+          matchBetting.matchRates = teamRates;
         }
 
         return SuccessResponse(
@@ -124,6 +128,7 @@ exports.getMatchBettingDetails = async (req, res) => {
       match: match,
       matchBetting: matchBetting,
     };
+
     return SuccessResponse(
       {
         statusCode: 200,

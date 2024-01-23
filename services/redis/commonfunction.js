@@ -460,7 +460,7 @@ exports.deleteKeyFromManualSessionId = async (matchId, sessionId) => {
 }
 
 exports.setExpertsRedisData = async (data) => {
-  await internalRedis.hset(redisKeys.expertRedisData, data)
+  await internalRedis.hmset(redisKeys.expertRedisData, data)
 }
 
 exports.getExpertsRedisData = async () => {
@@ -479,6 +479,22 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
 
   // Parse and return the session data or null if it doesn't exist
   return sessionData;
+
+}
+
+exports.getExpertsRedisMatchData = async (matchId) => {
+  // Retrieve match data from Redis
+  let redisIds = [`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`];
+  
+  const matchData = await internalRedis.hmget(redisKeys.expertRedisData, ...redisIds);
+  let teamRates = {};
+  matchData?.forEach((item, index) => {
+    if (item) {
+      teamRates[redisIds?.[index]?.split("_")[0]] = item;
+    }
+  });
+  // Parse and return the match data or null if it doesn't exist
+  return teamRates;
 
 }
 // create function for remove key from market session

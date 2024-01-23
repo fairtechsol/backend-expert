@@ -1,4 +1,4 @@
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType,socketData, betStatusType } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType,socketData, betStatusType, redisKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting,  addMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
@@ -14,7 +14,7 @@ const {
   getMatchByCompetitionIdAndDates,
   getMatchWithBettingAndSession,
 } = require("../services/matchService");
-const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis, updateMatchKeyInCache,  updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, addDataInRedis } = require("../services/redis/commonfunction");
+const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis, updateMatchKeyInCache,  updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, addDataInRedis, getExpertsRedisData, getExpertsRedisMatchData } = require("../services/redis/commonfunction");
 const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
@@ -655,6 +655,9 @@ const categorizedMatchBettings = {
 
     delete match.matchBettings;
   }
+  let teamRates = await getExpertsRedisMatchData(matchId);
+  
+  match.teamRates = teamRates;
   return match;
 }
 

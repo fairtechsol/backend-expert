@@ -6,6 +6,9 @@ const { getUserByUserName } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
+const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
+const { walletDomain } = require("../config/contants");
+const { setExpertsRedisData, getExpertsRedisData } = require("../services/redis/commonfunction");
 
 // Function to validate a user by username and password
 const validateUser = async (userName, password) => {
@@ -32,6 +35,29 @@ const validateUser = async (userName, password) => {
   // If the user is not found, return null
   return null;
 };
+
+const setBetDataRedis = async () => {
+  let data = await getExpertsRedisData();
+  if (!data) {
+    let result = await apiCall(
+      apiMethod.get,
+      walletDomain + allApiRoutes.wallet.loginData
+    )
+      .then((data) => {
+        return data.data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at setting redis data at expert side`,
+          stack: err.stack,
+          message: err.message,
+        });
+        throw err;
+      });
+
+    setExpertsRedisData(result);
+  }
+}
 
 exports.login = async (req, res) => {
   try {
@@ -68,7 +94,7 @@ exports.login = async (req, res) => {
     }
     // force logout user if already login on another device
     await forceLogoutIfLogin(user.id);
-
+    await setBetDataRedis();
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, userName: user.userName },

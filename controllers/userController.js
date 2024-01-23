@@ -351,6 +351,7 @@ if(!loginId){
         "betFairMatchPrivilege",
         "bookmakerMatchPrivilege",
         "sessionMatchPrivilege",
+        "userBlock"
       ],
       offset,
       limit

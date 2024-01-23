@@ -61,15 +61,6 @@ module.exports.ChangePassword=Joi.object({
       'string.pattern.base': 'user.passwordMatch',
         'any.required': 'Password is required',
     }),
-  confirmPassword: Joi.string()
-    .required()
-    .valid(Joi.ref("password"))
-    .label("Confirm Password")
-    .messages({
-      "string.base": "Confirm Password must be a string",
-      "any.required": "Confirm Password is required",
-      "any.only": "Confirm Password must match password",
-    }),
     createBy:Joi.string().required(),
 });
 module.exports.LockUnlockUser = Joi.object({

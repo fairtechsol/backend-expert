@@ -37,12 +37,12 @@ exports.getMatch = async (filters, select, query) => {
     let matchQuery = new ApiFeature(
       match
         .createQueryBuilder()
-        .select(select)
-        .where(filters)
         .leftJoinAndSelect(
           "match.matchBettings",
           "matchBetting"
         )
+        .where(filters)
+        .select(select)
         .orderBy("match.startAt", "DESC"),
       query
     )

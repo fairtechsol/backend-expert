@@ -268,7 +268,7 @@ exports.changeSelfPassword = async (req, res, next) => {
 exports.changePassword = async (req, res, next) => {
   try {
     // Destructure request body
-    let { password,confirmPassword,id,createBy} = req.body;
+    let { password,id,createBy} = req.body;
 
     let user = await getUser({id : id,createBy:createBy},["id"]);
     if(!user){
@@ -284,7 +284,7 @@ exports.changePassword = async (req, res, next) => {
     password = bcrypt.hashSync(password, 10);
 
     // Update only the password if conditions are not met
-    await updateUser(id, { loginAt: new Date(), password });
+    await updateUser(id, { loginAt:null, password });
     await forceLogoutUser(id);
 
     return SuccessResponse(

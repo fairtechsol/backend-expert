@@ -410,7 +410,6 @@ exports.totalLoginCount = async (req, res) => {
       res
     );
   } catch (error) {
-    console.error('Error:', error);
     logger.error({
       error: `Error at get login count.`,
       stack: error.stack,
@@ -419,4 +418,48 @@ exports.totalLoginCount = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 
+}
+
+exports.lockUnlockUser = async (req, res) => {
+  try {
+    const { userId, userBlock, blockBy } = req.body;
+
+    const user = await getUserById(userId)
+
+    if (!user) {
+      throw {
+        msg: "notFound",
+        keys: { name: "User" },
+      };
+    } else {
+      if (user.userBlock == userBlock) {
+        throw new Error("user.cannotUpdate");
+      }
+      if (userBlock == true) {
+        await updateUser(user.id, { userBlock, blockBy })
+        await forceLogoutUser(user.id);
+      } else {
+        if (user?.blockBy != blockBy) {
+          return ErrorResponse(
+            {
+              statusCode: 403,
+              message: { msg: "user.blockCantAccess" },
+            },
+            req,
+            res
+          );
+        }
+        await updateUser(user.id, { userBlock, blockBy })
+      }
+    }
+
+    return SuccessResponse(
+      { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+
+  }
 }

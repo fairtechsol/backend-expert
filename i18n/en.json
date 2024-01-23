@@ -26,8 +26,12 @@
     "passwordMatch": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?).",
     "confirmPasswordNotMatch":"Password and confirm password did not match.",
     "userExist" : "User already exist on given user name." ,
-    "profile": "Profile get successfully."
-    
+    "profile": "Profile get successfully.",
+    "userBlockError":"User is already blocked.",
+    "blockCantAccess":"You can not unblock this user.",
+    "lock/unlockSuccessfully" : "User lock and unlock operation successfull.",
+    "blocked": "There is something wrong with your account. Please contact your administrator.",
+    "cannotUpdate":"Cannot update same condition"
   },
   "match":{
     "betAlreadyExistForMatch":"Bet already exist for this match.",

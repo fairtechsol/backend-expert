@@ -58,6 +58,15 @@ const userSchema = new EntitySchema({
       nullable: true,
       default: null,
     },
+    userBlock:{
+      type:"boolean",
+      nullable:false,
+      default:false
+    },
+    blockBy:{
+      type:"uuid",
+      nullable:true
+    }
   },
   orderBy: {
     userName: "ASC",

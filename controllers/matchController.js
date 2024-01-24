@@ -1,4 +1,4 @@
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType,socketData, betStatusType, redisKeys } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType,socketData, betStatusType, redisKeys, walletDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting,  addMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
@@ -18,6 +18,7 @@ const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMat
 const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
+const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 /**
  * Create or update a match.
@@ -243,6 +244,37 @@ exports.createMatch = async (req, res) => {
 
     await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
     broadcastEvent(socketData.addMatchEvent);
+
+    await apiCall(
+      apiMethod.post,
+      walletDomain + allApiRoutes.wallet.addMatch,
+      {
+        matchType: match.matchType,
+        competitionId: match.competitionId,
+        competitionName: match.competitionName,
+        title: match.title,
+        marketId: match.marketId,
+        eventId: match.eventId,
+        teamA: match.teamA,
+        teamB: match.teamB,
+        teamC: match.teamC,
+        startAt: match.startAt,
+        id: match.id,
+        createdAt: match.createdAt
+      }
+    )
+      .then((data) => {
+        return data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at add match.`,
+          stack: err.stack,
+          message: err.message,
+        });
+        throw err;
+      });
+
     return SuccessResponse(
       {
         statusCode: 200,
@@ -462,7 +494,7 @@ exports.listMatch = async (req, res) => {
   }
 };
 
-const commonGetMatchDetails=async (matchId)=>{
+const commonGetMatchDetails=async (matchId,userId)=>{
   let match = await getMatchFromCache(matchId);
 
   // Check if the match exists
@@ -656,15 +688,16 @@ const categorizedMatchBettings = {
     delete match.matchBettings;
   }
   let teamRates = await getExpertsRedisMatchData(matchId);
-  
-  match.teamRates = teamRates;
+  if (!userId) {
+    match.teamRates = teamRates;
+  }
   return match;
 }
 
 exports.matchDetails = async (req, res) => {
   try {
     const { id: matchId } = req.params;
-
+    const userId = req?.user?.id;
 
     let match;
 
@@ -673,10 +706,10 @@ exports.matchDetails = async (req, res) => {
     if (matchIds?.length > 1) {
       match = [];
       for (let i = 0; i < matchIds?.length; i++) {
-        match.push(await commonGetMatchDetails(matchIds[i]));
+        match.push(await commonGetMatchDetails(matchIds[i], userId));
       }
     } else {
-      match = await commonGetMatchDetails(matchId);
+      match = await commonGetMatchDetails(matchId, userId);
     }
 
     return SuccessResponse(

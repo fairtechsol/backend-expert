@@ -875,8 +875,9 @@ exports.unDeclareMatchResult = async (req, res) => {
     await updateExpertResult({ betId: matchOddBetting.id },{ isApprove: false, isReject: false });
     await deleteKeyFromMatchRedisData(matchId, "stopAt");
 
-    await setExpertsRedisData(response?.data?.profitLossWallet);
-
+    if (response?.data?.profitLossWallet) {
+      await setExpertsRedisData(response?.data?.profitLossWallet);
+    }
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.matchResultUnDeclared,

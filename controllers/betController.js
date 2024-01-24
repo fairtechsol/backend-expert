@@ -873,7 +873,7 @@ exports.unDeclareMatchResult = async (req, res) => {
 
     await deleteResult(matchOddBetting.id);
     await updateExpertResult({ betId: matchOddBetting.id },{ isApprove: false, isReject: false });
-    await deleteKeyFromMatchRedisData(matchId, "stopAt");
+    await deleteAllMatchRedis(matchId);
 
     if (response?.data?.profitLossWallet) {
       await setExpertsRedisData(response?.data?.profitLossWallet);

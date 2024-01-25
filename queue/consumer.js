@@ -195,6 +195,8 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
         });
         oldProfitLossParent.betPlaced = parentPLbetPlaced;
         oldProfitLossParent.maxLoss = newMaxLossParent;
+        oldProfitLossParent.totalBet = oldProfitLossParent.totalBet - userDeleteProfitLoss.total_bet;
+
         let redisObj = {
           [redisName]: JSON.stringify(oldProfitLossParent)
         };

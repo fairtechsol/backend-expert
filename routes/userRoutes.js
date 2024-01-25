@@ -3,7 +3,7 @@ const router = express.Router();
 
 const validator = require('../middleware/joi.validator')
 const {CreateUser, ChangePassword, UpdateUser, ChangeSelfPassword, LockUnlockUser} = require('../validators/userValidator');
-const {createUser, changePassword, updateUser, changeSelfPassword, expertList, getProfile, totalLoginCount, lockUnlockUser} = require('../controllers/userController');
+const {createUser, changePassword, updateUser, changeSelfPassword, expertList, getProfile, totalLoginCount, lockUnlockUser, isUserExist} = require('../controllers/userController');
 
 const { isAuthenticate } = require('../middleware/auth');
 
@@ -18,5 +18,6 @@ router.post('/password',isAuthenticate,validator(ChangeSelfPassword),changeSelfP
 router.get('/list',expertList);
 router.get('/totalLoginCount', isAuthenticate, totalLoginCount)
 router.put('/lockUnlockUser', validator(LockUnlockUser), lockUnlockUser)
+router.get("/exist", isUserExist);
 
 module.exports = router;

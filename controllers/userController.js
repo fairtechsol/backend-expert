@@ -120,6 +120,15 @@ exports.getProfile = async (req, res) => {
   );
 };
 
+exports.isUserExist = async (req, res) => {
+  let { userName } = req.query;
+
+  const isUserExist = await getUser({ userName: userName });
+
+  return SuccessResponse({ statusCode: 200, data: { isUserExist: Boolean(isUserExist) } }, req, res);
+}
+
+
 
 exports.updateUser = async (req, res) => {
   try {

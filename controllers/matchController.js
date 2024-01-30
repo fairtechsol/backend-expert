@@ -688,9 +688,7 @@ const categorizedMatchBettings = {
     delete match.matchBettings;
   }
   let teamRates = await getExpertsRedisMatchData(matchId);
-  if (!userId) {
-    match.teamRates = teamRates;
-  }
+  match.teamRates = teamRates;
   return match;
 }
 

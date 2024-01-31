@@ -9,6 +9,7 @@ module.exports.userRoleConstant = {
   admin: "admin",
   superMaster: "superMaster",
   master: "master",
+  agent: "agent",
   expert: "expert",
   user: "user",
 };

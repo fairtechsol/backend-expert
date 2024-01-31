@@ -121,7 +121,7 @@ exports.getMatchWithBettingAndSession = async (
   try {
     // Start building the query
     let matchQuery = match
-      .createQueryBuilder()
+      .createQueryBuilder().where({ stopAt: IsNull() })
       ;
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery

@@ -123,7 +123,7 @@ exports.getProfile = async (req, res) => {
 exports.isUserExist = async (req, res) => {
   let { userName } = req.query;
 
-  const isUserExist = await getUser({ userName: userName });
+  const isUserExist = await getUserByUserName(userName);
 
   return SuccessResponse({ statusCode: 200, data: { isUserExist: Boolean(isUserExist) } }, req, res);
 }
@@ -381,10 +381,7 @@ if(!loginId){
         res
       );
     }
-    response.count = users[1]
-
-
-    
+    response.count = users[1];
 
     response.list = users[0];
     return SuccessResponse(

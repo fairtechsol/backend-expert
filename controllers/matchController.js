@@ -533,7 +533,7 @@ const commonGetMatchDetails=async (matchId,userId)=>{
     if (!sessions) {
    
       // If no session data is found in Redis, fetch it from the database
-      sessions = await getSessionBattingByMatchId(matchId);
+      sessions = await getSessionBattingByMatchId(matchId, !userId ? { activeStatus: betStatusType.live } : {});
 
       let result = {};
       let apiSelectionIdObj = {};
@@ -552,6 +552,7 @@ const commonGetMatchDetails=async (matchId,userId)=>{
     else {
       if (userId) {
         sessions = await getSessionBattingByMatchId(matchId);
+        sessions = sessions?.map((item) => JSON.stringify(item));
       }
       else {
         sessions = Object.values(sessions);

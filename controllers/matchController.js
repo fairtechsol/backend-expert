@@ -549,11 +549,16 @@ const commonGetMatchDetails=async (matchId,userId)=>{
       settingAllSessionMatchRedis(matchId, result);
       addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
     }
-    else{
-      sessions=Object.values(sessions);
+    else {
+      if (userId) {
+        sessions = await getSessionBattingByMatchId(matchId);
+      }
+      else {
+        sessions = Object.values(sessions);
+      }
     }
-const categorizedMatchBettings = {
-  ...(match.matchOdd
+    const categorizedMatchBettings = {
+      ...(match.matchOdd
     ? { [matchBettingType.matchOdd]: match.matchOdd }
     : {}),
     ...(match.marketBookmaker

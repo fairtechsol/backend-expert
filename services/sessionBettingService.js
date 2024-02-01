@@ -31,11 +31,11 @@ exports.getSessionBettings = async (where, select) => {
   });
 };
 
-exports.getSessionBattingByMatchId = async (id, select) => {
+exports.getSessionBattingByMatchId = async (id, where = {}, select) => {
   return await SessionBetting.find({
     where: {
       matchId: id,
-      activeStatus: betStatusType.live
+      ...where
     },
     select: select,
   });

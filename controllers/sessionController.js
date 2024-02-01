@@ -316,6 +316,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       }
     }
     let updateSession = await updateSessionBetting({id : sessionId},{activeStatus : status});
+
     // Update redis cache
       if(status == betStatusType.live){
         await updateMarketSessionIdRedis(sessionData.matchId,sessionData.selectionId,sessionId);

@@ -17,8 +17,9 @@ module.exports.addMatchValidate = Joi.object({
     "any.required": "Competition ID is required",
   }),
   competitionName: Joi.string().required().messages({
-    "string.base": "Competition name must be a string",
-    "any.required": "Competition name is required",
+    "string.base": "Match name must be a string",
+    "any.required": "Match name is required",
+    'any.empty': 'Match name cannot be empty'
   }),
   title: Joi.string().required().messages({
     "string.base": "Title must be a string",

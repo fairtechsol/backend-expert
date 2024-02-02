@@ -431,6 +431,11 @@ exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
   await internalRedis.hset(`${matchId}_selectionId`, selectionId, data);
 };
 
+exports.updateMultipleMarketSessionIdRedis = async (matchId, data) => {
+  // Use a Redis pipeline for atomicity and efficiency
+  await internalRedis.hset(`${matchId}_selectionId`, data);
+};
+
 exports.addDataInRedis = async (key, dataObj) => {
   // Use a Redis pipeline for atomicity and efficiency
   if (!lodash.isEmpty(dataObj)) {
@@ -448,7 +453,7 @@ exports.getUserRedisData = async (userId) => {
 }
 
 // create function for remove key from market session
-exports.deleteKeyFromMarketSessionId = async (matchId, selectionId) => {
+exports.deleteKeyFromMarketSessionId = async (matchId, ...selectionId) => {
   const deleteKey = await internalRedis.hdel(`${matchId}_selectionId`, selectionId);
   return deleteKey;
 }
@@ -460,7 +465,9 @@ exports.deleteKeyFromManualSessionId = async (matchId, sessionId) => {
 }
 
 exports.setExpertsRedisData = async (data) => {
-  await internalRedis.hmset(redisKeys.expertRedisData, data)
+  if (!lodash.isEmpty(data)) {
+    await internalRedis.hset(redisKeys.expertRedisData, data)
+  }
 }
 
 exports.getExpertsRedisData = async () => {

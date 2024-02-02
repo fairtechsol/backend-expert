@@ -264,9 +264,6 @@
                   "password": {
                     "example": "any"
                   },
-                  "confirmPassword": {
-                    "example": "any"
-                  },
                   "id": {
                     "example": "any"
                   },
@@ -438,6 +435,32 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/user/exist": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userName",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       }
@@ -1160,6 +1183,12 @@
                 "type": "object",
                 "properties": {
                   "status": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  },
+                  "stopAllSessions": {
                     "example": "any"
                   }
                 }

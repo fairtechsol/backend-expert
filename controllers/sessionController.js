@@ -5,7 +5,7 @@ const {getUserById} = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache,addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey,  updateMarketSessionIdRedis, getUserRedisData,  deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis, updateMultipleMarketSessionIdRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const {  getSpecificResultsSession } = require("../services/betService");
 
@@ -299,39 +299,73 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
   try {
     let reqUser = req.user;
     let sessionId = req.params.id;
-    let {status} = req.body;
+    let { status, matchId, stopAllSessions } = req.body;
     const user = await getUserRedisData(reqUser.id);
-    if(!user){
-      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
+    if (!user) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
-    let sessionData = await getSessionBettingById(sessionId);
-    if(!sessionData){
-      return ErrorResponse({statusCode: 404,message:{msg:"NotFound",keys : "Session"}});
-    }
-    if(sessionData.createBy != reqUser.id){
-      if(!user.allPrivilege){
-        if(!user.sessionMatchPrivilege){
-          return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User"}}},req,res);
+
+    if (stopAllSessions) {
+
+      let sessionData = await getSessionBettings({ matchId: matchId, isManual: false });
+      if (!sessionData?.length) {
+        return ErrorResponse({ statusCode: 404, message: { msg: "NotFound", keys: "Session" } });
+      }
+      if (sessionData[0].createBy != reqUser.id) {
+        if (!user.allPrivilege) {
+          if (!user.sessionMatchPrivilege) {
+            return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
+          }
         }
       }
-    }
-    let updateSession = await updateSessionBetting({id : sessionId},{activeStatus : status});
+      let sessions = {};
 
-    // Update redis cache
-      if(status == betStatusType.live){
-        await updateMarketSessionIdRedis(sessionData.matchId,sessionData.selectionId,sessionId);
-      }else if(status == betStatusType.save){
-        deleteKeyFromMarketSessionId(sessionData.matchId,sessionData.selectionId);
+      sessionData?.map((item) => {
+        sessions[item?.selectionId] = item?.id;
+      });
+
+      let updateSession = await updateSessionBetting({ matchId: matchId, isManual: false }, { activeStatus: status });
+
+      // Update redis cache
+      if (status == betStatusType.live) {
+        await updateMultipleMarketSessionIdRedis(matchId, sessions);
+      } else if (status == betStatusType.save) {
+        deleteKeyFromMarketSessionId(matchId, ...sessionData?.map((item) => {
+          return item?.selectionId
+        }));
       }
-      return SuccessResponse({statusCode: 200,message: {msg: "updated",keys: {name: "Session"}}}, req,res);
+    }
+    else {
+
+      let sessionData = await getSessionBettingById(sessionId);
+      if (!sessionData) {
+        return ErrorResponse({ statusCode: 404, message: { msg: "NotFound", keys: "Session" } });
+      }
+      if (sessionData.createBy != reqUser.id) {
+        if (!user.allPrivilege) {
+          if (!user.sessionMatchPrivilege) {
+            return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
+          }
+        }
+      }
+      let updateSession = await updateSessionBetting({ id: sessionId }, { activeStatus: status });
+
+      // Update redis cache
+      if (status == betStatusType.live) {
+        await updateMarketSessionIdRedis(sessionData.matchId, sessionData.selectionId, sessionId);
+      } else if (status == betStatusType.save) {
+        deleteKeyFromMarketSessionId(sessionData.matchId, sessionData.selectionId);
+      }
+    }
+    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "Session" } } }, req, res);
 
   } catch (error) {
     logger.error({
       error: `Error At update Market Session Active Status.`,
       stack: error.stack,
       message: error.message,
-      });
-      return ErrorResponse(error, req, res);
+    });
+    return ErrorResponse(error, req, res);
   }
 }
 

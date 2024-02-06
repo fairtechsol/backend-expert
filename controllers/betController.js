@@ -123,6 +123,7 @@ exports.declareSessionResult = async (req, res) => {
       userId: userId,
       result: score,
       selectionId: resultDeclare.selectionId,
+      match: match
     });
 
     if (resultValidate) {

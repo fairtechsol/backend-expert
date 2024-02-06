@@ -33,6 +33,10 @@ const userSchema = new EntitySchema({
       nullable: false,
       default:false
     },
+    remark: {
+      type: 'varchar',
+      nullable: true
+    },
     addMatchPrivilege: {
       type: "boolean",
       nullable: false,

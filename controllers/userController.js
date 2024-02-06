@@ -37,7 +37,8 @@ exports.createUser = async (req, res) => {
       betFairMatchPrivilege,
       bookmakerMatchPrivilege,
       sessionMatchPrivilege,
-      createBy
+      createBy,
+      remark
     } = req.body;
     
     userName = userName.toUpperCase();
@@ -69,6 +70,7 @@ exports.createUser = async (req, res) => {
       betFairMatchPrivilege,
       bookmakerMatchPrivilege,
       sessionMatchPrivilege,
+      remark
     };
 
     // Add the user to the database
@@ -144,9 +146,10 @@ exports.updateUser = async (req, res) => {
       bookmakerMatchPrivilege,
       sessionMatchPrivilege,
       id,
+      remark
     } = req.body;
 
-      const isUserPresent=await getUser({id : id,createBy:createBy},["id"]);
+      const isUserPresent=await getUser({id : id,createBy:createBy});
 
       if(!isUserPresent){
         return ErrorResponse(
@@ -166,6 +169,7 @@ exports.updateUser = async (req, res) => {
         betFairMatchPrivilege : betFairMatchPrivilege ?? isUserPresent.betFairMatchPrivilege,
         bookmakerMatchPrivilege : bookmakerMatchPrivilege ?? isUserPresent.bookmakerMatchPrivilege,
         sessionMatchPrivilege : sessionMatchPrivilege ?? isUserPresent.sessionMatchPrivilege,
+        remark: remark ?? isUserPresent.remark
       }
      await updateUser(id, updateData);
      updateData["id"] = id

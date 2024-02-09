@@ -492,7 +492,7 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
 exports.getExpertsRedisMatchData = async (matchId) => {
   // Retrieve match data from Redis
   let redisIds = [`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`];
-  
+
   const matchData = await internalRedis.hmget(redisKeys.expertRedisData, ...redisIds);
   let teamRates = {};
   matchData?.forEach((item, index) => {
@@ -510,12 +510,12 @@ exports.deleteKeyFromExpertRedisData = async (...key) => {
   return deleteKey;
 }
 // create function for remove key from market session
-exports.deleteKeyFromMatchRedisData = async (matchId,...key) => {
+exports.deleteKeyFromMatchRedisData = async (matchId, ...key) => {
   const deleteKey = await internalRedis.hdel(`${matchId}_match`, key);
   return deleteKey;
 }
 // create function for remove key from redis
-exports.deleteAllMatchRedis= async (matchId) => {
+exports.deleteAllMatchRedis = async (matchId) => {
   await internalRedis.del(matchId + "_match", matchId + "_manualBetting", matchId + "_session", matchId + "_selectionId");
 }
 

@@ -137,6 +137,9 @@
                   },
                   "createBy": {
                     "example": "any"
+                  },
+                  "remark": {
+                    "example": "any"
                   }
                 }
               }
@@ -229,6 +232,9 @@
                     "example": "any"
                   },
                   "id": {
+                    "example": "any"
+                  },
+                  "remark": {
                     "example": "any"
                   }
                 }

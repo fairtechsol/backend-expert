@@ -156,6 +156,7 @@ exports.declareSessionResult = async (req, res) => {
           sessionDetails: resultDeclare,
           userId,
           matchId,
+          match
         }
       )
         .then((data) => {
@@ -306,6 +307,7 @@ exports.declareSessionNoResult = async (req, res) => {
         noResult,
         userId,
         matchId,
+        match
       }
     )
       .then((data) => {

@@ -566,10 +566,10 @@ const checkResult = async (body) => {
 
     return true;
   } else if (checkExistResult && checkExistResult.userId == userId) {
-    throw {
-      statusCode: 400,
-      message: { msg: "bet.resultDuplicate" },
-    };
+    await updateExpertResult({id:checkExistResult.id},{
+      result:result
+    });
+    return true;
   } else if (checkExistResult && checkExistResult.result != result) {
     checkExistResult.isReject = true;
     addExpertResult(checkExistResult);

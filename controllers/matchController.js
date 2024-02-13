@@ -141,14 +141,16 @@ exports.createMatch = async (req, res) => {
         type: matchBettingType.matchOdd,
         name: intialMatchBettingsName.initialMatchOdd,
         maxBet: matchOddMaxBet,
-        marketId : matchOddMarketId
+        marketId : matchOddMarketId,
+        activeStatus: betStatusType.save
       },
       {
         ...matchBetting,
         type: matchBettingType.bookmaker,
         name: intialMatchBettingsName.initialBookmaker,
         maxBet: betFairBookmakerMaxBet,
-        marketId : marketBookmakerId
+        marketId : marketBookmakerId,
+        activeStatus: betStatusType.save
       },
       ...(bookmakers?.map((item, index) => {
         const { maxBet, marketName } = item;
@@ -177,7 +179,8 @@ exports.createMatch = async (req, res) => {
       type: matchBettingType.completeMatch,
       name: initialMatchNames.completeMatch,
       maxBet:completeMatchMaxBet,
-      marketId : completeMatchMarketId
+      marketId : completeMatchMarketId,
+      activeStatus: betStatusType.save
     })
    }else{
     matchBettings.push({
@@ -185,7 +188,9 @@ exports.createMatch = async (req, res) => {
       type: matchBettingType.completeMatch,
       name: initialMatchNames.completeMatch,
       maxBet:completeMatchMaxBet,
-      marketId : addIncrement(matchOddMarketId,2)
+      marketId : addIncrement(matchOddMarketId,2),
+      activeStatus: betStatusType.save
+
     })
    }
 
@@ -196,7 +201,8 @@ exports.createMatch = async (req, res) => {
         type: matchBettingType.tiedMatch1,
         name: initialMatchNames.market,
         maxBet:marketTiedMatchMaxBet,
-        marketId : tiedMatchMarketId
+        marketId : tiedMatchMarketId,
+        activeStatus: betStatusType.save
       })
    }else{
     matchBettings.push(
@@ -205,8 +211,9 @@ exports.createMatch = async (req, res) => {
         type: matchBettingType.tiedMatch1,
         name: initialMatchNames.market,
         maxBet:marketTiedMatchMaxBet,
-        marketId : addIncrement(matchOddMarketId,1)
-      })
+        marketId : addIncrement(matchOddMarketId,1),
+        activeStatus: betStatusType.save
+      });
    }
     // Attach bookmakers to the match
     let insertedMatchBettings = await insertMatchBettings(matchBettings);

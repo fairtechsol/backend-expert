@@ -68,7 +68,7 @@ let calculateRateAmount = async (jobData, userId) => {
       });
       //send Data to socket
       jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
-      sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData });
+      sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData, userRedisObj });
     }
     catch (error) {
       logger.error({

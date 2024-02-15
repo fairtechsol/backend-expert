@@ -12,7 +12,7 @@ module.exports = function (Schema) {
             if (err.isJoi)
                 return ErrorResponse({ statusCode: 400, message: { msg: err.message.replace(/"/g, "") } }, req, res)
             else
-            return ErrorResponse({ statusCode: 400, message: { msg: err.message.replace(/"/g, "") } }, req, res)
+            return ErrorResponse({ statusCode: 400, message: { msg: err?.message?.replace(/"/g, "") } }, req, res)
         }
     }
 }

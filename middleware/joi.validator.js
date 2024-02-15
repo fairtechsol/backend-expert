@@ -11,6 +11,8 @@ module.exports = function (Schema) {
         } catch (err) {
             if (err.isJoi)
                 return ErrorResponse({ statusCode: 400, message: { msg: err.message.replace(/"/g, "") } }, req, res)
+            else
+            return ErrorResponse({ statusCode: 400, message: { msg: err?.message?.replace(/"/g, "") } }, req, res)
         }
     }
 }

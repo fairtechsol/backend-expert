@@ -25,6 +25,10 @@ exports.getMatchByMarketId = async (marketId, select) => {
   });
 };
 
+exports.getOneMatchByCondition = (where, select) => {
+  return match.findOne({where, select});
+}
+
 exports.addMatch = async (body) => {
   let insertMatch = await match.save(body);
   return insertMatch;

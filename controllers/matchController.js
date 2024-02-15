@@ -1,3 +1,4 @@
+const { ILike } = require("typeorm");
 const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType,socketData, betStatusType, redisKeys, walletDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
@@ -13,6 +14,7 @@ const {
   getMatchDates,
   getMatchByCompetitionIdAndDates,
   getMatchWithBettingAndSession,
+  getOneMatchByCondition,
 } = require("../services/matchService");
 const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis, updateMatchKeyInCache,  updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, addDataInRedis, getExpertsRedisData, getExpertsRedisMatchData } = require("../services/redis/commonfunction");
 const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
@@ -32,7 +34,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 exports.createMatch = async (req, res) => {
   try {
     // Extract relevant information from the request body
-    const {
+    let {
       matchType,
       competitionId,
       competitionName,
@@ -54,7 +56,8 @@ exports.createMatch = async (req, res) => {
       matchOddMarketId,
       tiedMatchMarketId,
       marketBookmakerId,
-      completeMatchMarketId
+      completeMatchMarketId,
+      isManualMatch = false
     } = req.body;
 
     /* access work left */
@@ -62,7 +65,7 @@ exports.createMatch = async (req, res) => {
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
-    logger.info({message:`Match added by user ${loginId} with market id: ${marketId}`});
+    logger.info({message:`Match added by user ${loginId} with market id: ${marketId} and Manual Match: ${isManualMatch}`});
     let user = await getUserById(loginId,["allPrivilege","addMatchPrivilege"])
     if(!user){
       return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
@@ -75,16 +78,30 @@ exports.createMatch = async (req, res) => {
     if (bookmakers?.length == 0) {
       return ErrorResponse({statusCode: 400,message: {msg: "match.atLeastOneBookmaker"}},req,res);
     }
-    // If ID is not provided, it's a new match creation
 
-    // Check if market ID already exists
-    const isMarketIdPresent = await getMatchByMarketId(marketId);
-    if (isMarketIdPresent) {
+    if (isManualMatch) {
+      marketId = 'manual' + Date.now();
+      isCompetitionExist = await getOneMatchByCondition({ competitionName: ILike(competitionName) }, ['competitionName', 'competitionId']);
+      if (isCompetitionExist) {
+        competitionName = isCompetitionExist.competitionName;
+        competitionId = isCompetitionExist.competitionId;
+      }
+      if (!title) {
+        title = teamA + ' v ' + teamB;
+      }
+      eventId = marketId;
+      matchOddMarketId = marketId;
+      marketBookmakerId = marketId;
+      completeMatchMarketId = marketId;
+      tiedMatchMarketId = marketId;
+      completeMatchMarketId = marketId;
+      isManualMatchExist = await getOneMatchByCondition({ title: ILike(title) }, ['id', 'title']);
+      if (isManualMatchExist) {
         logger.error({
-            error: `Match already exist for market id: ${marketId}`
-          });
-
-      return ErrorResponse({statusCode: 400,message: {msg: "alreadyExist",keys: {name: "Match"}}},req,res);
+          error: `Match already exist for title: ${title}`
+        });
+        return ErrorResponse({ statusCode: 400, message: { msg: "alreadyExist", keys: { name: "Match" } } }, req, res);
+      }
     }
 
     // Prepare match data for a new match
@@ -107,17 +124,22 @@ exports.createMatch = async (req, res) => {
     let maxBetValues = bookmakers.map(item => item.maxBet);
     let minimumMaxBet = Math.min(...maxBetValues);
     if(minimumMaxBet < minBet){
- 
-      return ErrorResponse(
-        {
+      return ErrorResponse({
           statusCode: 400,
           message: {
             msg: "match.maxMustBeGreater",
           },
-        },
-        req,
-        res
-      );
+        }, req, res);
+    }
+
+    // Check if market ID already exists
+    const isMarketIdPresent = await getMatchByMarketId(marketId);
+    if (isMarketIdPresent) {
+        logger.error({
+            error: `Match already exist for market id: ${marketId}`
+          });
+
+      return ErrorResponse({statusCode: 400,message: {msg: "alreadyExist",keys: {name: "Match"}}},req,res);
     }
     // Add the new match
     const match = await addMatch(matchData);

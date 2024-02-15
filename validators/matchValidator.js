@@ -117,13 +117,13 @@ let addMatchSchema = Joi.object({
 module.exports.addMatchValidate = addMatchSchema.when(Joi.object({ isManualMatch: Joi.exist() }).unknown(), {
   then: Joi.object({
       // Define conditional validations when isManualMatch is true
-      competitionId: Joi.string().optional().allow(null),
-      marketId: Joi.string().optional().allow(null),
-      eventId: Joi.string().optional().allow(null),
-      matchOddMarketId: Joi.string().optional().allow(null),
-      marketBookmakerId: Joi.string().optional().allow(null),
-      tiedMatchMarketId: Joi.string().optional().allow(null),
-      completeMatchMarketId: Joi.string().optional().allow(null),
+      competitionId: Joi.string().optional().allow(""),
+      marketId: Joi.string().optional().allow(""),
+      eventId: Joi.string().optional().allow(""),
+      matchOddMarketId: Joi.string().optional().allow(""),
+      marketBookmakerId: Joi.string().optional().allow(""),
+      tiedMatchMarketId: Joi.string().optional().allow(""),
+      completeMatchMarketId: Joi.string().optional().allow("")  ,
       // Other conditional validations...
   }),
   otherwise: Joi.object().unknown(true) // Ensures that other validations are preserved

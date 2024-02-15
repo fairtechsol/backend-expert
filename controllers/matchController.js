@@ -1,8 +1,8 @@
 const { ILike } = require("typeorm");
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType,socketData, betStatusType, redisKeys, walletDomain } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, redisKeys, walletDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
-const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting,  addMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
+const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, addMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
 const {
   getMatchById,
   getMatchByMarketId,
@@ -16,7 +16,7 @@ const {
   getMatchWithBettingAndSession,
   getOneMatchByCondition,
 } = require("../services/matchService");
-const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis, updateMatchKeyInCache,  updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, addDataInRedis, getExpertsRedisData, getExpertsRedisMatchData } = require("../services/redis/commonfunction");
+const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, addDataInRedis, getExpertsRedisData, getExpertsRedisMatchData } = require("../services/redis/commonfunction");
 const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
@@ -65,18 +65,18 @@ exports.createMatch = async (req, res) => {
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
-    logger.info({message:`Match added by user ${loginId} with market id: ${marketId} and Manual Match: ${isManualMatch}`});
-    let user = await getUserById(loginId,["allPrivilege","addMatchPrivilege"])
-    if(!user){
-      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
+    logger.info({ message: `Match added by user ${loginId} with market id: ${marketId} and Manual Match: ${isManualMatch}` });
+    let user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege"])
+    if (!user) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
-    if(!user.allPrivilege && !user.addMatchPrivilege){
-      return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User"}}},req,res);
+    if (!user.allPrivilege && !user.addMatchPrivilege) {
+      return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
     }
 
     // Check if at least one bookmaker is provided
     if (bookmakers?.length == 0) {
-      return ErrorResponse({statusCode: 400,message: {msg: "match.atLeastOneBookmaker"}},req,res);
+      return ErrorResponse({ statusCode: 400, message: { msg: "match.atLeastOneBookmaker" } }, req, res);
     }
 
     if (isManualMatch) {
@@ -116,37 +116,37 @@ exports.createMatch = async (req, res) => {
       teamB,
       teamC,
       startAt,
-      betFairSessionMaxBet : betFairSessionMaxBet,
+      betFairSessionMaxBet: betFairSessionMaxBet,
       betFairSessionMinBet: minBet,
       createBy: loginId
     };
 
     let maxBetValues = bookmakers.map(item => item.maxBet);
     let minimumMaxBet = Math.min(...maxBetValues);
-    if(minimumMaxBet < minBet){
+    if (minimumMaxBet < minBet) {
       return ErrorResponse({
-          statusCode: 400,
-          message: {
-            msg: "match.maxMustBeGreater",
-          },
-        }, req, res);
+        statusCode: 400,
+        message: {
+          msg: "match.maxMustBeGreater",
+        },
+      }, req, res);
     }
 
     // Check if market ID already exists
     const isMarketIdPresent = await getMatchByMarketId(marketId);
     if (isMarketIdPresent) {
-        logger.error({
-            error: `Match already exist for market id: ${marketId}`
-          });
+      logger.error({
+        error: `Match already exist for market id: ${marketId}`
+      });
 
-      return ErrorResponse({statusCode: 400,message: {msg: "alreadyExist",keys: {name: "Match"}}},req,res);
+      return ErrorResponse({ statusCode: 400, message: { msg: "alreadyExist", keys: { name: "Match" } } }, req, res);
     }
     // Add the new match
     const match = await addMatch(matchData);
     if (!match) {
-        logger.error({
-            error: `Match add fail for market id: ${marketId}`
-          });
+      logger.error({
+        error: `Match add fail for market id: ${marketId}`
+      });
 
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
     }
@@ -163,7 +163,7 @@ exports.createMatch = async (req, res) => {
         type: matchBettingType.matchOdd,
         name: intialMatchBettingsName.initialMatchOdd,
         maxBet: matchOddMaxBet,
-        marketId : matchOddMarketId,
+        marketId: matchOddMarketId,
         activeStatus: betStatusType.save
       },
       {
@@ -171,87 +171,87 @@ exports.createMatch = async (req, res) => {
         type: matchBettingType.bookmaker,
         name: intialMatchBettingsName.initialBookmaker,
         maxBet: betFairBookmakerMaxBet,
-        marketId : marketBookmakerId,
+        marketId: marketBookmakerId,
         activeStatus: betStatusType.save
       },
       ...(bookmakers?.map((item, index) => {
         const { maxBet, marketName } = item;
         index++;
-        return{
+        return {
           type: matchBettingType["quickbookmaker" + index],
           matchId: match.id,
           name: marketName,
           minBet: minBet,
           maxBet: maxBet,
-          createBy:loginId
+          createBy: loginId
         };
       })),
       {
         ...matchBetting,
         type: matchBettingType.tiedMatch2,
         name: initialMatchNames.manual,
-        maxBet:manualTiedMatchMaxBet,
+        maxBet: manualTiedMatchMaxBet,
       }
-      
+
     ];
 
-   if(completeMatchMarketId && completeMatchMarketId != ''){
-    matchBettings.push({
-      ...matchBetting,
-      type: matchBettingType.completeMatch,
-      name: initialMatchNames.completeMatch,
-      maxBet:completeMatchMaxBet,
-      marketId : completeMatchMarketId,
-      activeStatus: betStatusType.save
-    })
-   }else{
-    matchBettings.push({
-      ...matchBetting,
-      type: matchBettingType.completeMatch,
-      name: initialMatchNames.completeMatch,
-      maxBet:completeMatchMaxBet,
-      marketId : addIncrement(matchOddMarketId,2),
-      activeStatus: betStatusType.save
-
-    })
-   }
-
-   if(tiedMatchMarketId && tiedMatchMarketId != ''){
-    matchBettings.push(
-      {
+    if (completeMatchMarketId && completeMatchMarketId != '') {
+      matchBettings.push({
         ...matchBetting,
-        type: matchBettingType.tiedMatch1,
-        name: initialMatchNames.market,
-        maxBet:marketTiedMatchMaxBet,
-        marketId : tiedMatchMarketId,
+        type: matchBettingType.completeMatch,
+        name: initialMatchNames.completeMatch,
+        maxBet: completeMatchMaxBet,
+        marketId: completeMatchMarketId,
         activeStatus: betStatusType.save
       })
-   }else{
-    matchBettings.push(
-      {
+    } else {
+      matchBettings.push({
         ...matchBetting,
-        type: matchBettingType.tiedMatch1,
-        name: initialMatchNames.market,
-        maxBet:marketTiedMatchMaxBet,
-        marketId : addIncrement(matchOddMarketId,1),
+        type: matchBettingType.completeMatch,
+        name: initialMatchNames.completeMatch,
+        maxBet: completeMatchMaxBet,
+        marketId: addIncrement(matchOddMarketId, 2),
         activeStatus: betStatusType.save
-      });
-   }
+
+      })
+    }
+
+    if (tiedMatchMarketId && tiedMatchMarketId != '') {
+      matchBettings.push(
+        {
+          ...matchBetting,
+          type: matchBettingType.tiedMatch1,
+          name: initialMatchNames.market,
+          maxBet: marketTiedMatchMaxBet,
+          marketId: tiedMatchMarketId,
+          activeStatus: betStatusType.save
+        })
+    } else {
+      matchBettings.push(
+        {
+          ...matchBetting,
+          type: matchBettingType.tiedMatch1,
+          name: initialMatchNames.market,
+          maxBet: marketTiedMatchMaxBet,
+          marketId: addIncrement(matchOddMarketId, 1),
+          activeStatus: betStatusType.save
+        });
+    }
     // Attach bookmakers to the match
     let insertedMatchBettings = await insertMatchBettings(matchBettings);
     if (!insertedMatchBettings) {
-        logger.error({
-            error: `Match quick bookmaker add fail for quick bookmaker`,
-            matchBettings:matchBettings
-          });
+      logger.error({
+        error: `Match quick bookmaker add fail for quick bookmaker`,
+        matchBettings: matchBettings
+      });
 
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
     }
- 
+
     let matchBettingData = await getMatchBattingByMatchId(match.id);
 
     const convertedData = matchBettingData.reduce((result, item) => {
-      const key = item.type; 
+      const key = item.type;
       result[key] = item;
       return result;
     }, {});
@@ -261,13 +261,13 @@ exports.createMatch = async (req, res) => {
       matchOdd: convertedData[matchBettingType.matchOdd],
       marketBookmaker: convertedData[matchBettingType.bookmaker],
       marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
-      marketCompleteMatch : convertedData[matchBettingType.completeMatch]
+      marketCompleteMatch: convertedData[matchBettingType.completeMatch]
     };
     await addMatchInCache(match.id, payload);
-    const manualBettingRedisData ={};
-     manualMatchBettingType?.forEach((item) => {
-      if(convertedData[item]){
-        manualBettingRedisData[item]= JSON.stringify(convertedData[item]);
+    const manualBettingRedisData = {};
+    manualMatchBettingType?.forEach((item) => {
+      if (convertedData[item]) {
+        manualBettingRedisData[item] = JSON.stringify(convertedData[item]);
       }
     });
 
@@ -313,17 +313,17 @@ exports.createMatch = async (req, res) => {
             name: "Match",
           },
         },
-        data: {match,matchBettingData},
+        data: { match, matchBettingData },
       },
       req,
       res
     );
   } catch (err) {
     logger.error({
-        error: `Error at add match for the expert.`,
-        stack: err.stack,
-        message: err.message
-      });
+      error: `Error at add match for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -344,34 +344,34 @@ exports.updateMatch = async (req, res) => {
     } = req.body;
     //get user data to check privilages
     const { id: loginId } = req.user;
-    const user = await getUserById(loginId,["allPrivilege","addMatchPrivilege","betFairMatchPrivilege","bookmakerMatchPrivilege","sessionMatchPrivilege"]);
-    if(!user){
-      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "User"}}},req,res);
+    const user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege", "betFairMatchPrivilege", "bookmakerMatchPrivilege", "sessionMatchPrivilege"]);
+    if (!user) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
 
     // Check if the match exists
-    let match = await getMatchById(id, ["id","createBy", "betFairSessionMinBet", "betFairSessionMaxBet"]);
+    let match = await getMatchById(id, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet"]);
 
     if (!match) {
-        logger.error({
-            error: `Match not found for id ${id}`
-          });
-      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match"}}},req,res);
+      logger.error({
+        error: `Match not found for id ${id}`
+      });
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
     }
 
     let matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
-    if(!matchBatting || !matchBatting.length){
-        logger.error({
-            error: `Match betting not found for match id ${id}`
-          });
-      return ErrorResponse({statusCode: 404,message: {msg: "notFound",keys: {name: "Match batting"}}},req,res)
+    if (!matchBatting || !matchBatting.length) {
+      logger.error({
+        error: `Match betting not found for match id ${id}`
+      });
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match batting" } } }, req, res)
     }
 
-    if(loginId != match.createBy && !user.allPrivilege){
+    if (loginId != match.createBy && !user.allPrivilege) {
       logger.error({
         error: `User ${loginId} don't have privilege for accessing this match ${id}`
       });
-        return ErrorResponse({statusCode: 403,message: {msg: "notAuthorized",keys: {name: "User"}}},req,res);
+      return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
     }
 
     await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet });
@@ -382,7 +382,7 @@ exports.updateMatch = async (req, res) => {
     await updateMatchBetting({ matchId: id, type: matchBettingType.completeMatch }, { maxBet: completeMatchMaxBet, minBet: minBet });
 
     if (bookmakers && bookmakers.length) {
-      await Promise.all[bookmakers.map(item => updateMatchBetting({ id: item.id }, { maxBet: item.maxBet, minBet:minBet }))];
+      await Promise.all[bookmakers.map(item => updateMatchBetting({ id: item.id }, { maxBet: item.maxBet, minBet: minBet }))];
     }
 
 
@@ -390,10 +390,10 @@ exports.updateMatch = async (req, res) => {
 
     updateMatchDataAndBettingInRedis(id);
 
-    
+
     // Attach bookmaker data to the match object
     match["bookmaker"] = matchBatting;
-    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent,match);
+    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent, match);
     // Send success response with the updated match data
     return SuccessResponse(
       {
@@ -404,27 +404,27 @@ exports.updateMatch = async (req, res) => {
             name: "Match",
           },
         },
-        data : match
+        data: match
       },
       req,
       res
     );
   } catch (err) {
     logger.error({
-        error: `Error at update match for the expert.`,
-        stack: err.stack,
-        message: err.message
-      });
+      error: `Error at update match for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
 };
 
-const updateMatchDataAndBettingInRedis=async (id)=>{
- const match = await getMatchById(id);
- const matchBatting = await getMatchBattingByMatchId(id);
+const updateMatchDataAndBettingInRedis = async (id) => {
+  const match = await getMatchById(id);
+  const matchBatting = await getMatchBattingByMatchId(id);
   const convertedData = matchBatting.reduce((result, item) => {
-    const key = item.type;  
+    const key = item.type;
     result[key] = item;
     return result;
   }, {});
@@ -433,8 +433,8 @@ const updateMatchDataAndBettingInRedis=async (id)=>{
     ...match,
     matchOdd: convertedData[matchBettingType.matchOdd],
     marketBookmaker: convertedData[matchBettingType.bookmaker],
-    marketTiedMatch: convertedData[matchBettingType.tiedMatch2],      
-    marketCompleteMatch : convertedData[matchBettingType.completeMatch],
+    marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
+    marketCompleteMatch: convertedData[matchBettingType.completeMatch],
   };
   updateMatchInCache(match.id, payload);
 
@@ -469,17 +469,17 @@ exports.listMatch = async (req, res) => {
     } = req.user;
 
 
-    
+
 
     const filters =
       allPrivilege ||
-      betFairMatchPrivilege ||
-      bookmakerMatchPrivilege ||
-      sessionMatchPrivilege
+        betFairMatchPrivilege ||
+        bookmakerMatchPrivilege ||
+        sessionMatchPrivilege
         ? {}
         : {
-            createBy: loginId,
-          };
+          createBy: loginId,
+        };
 
     //   let userRedisData = await internalRedis.hgetall(user.userId);
     const match = await getMatch(filters, fields?.split(",") || null, query);
@@ -499,8 +499,8 @@ exports.listMatch = async (req, res) => {
       );
     }
 
-    for(let i=0;i<match?.matches?.length;i++){
-      match.matches[i].pl=await getAllProfitLossResults(match.matches[i].id);
+    for (let i = 0; i < match?.matches?.length; i++) {
+      match.matches[i].pl = await getAllProfitLossResults(match.matches[i].id);
     }
 
     return SuccessResponse(
@@ -523,7 +523,7 @@ exports.listMatch = async (req, res) => {
   }
 };
 
-const commonGetMatchDetails=async (matchId,userId)=>{
+const commonGetMatchDetails = async (matchId, userId) => {
   let match = await getMatchFromCache(matchId);
 
   // Check if the match exists
@@ -533,7 +533,7 @@ const commonGetMatchDetails=async (matchId,userId)=>{
 
     // If betting data is found in Redis, update its expiry time
     if (!betting) {
-      
+
       // If no betting data is found in Redis, fetch it from the database
       const matchBetting = await getMatchBattingByMatchId(matchId);
 
@@ -547,7 +547,7 @@ const commonGetMatchDetails=async (matchId,userId)=>{
           // If the item exists, add it to the manualBettingRedisData object
           // with its value stringified using JSON.stringify
           manualBettingRedisData[item?.type] = JSON.stringify(item);
-          betting[item?.type]=JSON.stringify(item);
+          betting[item?.type] = JSON.stringify(item);
         }
       });
 
@@ -560,19 +560,19 @@ const commonGetMatchDetails=async (matchId,userId)=>{
 
     // If session data is found in Redis, update its expiry time
     if (!sessions) {
-   
+
       // If no session data is found in Redis, fetch it from the database
       sessions = await getSessionBattingByMatchId(matchId, !userId ? { activeStatus: betStatusType.live } : {});
 
       let result = {};
       let apiSelectionIdObj = {};
       for (let index = 0; index < sessions?.length; index++) {
-        if(sessions?.[index]?.activeStatus== betStatusType.live){
-          if(sessions?.[index]?.selectionId){
+        if (sessions?.[index]?.activeStatus == betStatusType.live) {
+          if (sessions?.[index]?.selectionId) {
             apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
           }
-        result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
-      }
+          result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
+        }
         sessions[index] = JSON.stringify(sessions?.[index]);
       }
       settingAllSessionMatchRedis(matchId, result);
@@ -589,20 +589,20 @@ const commonGetMatchDetails=async (matchId,userId)=>{
     }
     const categorizedMatchBettings = {
       ...(match.matchOdd
-    ? { [matchBettingType.matchOdd]: match.matchOdd }
-    : {}),
-    ...(match.marketBookmaker
-      ? { [matchBettingType.bookmaker]:match.marketBookmaker }
-      : {}),
-      ...(match.marketCompleteMatch
-        ? { "marketCompleteMatch":match.marketCompleteMatch }
+        ? { [matchBettingType.matchOdd]: match.matchOdd }
         : {}),
-        quickBookmaker: [],
-        ...(match.marketTiedMatch
-          ? { "apiTideMatch": match.marketTiedMatch }
-          : {}),
-          manualTiedMatch: null,
-        };
+      ...(match.marketBookmaker
+        ? { [matchBettingType.bookmaker]: match.marketBookmaker }
+        : {}),
+      ...(match.marketCompleteMatch
+        ? { "marketCompleteMatch": match.marketCompleteMatch }
+        : {}),
+      quickBookmaker: [],
+      ...(match.marketTiedMatch
+        ? { "apiTideMatch": match.marketTiedMatch }
+        : {}),
+      manualTiedMatch: null,
+    };
     // Iterate through matchBettings and categorize them
     (Object.values(betting) || []).forEach(
       (item) => {
@@ -631,14 +631,14 @@ const commonGetMatchDetails=async (matchId,userId)=>{
     match = await getMatchDetails(matchId, []);
     if (!match) {
       throw {
-          statusCode: 400,
-          message: {
-            msg: "notFound",
-            keys: {
-              name: "Match",
-            },
+        statusCode: 400,
+        message: {
+          msg: "notFound",
+          keys: {
+            name: "Match",
           },
-        }
+        },
+      }
     }
 
     const categorizedMatchBettings = {
@@ -676,14 +676,14 @@ const commonGetMatchDetails=async (matchId,userId)=>{
       }
     });
 
-      let payload = {
-        ...match,
-        matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
-        marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
-        marketTiedMatch: categorizedMatchBettings.apiTideMatch,
-        marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
-      };
-      await addMatchInCache(match.id, payload);
+    let payload = {
+      ...match,
+      matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
+      marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
+      marketTiedMatch: categorizedMatchBettings.apiTideMatch,
+      marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
+    };
+    await addMatchInCache(match.id, payload);
 
     // Create an empty object to store manual betting Redis data
     const manualBettingRedisData = {};
@@ -705,18 +705,18 @@ const commonGetMatchDetails=async (matchId,userId)=>{
     let result = {};
     let apiSelectionIdObj = {};
     for (let index = 0; index < sessions?.length; index++) {
-      if(sessions?.[index]?.activeStatus== betStatusType.live){
-        if(sessions?.[index]?.selectionId){
+      if (sessions?.[index]?.activeStatus == betStatusType.live) {
+        if (sessions?.[index]?.selectionId) {
           apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
         }
-      result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
+        result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
       }
       sessions[index] = JSON.stringify(sessions?.[index]);
     }
     settingAllSessionMatchRedis(matchId, result);
     addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
 
-    match.sessionBettings=sessions;
+    match.sessionBettings = sessions;
     // Assign the categorized match betting to the match object
     Object.assign(match, categorizedMatchBettings);
 
@@ -773,29 +773,29 @@ exports.matchActiveInActive = async (req, res) => {
       req.body;
 
 
-      const { allPrivilege, addMatchPrivilege } = req.user;
+    const { allPrivilege, addMatchPrivilege } = req.user;
 
-        if (!allPrivilege && !addMatchPrivilege) {
-          return ErrorResponse(
-            {
-              statusCode: 400,
-              message: {
-                msg: "notAuthorized",
-                keys: {
-                  name: "Expert",
-                },
-              },
+    if (!allPrivilege && !addMatchPrivilege) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notAuthorized",
+            keys: {
+              name: "Expert",
             },
-            req,
-            res
-          );
-        }
+          },
+        },
+        req,
+        res
+      );
+    }
 
-      let match = await getMatchFromCache(matchId);
-      
-      if(!match){
-        match=await getMatchById(matchId);
-      }
+    let match = await getMatchFromCache(matchId);
+
+    if (!match) {
+      match = await getMatchById(matchId);
+    }
 
     if (!match) {
       // If match is not found, return a 400 Bad Request response
@@ -818,17 +818,17 @@ exports.matchActiveInActive = async (req, res) => {
     if (type == bettingType.session) {
       const sessionBetType = isManualBet
         ? {
-            manualSessionActive: isActive,
-          }
+          manualSessionActive: isActive,
+        }
         : {
-            apiSessionActive: isActive,
-          };
+          apiSessionActive: isActive,
+        };
 
       // If it's a session betting type, update sessionActive accordingly
-      await updateMatch(matchId,sessionBetType);
+      await updateMatch(matchId, sessionBetType);
 
       const isMatchBetting = await hasBettingInCache(matchId);
-      if(!isMatchBetting){
+      if (!isMatchBetting) {
         const matchBatting = await getMatchBattingByMatchId(matchId);
 
         const convertedData = matchBatting.reduce((result, item) => {
@@ -844,10 +844,10 @@ exports.matchActiveInActive = async (req, res) => {
           marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
           marketCompleteMatch: convertedData[matchBettingType.completeMatch],
         };
-       await updateMatchInCache(match.id, payload);
+        await updateMatchInCache(match.id, payload);
       }
-      else{
-        await updateMatchKeyInCache(match.id,isManualBet?"manualSessionActive":"apiSessionActive",isActive);
+      else {
+        await updateMatchKeyInCache(match.id, isManualBet ? "manualSessionActive" : "apiSessionActive", isActive);
       }
 
     } else {
@@ -881,7 +881,7 @@ exports.matchActiveInActive = async (req, res) => {
           await updateBettingMatchRedis(
             matchId,
             matchBetting?.type,
-           matchBetting
+            matchBetting
           );
         } else {
           const matchBatting = await getMatchBattingByMatchId(
@@ -912,10 +912,10 @@ exports.matchActiveInActive = async (req, res) => {
           await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
         }
       }
-      else{
-        const redisMatch=await getKeyFromMatchRedis(matchBetting?.matchId,marketBettingTypeByBettingType[matchBetting?.type]);
+      else {
+        const redisMatch = await getKeyFromMatchRedis(matchBetting?.matchId, marketBettingTypeByBettingType[matchBetting?.type]);
 
-        if(!redisMatch){
+        if (!redisMatch) {
 
           const matchBatting = await getMatchBattingByMatchId(match.id);
           const convertedData = matchBatting.reduce((result, item) => {
@@ -932,9 +932,9 @@ exports.matchActiveInActive = async (req, res) => {
           };
           await updateMatchInCache(match.id, payload);
         }
-        else{
-          await updateMatchKeyInCache(matchBetting?.matchId,marketBettingTypeByBettingType[matchBetting?.type],
-          JSON.stringify(matchBetting)
+        else {
+          await updateMatchKeyInCache(matchBetting?.matchId, marketBettingTypeByBettingType[matchBetting?.type],
+            JSON.stringify(matchBetting)
           )
         }
       }
@@ -1017,7 +1017,7 @@ exports.getMatchDatesByCompetitionId = async (req, res) => {
 
 exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
   try {
-    const { competitionId,date } = req.params;
+    const { competitionId, date } = req.params;
 
     const matches = await getMatchByCompetitionIdAndDates(competitionId, date);
 
@@ -1051,8 +1051,8 @@ exports.matchListWithManualBetting = async (req, res) => {
       sessionMatchPrivilege,
     } = req.user;
 
-    
-    
+
+
     const match = await getMatchWithBettingAndSession(
       allPrivilege,
       addMatchPrivilege,
@@ -1098,28 +1098,28 @@ exports.matchListWithManualBetting = async (req, res) => {
 function addIncrement(number, increment) {
   // Convert the number to a string to manipulate the decimal part
   const numberStr = number.toString();
-  
+
   // Find the position of the decimal point
   const decimalPosition = numberStr.indexOf('.');
-  
+
   // If there is a decimal point
   if (decimalPosition !== -1) {
-      // Extract the integer and decimal parts
-      const integerPart = numberStr.slice(0, decimalPosition);
-      const decimalPart = numberStr.slice(decimalPosition + 1);
-      
-      // Convert the decimal part to an integer and add the increment
-      const newDecimalPart = parseInt(decimalPart) + increment;
-      
-      // Combine the integer and updated decimal parts
-      const updatedNumberStr = `${integerPart}.${newDecimalPart.toString().padStart(5, '0')}`;
-      
-      // Convert the updated string back to a float
-      const updatedNumber = parseFloat(updatedNumberStr);
-      
-      return updatedNumber;
+    // Extract the integer and decimal parts
+    const integerPart = numberStr.slice(0, decimalPosition);
+    const decimalPart = numberStr.slice(decimalPosition + 1);
+
+    // Convert the decimal part to an integer and add the increment
+    const newDecimalPart = parseInt(decimalPart) + increment;
+
+    // Combine the integer and updated decimal parts
+    const updatedNumberStr = `${integerPart}.${newDecimalPart.toString().padStart(5, '0')}`;
+
+    // Convert the updated string back to a float
+    const updatedNumber = parseFloat(updatedNumberStr);
+
+    return updatedNumber;
   } else {
-      // If there is no decimal point, just return the original number
-      return number;
+    // If there is no decimal point, just return the original number
+    return number;
   }
 }

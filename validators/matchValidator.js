@@ -59,53 +59,53 @@ let addMatchSchema = Joi.object({
     "any.required": "Maximum bet odd is required",
   }),
   betFairSessionMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
-      "number.base": "Maximum bet amount for BetFair session must be a number",
-      "number.greater":
-        "Maximum bet amount for BetFair session must be greater than minimum bet amount",
-      "any.required": "Maximum bet amount for BetFair session is required",
-    }),
+    "number.base": "Maximum bet amount for BetFair session must be a number",
+    "number.greater":
+      "Maximum bet amount for BetFair session must be greater than minimum bet amount",
+    "any.required": "Maximum bet amount for BetFair session is required",
+  }),
   betFairBookmakerMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
-      "number.base":
-        "Maximum bet amount for BetFair bookmaker must be a number",
-      "number.greater":
-        "Maximum bet amount for BetFair bookmaker must be greater than minimum bet amount",
-      "any.required": "Maximum bet amount for BetFair bookmaker is required",
-    }),
+    "number.base":
+      "Maximum bet amount for BetFair bookmaker must be a number",
+    "number.greater":
+      "Maximum bet amount for BetFair bookmaker must be greater than minimum bet amount",
+    "any.required": "Maximum bet amount for BetFair bookmaker is required",
+  }),
   bookmakers: Joi.array().items(bookmakerSchema).required().messages({
     "array.base": "Bookmakers must be an array",
     "any.required": "Bookmakers are required",
   }),
-  marketTiedMatchMaxBet : Joi.number().greater(Joi.ref("minBet")).required().messages({
+  marketTiedMatchMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
     "number.base": "Maximum bet amount for market tied match must be a number",
     "number.greater":
       "Maximum bet amount for market tied match must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for market tied match is required",
   }),
-  manualTiedMatchMaxBet : Joi.number().greater(Joi.ref("minBet")).required().messages({
+  manualTiedMatchMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
     "number.base": "Maximum bet amount for manual tied match must be a number",
     "number.greater":
       "Maximum bet amount for market tied match must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for manual tied match is required",
   }),
-  completeMatchMaxBet : Joi.number().greater(Joi.ref("minBet")).required()
-  .messages({
-    "number.base": "Maximum bet amount for complete match must be a number",
-    "number.greater":
-      "Maximum bet amount for complete match must be greater than minimum bet amount",
-    "any.required": "Maximum bet amount for complete tied match is required",
-  }),
-  matchOddMarketId : Joi.string().required().messages({
+  completeMatchMaxBet: Joi.number().greater(Joi.ref("minBet")).required()
+    .messages({
+      "number.base": "Maximum bet amount for complete match must be a number",
+      "number.greater":
+        "Maximum bet amount for complete match must be greater than minimum bet amount",
+      "any.required": "Maximum bet amount for complete tied match is required",
+    }),
+  matchOddMarketId: Joi.string().required().messages({
     "string.base": "Match odd market id must be a string",
     "any.required": "Match odd market id is required",
   }),
-  marketBookmakerId : Joi.string().required().messages({
+  marketBookmakerId: Joi.string().required().messages({
     "string.base": "Market bookmaker id must be a string",
     "any.required": "Market bookmaker id is required",
   }),
-  tiedMatchMarketId : Joi.string().messages({
+  tiedMatchMarketId: Joi.string().messages({
     "string.base": "Tied match market id must be a string",
   }),
-  completeMatchMarketId : Joi.string().messages({
+  completeMatchMarketId: Joi.string().messages({
     "string.base": "Complete match market id must be a string",
   }),
   isManualMatch: Joi.boolean()
@@ -163,29 +163,29 @@ module.exports.updateMatchValidate = Joi.object({
     "array.base": "Bookmakers must be an array",
   }),
   marketTiedMatchMaxBet: Joi.number()
-  .greater(Joi.ref("minBet"))
-  .messages({
-    "number.base":
-      "Maximum bet amount for market tied match must be a number",
-    "number.greater":
-      "Maximum bet amount for market tied match must be greater than minimum bet amount"
-  }),
+    .greater(Joi.ref("minBet"))
+    .messages({
+      "number.base":
+        "Maximum bet amount for market tied match must be a number",
+      "number.greater":
+        "Maximum bet amount for market tied match must be greater than minimum bet amount"
+    }),
   manualTiedMatchMaxBet: Joi.number()
-  .greater(Joi.ref("minBet"))
-  .messages({
-    "number.base":
-      "Maximum bet amount for manual tied match must be a number",
-    "number.greater":
-      "Maximum bet amount for manual tied match must be greater than minimum bet amount"
-  }),
+    .greater(Joi.ref("minBet"))
+    .messages({
+      "number.base":
+        "Maximum bet amount for manual tied match must be a number",
+      "number.greater":
+        "Maximum bet amount for manual tied match must be greater than minimum bet amount"
+    }),
   completeMatchMaxBet: Joi.number()
-  .greater(Joi.ref("minBet"))
-  .messages({
-    "number.base":
-      "Maximum bet amount for complete match must be a number",
-    "number.greater":
-      "Maximum bet amount for complete match must be greater than minimum bet amount"
-  })  
+    .greater(Joi.ref("minBet"))
+    .messages({
+      "number.base":
+        "Maximum bet amount for complete match must be a number",
+      "number.greater":
+        "Maximum bet amount for complete match must be greater than minimum bet amount"
+    })
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });
@@ -208,7 +208,7 @@ module.exports.MatchActiveInactive = Joi.object({
 
 
 module.exports.getMatchSchema = Joi.object({
-  id:Joi.string().guid({ version: 'uuidv4' }),
+  id: Joi.string().guid({ version: 'uuidv4' }),
   matchType: Joi.string(),
   competitionId: Joi.string(),
   competitionName: Joi.string(),
@@ -225,7 +225,7 @@ module.exports.getMatchSchema = Joi.object({
   manualSessionActive: Joi.boolean(),
   matchOdd: Joi.string().allow(""),
   marketBookmaker: Joi.string().allow(""),
-  marketTiedMatch: Joi.string().allow(""), 
-  marketCompleteMatch : Joi.string().allow(""),
-  stopAt: Joi.date(),   
+  marketTiedMatch: Joi.string().allow(""),
+  marketCompleteMatch: Joi.string().allow(""),
+  stopAt: Joi.date(),
 })

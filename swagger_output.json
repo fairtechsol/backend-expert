@@ -566,6 +566,9 @@
                   },
                   "completeMatchMarketId": {
                     "example": "any"
+                  },
+                  "isManualMatch": {
+                    "example": "any"
                   }
                 }
               }

@@ -1,5 +1,5 @@
 
-const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings } = require("../services/sessionBettingService");
+const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings, getSessionBetting } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const {getUserById} = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType } = require("../config/contants");
@@ -48,6 +48,12 @@ exports.addSession = async (req,res) =>{
       if(selectionId){
         isManual = false;
         status = teamStatus.active
+
+        const isSessionExist = await getSessionBetting({ matchId: matchId, selectionId: selectionId }, ["id"]);
+
+        if(isSessionExist){
+          return ErrorResponse({statusCode: 400,message: {msg: "alreadyExist",keys: {name: "Session"}}},req,res);
+        }
       }
       let sessionData = {
         matchId,

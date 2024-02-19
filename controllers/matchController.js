@@ -1,4 +1,4 @@
-const { ILike } = require("typeorm");
+const { ILike, IsNull } = require("typeorm");
 const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, redisKeys, walletDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
@@ -96,7 +96,7 @@ exports.createMatch = async (req, res) => {
       completeMatchMarketId = marketId;
       tiedMatchMarketId = marketId;
       completeMatchMarketId = marketId;
-      isManualMatchExist = await getOneMatchByCondition({ title: ILike(title) }, ['id', 'title']);
+      isManualMatchExist = await getOneMatchByCondition({ title: ILike(title), stopAt: IsNull() }, ['id', 'title']);
       if (isManualMatchExist) {
         logger.error({
           error: `Match already exist for title: ${title}`

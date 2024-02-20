@@ -325,13 +325,18 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
         }
       }
       let sessions = {};
+      let sessionDetailData={};
 
+      
+      let updateSession = await updateSessionBetting({ matchId: matchId, isManual: false }, { activeStatus: status });
+      
       sessionData?.map((item) => {
         sessions[item?.selectionId] = item?.id;
+        item.activeStatus = status;
+        sessionDetailData[item?.id] = JSON.stringify(item);
       });
-
-      let updateSession = await updateSessionBetting({ matchId: matchId, isManual: false }, { activeStatus: status });
-
+      
+      settingAllSessionMatchRedis(matchId, sessionDetailData);
       // Update redis cache
       if (status == betStatusType.live) {
         await updateMultipleMarketSessionIdRedis(matchId, sessions);
@@ -354,8 +359,9 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
           }
         }
       }
-      let updateSession = await updateSessionBetting({ id: sessionId }, { activeStatus: status });
-
+      await updateSessionBetting({ id: sessionId }, { activeStatus: status });
+      sessionData.activeStatus = status;
+      updateSessionMatchRedis(sessionData.matchId, sessionData.id, sessionData);
       // Update redis cache
       if (status == betStatusType.live) {
         await updateMarketSessionIdRedis(sessionData.matchId, sessionData.selectionId, sessionId);

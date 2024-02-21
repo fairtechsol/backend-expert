@@ -313,9 +313,9 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
 
     if (stopAllSessions) {
 
-      let sessionData = await getSessionBettings({ matchId: matchId, isManual: false });
+      let sessionData = await getSessionBettings({ matchId: matchId, isManual: false, activeStatus: betStatusType.live });
       if (!sessionData?.length) {
-        return ErrorResponse({ statusCode: 404, message: { msg: "NotFound", keys: "Session" } });
+        return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: {name:"Session" }} }, req, res);
       }
       if (sessionData[0].createBy != reqUser.id) {
         if (!user.allPrivilege) {
@@ -328,7 +328,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       let sessionDetailData={};
 
       
-      await updateSessionBetting({ matchId: matchId, isManual: false }, { activeStatus: status });
+      await updateSessionBetting({ matchId: matchId, isManual: false, activeStatus: betStatusType.live }, { activeStatus: status });
       
       sessionData?.map((item) => {
         sessions[item?.selectionId] = item?.id;

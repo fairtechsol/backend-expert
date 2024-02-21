@@ -328,7 +328,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       let sessionDetailData={};
 
       
-      let updateSession = await updateSessionBetting({ matchId: matchId, isManual: false }, { activeStatus: status });
+      await updateSessionBetting({ matchId: matchId, isManual: false }, { activeStatus: status });
       
       sessionData?.map((item) => {
         sessions[item?.selectionId] = item?.id;

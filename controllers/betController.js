@@ -11,7 +11,7 @@ const {
   matchBettingType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { addResult, deleteResult } = require("../services/betService");
+const { addResult, deleteResult, getResult } = require("../services/betService");
 const {
   getExpertResult,
   addExpertResult,
@@ -85,6 +85,22 @@ exports.declareSessionResult = async (req, res) => {
   try {
     const { betId, matchId, score } = req.body;
     const { id: userId } = req.user;
+
+    const isSessionDeclared = await getResult({
+      betId: betId,
+      matchId: matchId
+    }, ["id"]);
+
+    if(isSessionDeclared){
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.sessionDeclare" },
+        },
+        req,
+        res
+      );
+    }
 
     const match = await getMatchById(matchId);
     logger.info({
@@ -239,6 +255,22 @@ exports.declareSessionNoResult = async (req, res) => {
   try {
     const { betId, matchId } = req.body;
     const { id: userId } = req.user;
+
+    const isSessionDeclared = await getResult({
+      betId: betId,
+      matchId: matchId
+    }, ["id"]);
+
+    if(isSessionDeclared){
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.sessionDeclare" },
+        },
+        req,
+        res
+      );
+    }
 
     const match = await getMatchById(matchId);
     logger.info({
@@ -605,6 +637,7 @@ exports.declareMatchResult = async (req, res) => {
     const { matchId, result } = req.body;
     const { id: userId } = req.user;
 
+    
     const match = await getMatchById(matchId);
     logger.info({
       message: "Result declare",
@@ -651,6 +684,23 @@ exports.declareMatchResult = async (req, res) => {
         res
       );
     }
+
+    const isMatchDeclared = await getResult({
+      betId: matchOddBetting.id,
+      matchId: matchId
+    }, ["id"]);
+
+    if(isMatchDeclared){
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.matchDeclare" },
+        },
+        req,
+        res
+      );
+    }
+
 
     const resultValidate = await checkResult({
       betId: matchOddBetting.id,

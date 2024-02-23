@@ -4,7 +4,7 @@ const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchBattingByMatchId } = require("./matchBettingService");
 const { getMatchDetails } = require("./matchService");
-const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisData, getExpertsRedisSessionData } = require("./redis/commonfunction");
+const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisData, getExpertsRedisSessionData, getExpertsRedisSessionDataByKeys } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 
 exports.forceLogoutIfLogin = async (userId) => {
@@ -456,7 +456,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
   if (userId) {
     const redisIds = match.sessionBettings?.map((item) => JSON.parse(item)?.id + redisKeys.profitLoss);
     if (redisIds?.length > 0) {
-      let sessionData = await getExpertsRedisSessionData(redisIds);
+      let sessionData = await getExpertsRedisSessionDataByKeys(redisIds);
       match.sessionProfitLoss = sessionData;
     }
   }

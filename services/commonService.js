@@ -1,10 +1,10 @@
-const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType } = require("../config/contants");
+const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchBattingByMatchId } = require("./matchBettingService");
 const { getMatchDetails } = require("./matchService");
-const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData } = require("./redis/commonfunction");
+const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisData, getExpertsRedisSessionData } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 
 exports.forceLogoutIfLogin = async (userId) => {
@@ -448,6 +448,12 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     delete match.matchBettings;
   }
   let teamRates = await getExpertsRedisMatchData(matchId);
+
+  const redisIds = match.sessionBettings?.map((item) => JSON.parse(item)?.id + redisKeys.profitLoss);
+  let sessionData = await getExpertsRedisSessionData(redisIds);
+  
+
   match.teamRates = teamRates;
+  match.sessionProfitLoss = sessionData;
   return match;
 }

@@ -449,11 +449,16 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
   }
   let teamRates = await getExpertsRedisMatchData(matchId);
 
-  const redisIds = match.sessionBettings?.map((item) => JSON.parse(item)?.id + redisKeys.profitLoss);
-  let sessionData = await getExpertsRedisSessionData(redisIds);
-  
+
+
 
   match.teamRates = teamRates;
-  match.sessionProfitLoss = sessionData;
+  if (userId) {
+    const redisIds = match.sessionBettings?.map((item) => JSON.parse(item)?.id + redisKeys.profitLoss);
+    if (redisIds?.length > 0) {
+      let sessionData = await getExpertsRedisSessionData(redisIds);
+      match.sessionProfitLoss = sessionData;
+    }
+  }
   return match;
 }

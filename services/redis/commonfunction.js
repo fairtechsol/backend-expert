@@ -7,7 +7,7 @@ const { getMatchSchema } = require("../../validators/matchValidator");
 const { getMatchAllBettings } = require("../matchBettingService");
 const { getSessionBettings } = require("../sessionBettingService");
 const lodash = require('lodash')
-let expiry = 3600;
+let expiry = 60*60*4;
 
 exports.addMatchInCache = async (matchId, data) => {
   // Log the update information
@@ -184,7 +184,7 @@ exports.settingAllSessionMatchRedis = async (matchId, data) => {
   await internalRedis
     .pipeline()
     .hset(`${matchId}_session`, data)
-    .expire(`${matchId}_session`, 3600) // Set a TTL of 3600 seconds (1 hour) for the key
+    .expire(`${matchId}_session`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
     .exec();
 }
 

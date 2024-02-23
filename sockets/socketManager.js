@@ -165,8 +165,12 @@ exports.socketManager = (server) => {
   server.app.socketConnections = {};
 
   // Create a Socket.io instance attached to the server
-  io = socketIO(server);
-
+  io = socketIO(server, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
   // Use the Redis adapter
   io.adapter(
     redis({

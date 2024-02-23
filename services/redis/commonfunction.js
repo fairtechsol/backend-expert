@@ -489,6 +489,27 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
 
 }
 
+
+exports.getExpertsRedisSessionData = async (keys) => {
+  // Retrieve expert data from Redis
+  const expertData = await internalRedis.hmget(redisKeys.expertRedisData, keys);
+  let expertRedisData = {};
+  expertData?.forEach((item, index) => {
+    if (item) {
+
+      expertRedisData[keys?.[index]?.split("_")[0]] = {
+
+        maxLoss: JSON.parse(item)?.maxLoss,
+        totalBet: JSON.parse(item)?.totalBet
+
+      };
+
+    }
+  });
+  return expertRedisData;
+
+}
+
 exports.getExpertsRedisMatchData = async (matchId) => {
   // Retrieve match data from Redis
   let redisIds = [`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`];

@@ -324,9 +324,9 @@ exports.getMatchFromCache = async (matchId) => {
       validated.matchOdd = JSON.parse(validated.matchOdd);
     if (validated?.marketBookmaker)
       validated.marketBookmaker = JSON.parse(validated?.marketBookmaker);
-    if (validated.marketTiedMatch)
+    if (validated?.marketTiedMatch)
       validated.marketTiedMatch = JSON.parse(validated.marketTiedMatch);
-    if (validated.marketCompleteMatch)
+    if (validated?.marketCompleteMatch)
       validated.marketCompleteMatch = JSON.parse(validated.marketCompleteMatch);
     return validated;
   }

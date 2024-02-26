@@ -107,11 +107,7 @@ module.exports.updateMatchValidate = Joi.object({
   minBet: Joi.number().messages({
     "number.base": "Minimum bet amount must be a number"
   }),
-  matchOddMaxBet: Joi.number().greater(Joi.ref("minBet")).messages({
-    "number.base": "Maximum bet odd must be a number",
-    "number.greater":
-      "Maximum bet amount must be greater than minimum bet amount"
-  }),
+
   betFairSessionMaxBet: Joi.number()
     .greater(Joi.ref("minBet"))
     .messages({
@@ -166,9 +162,9 @@ module.exports.getMatchSchema = Joi.object({
   betFairSessionMinBet: Joi.number(),
   apiSessionActive: Joi.boolean(),
   manualSessionActive: Joi.boolean(),
-  matchOdd: Joi.string().allow(""),
-  marketBookmaker: Joi.string().allow(""),
-  marketTiedMatch: Joi.string().allow(""),
-  marketCompleteMatch: Joi.string().allow(""),
+  ...(Object.values(marketBettingTypeByBettingType)?.reduce((prev, curr) => {
+    prev[curr] = Joi.string().allow("");
+    return prev;
+  }, {})),
   stopAt: Joi.date(),
 })

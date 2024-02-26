@@ -410,7 +410,6 @@ exports.listMatch = async (req, res) => {
     const {
       id: loginId,
       allPrivilege,
-      addMatchPrivilege,
       betFairMatchPrivilege,
       bookmakerMatchPrivilege,
       sessionMatchPrivilege,
@@ -585,11 +584,11 @@ exports.matchActiveInActive = async (req, res) => {
         let payload = {
           ...match,
           ...sessionBetType,
-          matchOdd: convertedData[matchBettingType.matchOdd],
-          marketBookmaker: convertedData[matchBettingType.bookmaker],
-          marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
-          marketCompleteMatch: convertedData[matchBettingType.completeMatch],
         };
+
+        Object.keys(marketMatchBettingType)?.forEach((item) => {
+          payload[marketBettingTypeByBettingType[item]] = convertedData[matchBettingType[item]];
+        });
         await updateMatchInCache(match.id, payload);
       }
       else {
@@ -670,12 +669,13 @@ exports.matchActiveInActive = async (req, res) => {
             return result;
           }, {});
           let payload = {
-            ...match,
-            matchOdd: convertedData[matchBettingType.matchOdd],
-            marketBookmaker: convertedData[matchBettingType.bookmaker],
-            marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
-            marketCompleteMatch: convertedData[matchBettingType.completeMatch],
+            ...match
           };
+
+          Object.keys(marketMatchBettingType)?.forEach((item) => {
+            payload[marketBettingTypeByBettingType[item]] = convertedData[matchBettingType[item]];
+          });
+
           await updateMatchInCache(match.id, payload);
         }
         else {
@@ -792,7 +792,6 @@ exports.matchListWithManualBetting = async (req, res) => {
     const {
       allPrivilege,
       addMatchPrivilege,
-      betFairMatchPrivilege,
       bookmakerMatchPrivilege,
       sessionMatchPrivilege,
     } = req.user;

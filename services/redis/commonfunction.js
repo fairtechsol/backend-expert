@@ -77,12 +77,20 @@ exports.updateMatchInCache = async (matchId, data) => {
     betFairSessionMinBet: data.betFairSessionMinBet || match.betFairSessionMinBet,
     startAt: data.startAt || match.startAt,
     apiSessionActive: data.apiSessionActive ?? match.apiSessionActive,
-    manualSessionActive: data.manualSessionActive ?? match.manualSessionActive,
-    matchOdd: JSON.stringify(data.matchOdd) || match.matchOdd,
-    marketBookmaker: JSON.stringify(data.marketBookmaker) || match.marketBookmaker,
-    marketTiedMatch: JSON.stringify(data.marketTiedMatch) || match.marketTiedMatch,
-    marketCompleteMatch: JSON.stringify(data.marketCompleteMatch) || match.marketCompleteMatch
+    manualSessionActive: data.manualSessionActive ?? match.manualSessionActive
   }
+
+  Object.values(marketBettingTypeByBettingType)?.forEach((item)=>{
+    if(data[item]){
+      payload[item]=JSON.stringify(data[item]);
+    }
+    else{
+      payload[item]=match[item];
+
+    }
+  });
+
+
   if (data.teamC || match.teamC) {
     payload.teamC = data.teamC || match.teamC;
   }
@@ -324,14 +332,13 @@ exports.getMatchFromCache = async (matchId) => {
   let MatchData = await internalRedis.hgetall(matchKey);
   if (Object.keys(MatchData)?.length) {
     let { validated } = await joiValidator.jsonValidator(getMatchSchema, MatchData);
-    if (validated?.matchOdd)
-      validated.matchOdd = JSON.parse(validated.matchOdd);
-    if (validated?.marketBookmaker)
-      validated.marketBookmaker = JSON.parse(validated?.marketBookmaker);
-    if (validated?.marketTiedMatch)
-      validated.marketTiedMatch = JSON.parse(validated.marketTiedMatch);
-    if (validated?.marketCompleteMatch)
-      validated.marketCompleteMatch = JSON.parse(validated.marketCompleteMatch);
+
+    Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+      if (validated?.[item]) {
+        validated[item] = JSON.parse(validated[item]);
+      }
+    });
+
     return validated;
   }
   return null;

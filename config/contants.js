@@ -71,9 +71,19 @@ module.exports.marketBettingTypeByBettingType={
   completeMatch : "marketCompleteMatch"
 }
 
+module.exports.marketMatchBettingType={
+  matchOdd: "matchOdd",
+  bookmaker: "bookmaker",
+  tiedMatch1: "tiedMatch1",
+  completeMatch : "completeMatch"
+}
+
 module.exports.intialMatchBettingsName = {
-  initialBookmaker: "Bookmaker Market",
-  initialMatchOdd: "Match Odd",
+  bookmaker: "Bookmaker Market",
+  matchOdd: "Match Odd",
+  tiedMatch1: "tied_match",
+  tiedMatch2: "tied_manual",
+  completeMatch : "complete_match"
 };
 module.exports.sessionBettingType = {
   session: "session",
@@ -108,11 +118,6 @@ module.exports.bettingType = {
   match: "match",
 };
 
-module.exports.initialMatchNames = {
-  manual: "tied_manual",
-  market: "tied_match",
-  completeMatch : "complete_match"
-};
 
 module.exports.socketData ={
   expertRoomSocket : "expertRoom",

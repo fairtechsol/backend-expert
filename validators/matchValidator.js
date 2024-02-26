@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { bettingType } = require("../config/contants");
+const { bettingType, matchBettingType, marketBettingTypeByBettingType, marketMatchBettingType } = require("../config/contants");
 
 const bookmakerSchema = Joi.object({
   maxBet: Joi.number().required(),
@@ -52,61 +52,34 @@ let addMatchSchema = Joi.object({
     "number.base": "Minimum bet amount must be a number",
     "any.required": "Minimum bet amount is required",
   }),
-  matchOddMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
-    "number.base": "Maximum bet odd must be a number",
-    "number.greater":
-      "Maximum bet amount must be greater than minimum bet amount",
-    "any.required": "Maximum bet odd is required",
-  }),
   betFairSessionMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
     "number.base": "Maximum bet amount for BetFair session must be a number",
     "number.greater":
       "Maximum bet amount for BetFair session must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for BetFair session is required",
   }),
-  betFairBookmakerMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
-    "number.base":
-      "Maximum bet amount for BetFair bookmaker must be a number",
-    "number.greater":
-      "Maximum bet amount for BetFair bookmaker must be greater than minimum bet amount",
-    "any.required": "Maximum bet amount for BetFair bookmaker is required",
-  }),
+  
   bookmakers: Joi.array().items(bookmakerSchema).required().messages({
     "array.base": "Bookmakers must be an array",
     "any.required": "Bookmakers are required",
   }),
-  marketTiedMatchMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
-    "number.base": "Maximum bet amount for market tied match must be a number",
-    "number.greater":
-      "Maximum bet amount for market tied match must be greater than minimum bet amount",
-    "any.required": "Maximum bet amount for market tied match is required",
-  }),
-  manualTiedMatchMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
-    "number.base": "Maximum bet amount for manual tied match must be a number",
-    "number.greater":
-      "Maximum bet amount for market tied match must be greater than minimum bet amount",
-    "any.required": "Maximum bet amount for manual tied match is required",
-  }),
-  completeMatchMaxBet: Joi.number().greater(Joi.ref("minBet")).required()
-    .messages({
-      "number.base": "Maximum bet amount for complete match must be a number",
-      "number.greater":
-        "Maximum bet amount for complete match must be greater than minimum bet amount",
-      "any.required": "Maximum bet amount for complete tied match is required",
-    }),
-  matchOddMarketId: Joi.string().required().messages({
-    "string.base": "Match odd market id must be a string",
-    "any.required": "Match odd market id is required",
-  }),
-  marketBookmakerId: Joi.string().required().messages({
-    "string.base": "Market bookmaker id must be a string",
-    "any.required": "Market bookmaker id is required",
-  }),
-  tiedMatchMarketId: Joi.string().messages({
-    "string.base": "Tied match market id must be a string",
-  }),
-  completeMatchMarketId: Joi.string().messages({
-    "string.base": "Complete match market id must be a string",
+  marketData: Joi.array().min(1).items(Joi.object({
+    type: Joi.string().valid(...Object.values(matchBettingType)).required(),
+    maxBet: Joi.number().required(),
+    marketId: Joi.when('type', {
+      is: Joi.valid(...Object.keys(marketMatchBettingType)),
+      then: Joi.string().required(),
+      otherwise: Joi.string().forbidden()
+    })
+  })).custom((value, helpers) => {
+    const hasMatchOdd = value.some(obj => obj.type === matchBettingType.matchOdd);
+    if (!hasMatchOdd) {
+      return helpers.error('any.custom', { message: 'Match must have a matchOdd.' });
+    }
+    return value;
+  }).required().messages({
+    "array.base": "Market data must be an array",
+    "any.custom": "Match must have a matchOdd."
   }),
   isManualMatch: Joi.boolean()
 }).messages({
@@ -120,11 +93,6 @@ module.exports.addMatchValidate = addMatchSchema.when(Joi.object({ isManualMatch
       competitionId: Joi.string().optional().allow(""),
       marketId: Joi.string().optional().allow(""),
       eventId: Joi.string().optional().allow(""),
-      matchOddMarketId: Joi.string().optional().allow(""),
-      marketBookmakerId: Joi.string().optional().allow(""),
-      tiedMatchMarketId: Joi.string().optional().allow(""),
-      completeMatchMarketId: Joi.string().optional().allow("")  ,
-      // Other conditional validations...
   }),
   otherwise: Joi.object().unknown(true) // Ensures that other validations are preserved
 });
@@ -151,41 +119,16 @@ module.exports.updateMatchValidate = Joi.object({
       "number.greater":
         "Maximum bet amount for BetFair session must be greater than minimum bet amount"
     }),
-  betFairBookmakerMaxBet: Joi.number()
-    .greater(Joi.ref("minBet"))
-    .messages({
-      "number.base":
-        "Maximum bet amount for BetFair bookmaker must be a number",
-      "number.greater":
-        "Maximum bet amount for BetFair bookmaker must be greater than minimum bet amount"
-    }),
+
   bookmakers: Joi.array().items(updatebookmakerSchema).messages({
     "array.base": "Bookmakers must be an array",
   }),
-  marketTiedMatchMaxBet: Joi.number()
-    .greater(Joi.ref("minBet"))
-    .messages({
-      "number.base":
-        "Maximum bet amount for market tied match must be a number",
-      "number.greater":
-        "Maximum bet amount for market tied match must be greater than minimum bet amount"
-    }),
-  manualTiedMatchMaxBet: Joi.number()
-    .greater(Joi.ref("minBet"))
-    .messages({
-      "number.base":
-        "Maximum bet amount for manual tied match must be a number",
-      "number.greater":
-        "Maximum bet amount for manual tied match must be greater than minimum bet amount"
-    }),
-  completeMatchMaxBet: Joi.number()
-    .greater(Joi.ref("minBet"))
-    .messages({
-      "number.base":
-        "Maximum bet amount for complete match must be a number",
-      "number.greater":
-        "Maximum bet amount for complete match must be greater than minimum bet amount"
-    })
+  marketData: Joi.array().min(1).items(Joi.object({
+    type: Joi.string().valid(...Object.values(matchBettingType)).required(),
+    maxBet: Joi.number().required()
+  })).required().messages({
+    "array.base": "Market data must be an array",
+  })
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });

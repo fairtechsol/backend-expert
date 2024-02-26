@@ -1,5 +1,5 @@
 
-const { redisKeys, betStatusType } = require("../../config/contants");
+const { redisKeys, betStatusType, marketBettingTypeByBettingType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
@@ -30,12 +30,16 @@ exports.addMatchInCache = async (matchId, data) => {
     betFairSessionMinBet: data.betFairSessionMinBet,
     startAt: data.startAt,
     apiSessionActive: data.apiSessionActive,
-    manualSessionActive: data.manualSessionActive,
-    ...(data.matchOdd ? { matchOdd: JSON.stringify(data.matchOdd) } : {}),
-    ...(data.marketBookmaker ? { marketBookmaker: JSON.stringify(data.marketBookmaker) } : {}),
-    ...(data.marketTiedMatch ? { marketTiedMatch: JSON.stringify(data.marketTiedMatch) } : {}),
-    ...(data.marketCompleteMatch ? { marketCompleteMatch: JSON.stringify(data.marketCompleteMatch) } : {}),
+    manualSessionActive: data.manualSessionActive
   }
+
+  Object.values(marketBettingTypeByBettingType)?.forEach((item)=>{
+    if(data[item]){
+      payload[item]=JSON.stringify(data[item]);
+    }
+  });
+
+
   if (data.teamC) {
     payload.teamC = data.teamC;
   }

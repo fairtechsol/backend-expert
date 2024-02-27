@@ -71,12 +71,15 @@ let addMatchSchema = Joi.object({
       then: Joi.string().required(),
       otherwise: Joi.string().forbidden()
     })
-  })).custom((value, helpers) => {
-    const hasMatchOdd = value.some(obj => obj.type === matchBettingType.matchOdd);
-    if (!hasMatchOdd) {
-      return helpers.error('any.custom', { message: 'Match must have a matchOdd.' });
-    }
-    return value;
+  })).when(Joi.ref('isManualMatch'), {
+    is: false,
+    then: Joi.array().custom((value, helpers) => {
+      const hasMatchOdd = value.some(obj => obj.type === matchBettingType.matchOdd);
+      if (!hasMatchOdd) {
+        return helpers.error('any.custom', { message: 'Match must have a matchOdd.' });
+      }
+      return value;
+    })
   }).required().messages({
     "array.base": "Market data must be an array",
     "any.custom": "Match must have a matchOdd."

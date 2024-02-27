@@ -52,8 +52,7 @@ exports.createMatch = async (req, res) => {
     } = req.body;
 
 
-    // filtering market data so that no one can add unidentified market in db
-    marketData = marketData?.filter((item) => Boolean(matchBettingType[item?.type]) == true);
+   
 
 
     // Extract user ID from the request object
@@ -85,11 +84,11 @@ exports.createMatch = async (req, res) => {
       }
       eventId = marketId;
 
-      marketData = marketData?.filter((item) => Boolean(marketMatchBettingType[item?.type]) == true)?.map((item) => {
-        return ({
-          ...item, marketId: marketId
-        })
-      });
+      // marketData = marketData?.filter((item) => Boolean(marketMatchBettingType[item?.type]) == true)?.map((item) => {
+      //   return ({
+      //     ...item, marketId: marketId
+      //   })
+      // });
 
       const isManualMatchExist = await getOneMatchByCondition({ title: ILike(title), stopAt: IsNull() }, ['id', 'title']);
       if (isManualMatchExist) {

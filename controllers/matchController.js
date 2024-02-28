@@ -87,6 +87,8 @@ exports.createMatch = async (req, res) => {
         competitionName = isCompetitionExist.competitionName;
         competitionId = isCompetitionExist.competitionId;
       }
+      competitionId = competitionId || marketId;
+      
       if (!title) {
         title = teamA + ' v ' + teamB;
       }

@@ -54,7 +54,8 @@ module.exports.matchBettingType = {
   quickbookmaker3: "quickbookmaker3",
   tiedMatch1: "tiedMatch1",
   tiedMatch2: "tiedMatch2",
-  completeMatch: "completeMatch"
+  completeMatch: "completeMatch",
+  completeManual: "completeManual",
 };
 
 module.exports.manualMatchBettingType = [
@@ -62,6 +63,7 @@ module.exports.manualMatchBettingType = [
   "quickbookmaker2",
   "quickbookmaker3",
   "tiedMatch2",
+  "completeManual"
 ];
 
 module.exports.quickBookmakers = [
@@ -89,7 +91,8 @@ module.exports.intialMatchBettingsName = {
   [this.matchBettingType.matchOdd]: "Match Odd",
   [this.matchBettingType.tiedMatch1]: "tied_match",
   [this.matchBettingType.tiedMatch2]: "tied_manual",
-  [this.matchBettingType.completeMatch]: "complete_match"
+  [this.matchBettingType.completeMatch]: "complete_match",
+  [this.matchBettingType.completeManual]: "complete_manual",
 };
 
 module.exports.matchBettingKeysForMatchDetails={
@@ -97,7 +100,8 @@ module.exports.matchBettingKeysForMatchDetails={
   [this.matchBettingType.tiedMatch2]:"manualTideMatch",
   [this.matchBettingType.matchOdd]: "matchOdd",
   [this.matchBettingType.bookmaker]: "bookmaker",
-  [this.matchBettingType.completeMatch]: "marketCompleteMatch"
+  [this.matchBettingType.completeMatch]: "marketCompleteMatch",
+  [this.matchBettingType.completeManual]: "completeManual",
 }
 
 module.exports.sessionBettingType = {

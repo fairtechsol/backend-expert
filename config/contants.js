@@ -54,7 +54,8 @@ module.exports.matchBettingType = {
   quickbookmaker3: "quickbookmaker3",
   tiedMatch1: "tiedMatch1",
   tiedMatch2: "tiedMatch2",
-  completeMatch : "completeMatch"
+  completeMatch: "completeMatch",
+  completeManual: "completeManual",
 };
 
 module.exports.manualMatchBettingType = [
@@ -62,19 +63,47 @@ module.exports.manualMatchBettingType = [
   "quickbookmaker2",
   "quickbookmaker3",
   "tiedMatch2",
+  "completeManual"
 ];
 
-module.exports.marketBettingTypeByBettingType={
-  matchOdd: "matchOdd",
-  bookmaker: "marketBookmaker",
-  tiedMatch1: "marketTiedMatch",
-  completeMatch : "marketCompleteMatch"
+module.exports.quickBookmakers = [
+  "quickbookmaker1",
+  "quickbookmaker2",
+  "quickbookmaker3",
+];
+
+module.exports.marketBettingTypeByBettingType = {
+  [this.matchBettingType.matchOdd]: "matchOdd",
+  [this.matchBettingType.bookmaker]: "marketBookmaker",
+  [this.matchBettingType.tiedMatch1]: "marketTiedMatch",
+  [this.matchBettingType.completeMatch]: "marketCompleteMatch"
+}
+
+module.exports.marketMatchBettingType = {
+  [this.matchBettingType.matchOdd]: "matchOdd",
+  [this.matchBettingType.bookmaker]: "bookmaker",
+  [this.matchBettingType.tiedMatch1]: "tiedMatch1",
+  [this.matchBettingType.completeMatch]: "completeMatch"
 }
 
 module.exports.intialMatchBettingsName = {
-  initialBookmaker: "Bookmaker Market",
-  initialMatchOdd: "Match Odd",
+  [this.matchBettingType.bookmaker]: "Bookmaker Market",
+  [this.matchBettingType.matchOdd]: "Match Odd",
+  [this.matchBettingType.tiedMatch1]: "tied_match",
+  [this.matchBettingType.tiedMatch2]: "tied_manual",
+  [this.matchBettingType.completeMatch]: "complete_match",
+  [this.matchBettingType.completeManual]: "complete_manual",
 };
+
+module.exports.matchBettingKeysForMatchDetails={
+  [this.matchBettingType.tiedMatch1]:"apiTideMatch",
+  [this.matchBettingType.tiedMatch2]:"manualTideMatch",
+  [this.matchBettingType.matchOdd]: "matchOdd",
+  [this.matchBettingType.bookmaker]: "bookmaker",
+  [this.matchBettingType.completeMatch]: "marketCompleteMatch",
+  [this.matchBettingType.completeManual]: "completeManual",
+}
+
 module.exports.sessionBettingType = {
   session: "session",
   overByOver: "overByover",
@@ -108,11 +137,6 @@ module.exports.bettingType = {
   match: "match",
 };
 
-module.exports.initialMatchNames = {
-  manual: "tied_manual",
-  market: "tied_match",
-  completeMatch : "complete_match"
-};
 
 module.exports.socketData ={
   expertRoomSocket : "expertRoom",

@@ -2,7 +2,7 @@ const { AppDataSource } = require("../config/postGresConnection");
 const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
-const { matchBettingType, betStatusType } = require("../config/contants");
+const { matchBettingType, betStatusType, manualMatchBettingType } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
 
 
@@ -125,8 +125,7 @@ exports.getMatchWithBettingAndSession = async (
   try {
     // Start building the query
     let matchQuery = match
-      .createQueryBuilder().where({ stopAt: IsNull() })
-      ;
+      .createQueryBuilder().where({ stopAt: IsNull() });
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery
         .leftJoinAndMapMany(
@@ -135,12 +134,7 @@ exports.getMatchWithBettingAndSession = async (
           "bookmakers",
           "bookmakers.type IN (:...types)",
           {
-            types: [
-              matchBettingType.quickbookmaker1,
-              matchBettingType.quickbookmaker2,
-              matchBettingType.quickbookmaker3,
-              matchBettingType.tiedMatch2,
-            ],
+            types: manualMatchBettingType,
           }
         );
     }

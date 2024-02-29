@@ -17,6 +17,7 @@ const {
   addExpertResult,
   deleteExpertResult,
   updateExpertResult,
+  deleteAllExpertResult,
 } = require("../services/expertResultService");
 const { getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
 const { getMatchById, addMatch } = require("../services/matchService");
@@ -493,7 +494,7 @@ exports.unDeclareSessionResult = async (req, res) => {
         });
   
       await deleteResult(betId);
-      await updateExpertResult({ betId: betId },{ isApprove: false, isReject: false });
+      await deleteAllExpertResult(betId);
 
       bet.activeStatus=betStatusType.live;
       bet.result=null;
@@ -552,9 +553,7 @@ exports.unDeclareSessionResult = async (req, res) => {
 const checkResult = async (body) => {
   const { betId, matchId, isSessionBet, userId, result, selectionId } = body;
   let checkExistResult = await getExpertResult({
-    betId: betId,
-    isApprove: true,
-    isReject: false,
+    betId: betId
   });
 
   if (isSessionBet) {
@@ -586,7 +585,7 @@ const checkResult = async (body) => {
     }
   }
 
-  if (!checkExistResult) {
+  if (!checkExistResult?.length) {
     await addExpertResult({
       betId: betId,
       matchId: matchId,
@@ -597,12 +596,7 @@ const checkResult = async (body) => {
     });
 
     return true;
-  } else if (checkExistResult && checkExistResult.userId == userId) {
-    await updateExpertResult({id:checkExistResult.id},{
-      result:result
-    });
-    return true;
-  } else if (checkExistResult && checkExistResult.result != result) {
+  } else if (!checkExistResult?.find((item)=>item?.result==result)) {
     checkExistResult.isReject = true;
     addExpertResult(checkExistResult);
     await addExpertResult({
@@ -618,7 +612,7 @@ const checkResult = async (body) => {
       statusCode: 400,
       message: { msg: "bet.resultReject" },
     };
-  } else if (checkExistResult && checkExistResult.result == result) {
+  } else if (checkExistResult?.find((item) => item?.result == result && item?.userId != userId)) {
     checkExistResult.isReject = 0;
     addExpertResult(checkExistResult);
     await addExpertResult({
@@ -629,6 +623,12 @@ const checkResult = async (body) => {
       isApprove: true,
       isReject: false,
     });
+  }
+  else if (checkExistResult?.find((item)=>item?.userId==userId)) {
+    await updateExpertResult({id:checkExistResult.id},{
+      result:result
+    });
+    return true;
   }
 };
 
@@ -925,7 +925,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       });
 
     await deleteResult(matchOddBetting.id);
-    await updateExpertResult({ betId: matchOddBetting.id },{ isApprove: false, isReject: false });
+    await deleteAllExpertResult(matchOddBetting.id);
     await deleteAllMatchRedis(matchId);
 
     if (response?.data?.profitLossWallet) {

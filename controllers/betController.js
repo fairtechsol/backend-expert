@@ -499,7 +499,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       bet.result=null;
 
       if (bet?.selectionId && bet?.selectionId != "") {
-        await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet);
+        await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet.id);
       } else {
         await updateSessionMatchRedis(bet.matchId, bet.id, bet);
       }

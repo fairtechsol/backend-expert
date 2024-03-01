@@ -160,7 +160,7 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
   let userId = jobData.userId;
   try {
     // Parse partnerships from userRedisData
-    let partnershipObj = JSON.parse(jobData.partnership);
+    let partnershipObj = jobData.partnership;
 
     // Extract relevant data from jobData
     const userDeleteProfitLoss = jobData.userDeleteProfitLoss;
@@ -320,4 +320,4 @@ expertMatchBetDeleteQueue.process(async function (job, done) {
   }
 });
 
-module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, expertSessionBetDeleteQueue }
+module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, expertSessionBetDeleteQueue, expertMatchBetDeleteQueue }

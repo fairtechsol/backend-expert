@@ -613,7 +613,7 @@ const checkResult = async (body) => {
       message: { msg: "bet.resultReject" },
     };
   } else if (checkExistResult?.find((item) => item?.result == result && item?.userId != userId)) {
-    checkExistResult.isReject = 0;
+    checkExistResult.isReject = false;
     addExpertResult(checkExistResult);
     await addExpertResult({
       betId: betId,

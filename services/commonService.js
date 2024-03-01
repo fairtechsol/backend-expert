@@ -1,10 +1,11 @@
+const { __mf } = require("i18n");
 const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchBattingByMatchId } = require("./matchBettingService");
 const { getMatchDetails } = require("./matchService");
-const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisData, getExpertsRedisSessionData, getExpertsRedisSessionDataByKeys } = require("./redis/commonfunction");
+const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData,  getExpertsRedisSessionDataByKeys } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 
 exports.forceLogoutIfLogin = async (userId) => {
@@ -14,7 +15,7 @@ exports.forceLogoutIfLogin = async (userId) => {
 
   if (token) {
     // function to force logout
-    sendMessageToUser(userId, socketData.logoutUserForceEvent, {});
+    sendMessageToUser(userId, socketData.logoutUserForceEvent, { message: __mf("auth.forceLogout") })
   }
 };
 

@@ -209,7 +209,8 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
           matchId: matchId,
           betPlacedId: betPlacedId,
           deleteReason: deleteReason,
-          domainUrl: domainUrl
+          domainUrl: domainUrl,
+          betId: betId
         });
       } catch (error) {
         // Log error if any during exposure update

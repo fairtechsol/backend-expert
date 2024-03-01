@@ -160,7 +160,12 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
   let userId = jobData.userId;
   try {
     // Parse partnerships from userRedisData
-    let partnershipObj = jobData.partnership;
+    let partnershipObj = {};
+    try{
+      partnershipObj = JSON.parse(jobData.partnership);
+    } catch {
+      partnershipObj = jobData.partnership;
+    }
 
     // Extract relevant data from jobData
     const userDeleteProfitLoss = jobData.userDeleteProfitLoss;
@@ -296,7 +301,11 @@ expertMatchBetDeleteQueue.process(async function (job, done) {
           betPlacedId: betPlacedId,
           deleteReason: deleteReason,
           domainUrl: domainUrl,
-          matchBetType
+          matchBetType,
+          teamArateRedisKey: teamArateRedisKey,
+          teamBrateRedisKey: teamBrateRedisKey,
+          teamCrateRedisKey: teamCrateRedisKey,
+          redisObject: redisObj
         });
       } catch (error) {
         // Log error if any during exposure update

@@ -475,6 +475,7 @@ exports.unDeclareSessionResult = async (req, res) => {
           betId,
           userId,
           matchId,
+          sessionDetails: bet
         }
       )
         .then((data) => {

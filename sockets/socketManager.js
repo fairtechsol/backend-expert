@@ -60,9 +60,9 @@ const handleConnection = async (client) => {
 
       // Increment and emit the login user count if greater than 0; otherwise, set it to 1
       if (userCount > 0) {
-        incrementCount();
+        await incrementCount();
       } else {
-        internalRedis.set("loginUserCount", 1);
+        await internalRedis.set("loginUserCount", 1);
         io.to(socketData.expertRoomSocket).emit("loginUserCount", { count: 1 });
       }
       return;
@@ -132,7 +132,7 @@ const handleDisconnect = async (client) => {
       };
 
       // Decrement and emit the login user count if greater than 0; otherwise, set it to 0
-      userCount > 0 ? decrementCount() : internalRedis.set("loginUserCount", 0);
+      userCount > 0 ? await decrementCount() : await internalRedis.set("loginUserCount", 0);
 
       return;
     }

@@ -206,6 +206,7 @@ exports.declareSessionResult = async (req, res) => {
         matchId: matchId,
         result: score,
         profitLoss: fwProfitLoss,
+      commission: response?.data?.totalCommission
       });
 
       sendMessageToUser(
@@ -772,12 +773,13 @@ exports.declareMatchResult = async (req, res) => {
 
     
     await addResult({
-        betType: bettingType.match,
-        betId: matchOddBetting.id,
-        matchId: matchId,
-        result: result,
-        profitLoss: fwProfitLoss,
-      });
+      betType: bettingType.match,
+      betId: matchOddBetting.id,
+      matchId: matchId,
+      result: result,
+      profitLoss: fwProfitLoss,
+      commission: response?.data?.totalCommission
+    });
 
       sendMessageToUser(
         socketData.expertRoomSocket,

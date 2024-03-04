@@ -31,7 +31,8 @@ exports.getAllProfitLossResults = async (matchId) => {
                   WHEN "betType"='session' THEN ROUND(result."profitLoss"::numeric, 2)
                   ELSE 0 
                 END
-              ) AS "sessionTotalProfitLoss"`
+              ) AS "sessionTotalProfitLoss"`,
+              'SUM(ROUND(result."commission"::numeric, 2)) AS "commission"'
         ]).addSelect('result."matchId"', "matchId")
         .groupBy('result."matchId"')
         .getRawMany();

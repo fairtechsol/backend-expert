@@ -550,7 +550,6 @@ exports.unDeclareSessionResult = async (req, res) => {
       return ErrorResponse(err, req, res);
     }
 };
-  
 
 const checkResult = async (body) => {
   const { betId, matchId, isSessionBet, userId, result, selectionId } = body;

@@ -1,5 +1,5 @@
 const { __mf } = require("i18n");
-const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys } = require("../config/contants");
+const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
@@ -7,6 +7,7 @@ const { getMatchBattingByMatchId } = require("./matchBettingService");
 const { getMatchDetails } = require("./matchService");
 const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData,  getExpertsRedisSessionDataByKeys } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
+const { getExpertResult } = require("./expertResultService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   logger.info({ message: `Force logout user: ${userId} if already login.` });
@@ -251,7 +252,7 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
 
 exports.commonGetMatchDetails = async (matchId, userId) => {
   let match = await getMatchFromCache(matchId);
-
+  let expertResults = await getExpertResult({ matchId: matchId });
   // Check if the match exists
   if (match) {
     // Retrieve all betting data from Redis for the given match
@@ -455,7 +456,23 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 
   match.teamRates = teamRates;
   if (userId) {
-    const redisIds = match.sessionBettings?.map((item) => JSON.parse(item)?.id + redisKeys.profitLoss);
+    const redisIds = match.sessionBettings?.map((item, index) => {
+      const sessionBettingData = JSON.parse(item);
+      const currSessionExpertResult = expertResults.filter((result) => result.betId == sessionBettingData?.id);
+
+      if (currSessionExpertResult?.length != 0) {
+        if (currSessionExpertResult?.length == currSessionExpertResult?.filter((result) => result.userId == userId)?.length && currSessionExpertResult?.filter((result) => result.userId == userId)?.length != 0) {
+          sessionBettingData.resultStatus = resultStatus.pending;
+          match.sessionBettings[index] = JSON.stringify(sessionBettingData);
+        }
+        else if (currSessionExpertResult?.filter((result) => result.userId == userId)?.length != 0) {
+          sessionBettingData.resultStatus = resultStatus.missMatched;
+          match.sessionBettings[index] = JSON.stringify(sessionBettingData);
+        }
+      }
+
+      return (sessionBettingData?.id + redisKeys.profitLoss)
+    });
     if (redisIds?.length > 0) {
       let sessionData = await getExpertsRedisSessionDataByKeys(redisIds);
       match.sessionProfitLoss = sessionData;

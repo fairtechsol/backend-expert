@@ -1,12 +1,13 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings, getSessionBetting } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const { getUserById } = require("../services/userService");
-const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType } = require("../config/contants");
+const {getUserById} = require("../services/userService");
+const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis, updateMultipleMarketSessionIdRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
-const { getSpecificResultsSession } = require("../services/betService");
+const {  getSpecificResultsSession } = require("../services/betService");
+const { getExpertResult } = require("../services/expertResultService");
 
 exports.addSession = async (req, res) => {
   try {
@@ -226,6 +227,7 @@ exports.getSessions = async (req, res) => {
       }
     } else {
       const redisMatchData = await getSessionFromRedis(matchId, sessionId);
+      let expertResults = await getExpertResult({ betId: sessionId });
 
       if (redisMatchData) {
         session = redisMatchData;
@@ -263,6 +265,15 @@ exports.getSessions = async (req, res) => {
           "marketId",
           "stopAt"
         ]);
+      }
+
+      if (expertResults?.length != 0) {
+        if (expertResults?.length == expertResults?.filter((result) => result.userId == req.user.id)?.length && expertResults?.filter((result) => result.userId == req.user.id)?.length != 0) {
+          session.resultStatus = resultStatus.pending;
+        }
+        else if (expertResults?.filter((result) => result.userId == req.user.id)?.length != 0) {
+          session.resultStatus = resultStatus.missMatched;
+        }
       }
 
       session = { ...session, ...match };

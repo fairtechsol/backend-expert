@@ -598,9 +598,24 @@ const checkResult = async (body) => {
     });
 
     return true;
-  } else if (!checkExistResult?.find((item)=>item?.result==result)) {
-    checkExistResult.isReject = true;
-    addExpertResult(checkExistResult);
+  }
+  else if (checkExistResult?.find((item) => item?.result == result && item?.userId != userId)) {
+
+    await updateExpertResult({ betId: betId, userId: userId }, {
+      result: result
+    });
+
+  }
+  else if (checkExistResult?.find((item) => item?.result != result && item?.userId == userId)) {
+    await updateExpertResult({ betId: betId, userId: userId }, {
+      result: result
+    });
+    return true;
+  }
+  else if (!checkExistResult?.find((item) => item?.result == result)) {
+    await updateExpertResult({ betId: betId, userId: userId }, {
+      isReject: true
+    });
     await addExpertResult({
       betId: betId,
       matchId: matchId,
@@ -614,24 +629,7 @@ const checkResult = async (body) => {
       statusCode: 400,
       message: { msg: "bet.resultReject" },
     };
-  } else if (checkExistResult?.find((item) => item?.result == result && item?.userId != userId)) {
-    checkExistResult.isReject = false;
-    addExpertResult(checkExistResult);
-    await addExpertResult({
-      betId: betId,
-      matchId: matchId,
-      result: result,
-      userId: userId,
-      isApprove: true,
-      isReject: false,
-    });
-  }
-  else if (checkExistResult?.find((item)=>item?.userId==userId)) {
-    await updateExpertResult({id:checkExistResult.id},{
-      result:result
-    });
-    return true;
-  }
+  } 
 };
 
 exports.declareMatchResult = async (req, res) => {

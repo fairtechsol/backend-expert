@@ -173,6 +173,13 @@ exports.updateUser = async (req, res) => {
       }
      await updateUser(id, updateData);
      updateData["id"] = id
+     await internalRedis.hmset(id, {
+      allPrivilege: updateData.allPrivilege,
+      addMatchPrivilege: updateData.addMatchPrivilege,
+      betFairMatchPrivilege: updateData.betFairMatchPrivilege,
+      bookmakerMatchPrivilege: updateData.bookmakerMatchPrivilege,
+      sessionMatchPrivilege: updateData.sessionMatchPrivilege,
+    });
       // Send success response with the updated user data
       return SuccessResponse(
         {

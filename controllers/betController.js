@@ -604,7 +604,14 @@ const checkResult = async (body) => {
     await updateExpertResult({ betId: betId, userId: userId }, {
       result: result
     });
-
+    await addExpertResult({
+      betId: betId,
+      matchId: matchId,
+      result: result,
+      userId: userId,
+      isApprove: true,
+      isReject: false,
+    });
   }
   else if (checkExistResult?.find((item) => item?.result != result && item?.userId == userId)) {
     await updateExpertResult({ betId: betId, userId: userId }, {

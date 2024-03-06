@@ -178,14 +178,14 @@ exports.updateUser = async (req, res) => {
     }
     await updateUser(id, updateData);
     updateData["id"] = id
-    const privilegeobject = {
+    const privilegeObject = {
       allPrivilege: updateData.allPrivilege,
       addMatchPrivilege: updateData.addMatchPrivilege,
       betFairMatchPrivilege: updateData.betFairMatchPrivilege,
       bookmakerMatchPrivilege: updateData.bookmakerMatchPrivilege,
       sessionMatchPrivilege: updateData.sessionMatchPrivilege,
     }
-    await addDataInRedis(id, privilegeobject)
+    await addDataInRedis(id, privilegeObject)
 
 
     // Send success response with the updated user data

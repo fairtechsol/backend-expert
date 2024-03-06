@@ -14,7 +14,7 @@ const internalRedis = require("../config/internalRedisConnection");
 const { verifyToken } = require("../utils/authUtils");
 const { logger } = require("../config/logger");
 const { ILike } = require("typeorm");
-const { loginCount} = require('../services/redis/commonfunction')
+const { loginCount, addDataInRedis } = require('../services/redis/commonfunction')
 
 /**
  * Creates or updates a user based on the provided request data.
@@ -40,11 +40,11 @@ exports.createUser = async (req, res) => {
       createBy,
       remark
     } = req.body;
-    
+
     userName = userName.toUpperCase();
     // Check if a user with the same username already exists
     let userExist = await getUserByUserName(userName);
-    if (userExist){
+    if (userExist) {
       logger.error({
         error: `user exist for user id ${userExist?.id}`
       });
@@ -52,7 +52,8 @@ exports.createUser = async (req, res) => {
         { statusCode: 400, message: { msg: "user.userExist" } },
         req,
         res
-      );}
+      );
+    }
 
     // Hash the password using bcrypt
     password = await bcrypt.hash(password, 10);
@@ -149,53 +150,60 @@ exports.updateUser = async (req, res) => {
       remark
     } = req.body;
 
-      const isUserPresent=await getUser({id : id,createBy:createBy});
+    const isUserPresent = await getUser({ id: id, createBy: createBy });
 
-      if(!isUserPresent){
-        return ErrorResponse(
-          { statusCode: 404, message: { msg: "notFound",keys:{
-            name:"User"
-          } } },
-          req,
-          res
-        );
-      }
-      let updateData =  {
-        fullName  : fullName || isUserPresent.fullName,
-        phoneNumber : phoneNumber || isUserPresent.phoneNumber,
-        city : city || isUserPresent.city,
-        allPrivilege : allPrivilege ?? isUserPresent.allPrivilege,
-        addMatchPrivilege : addMatchPrivilege ?? isUserPresent.addMatchPrivilege,
-        betFairMatchPrivilege : betFairMatchPrivilege ?? isUserPresent.betFairMatchPrivilege,
-        bookmakerMatchPrivilege : bookmakerMatchPrivilege ?? isUserPresent.bookmakerMatchPrivilege,
-        sessionMatchPrivilege : sessionMatchPrivilege ?? isUserPresent.sessionMatchPrivilege,
-        remark: remark ?? isUserPresent.remark
-      }
-     await updateUser(id, updateData);
-     updateData["id"] = id
-     await internalRedis.hmset(id, {
+    if (!isUserPresent) {
+      return ErrorResponse(
+        {
+          statusCode: 404, message: {
+            msg: "notFound", keys: {
+              name: "User"
+            }
+          }
+        },
+        req,
+        res
+      );
+    }
+    let updateData = {
+      fullName: fullName || isUserPresent.fullName,
+      phoneNumber: phoneNumber || isUserPresent.phoneNumber,
+      city: city || isUserPresent.city,
+      allPrivilege: allPrivilege ?? isUserPresent.allPrivilege,
+      addMatchPrivilege: addMatchPrivilege ?? isUserPresent.addMatchPrivilege,
+      betFairMatchPrivilege: betFairMatchPrivilege ?? isUserPresent.betFairMatchPrivilege,
+      bookmakerMatchPrivilege: bookmakerMatchPrivilege ?? isUserPresent.bookmakerMatchPrivilege,
+      sessionMatchPrivilege: sessionMatchPrivilege ?? isUserPresent.sessionMatchPrivilege,
+      remark: remark ?? isUserPresent.remark
+    }
+    await updateUser(id, updateData);
+    updateData["id"] = id
+    const privilegeobject = {
       allPrivilege: updateData.allPrivilege,
       addMatchPrivilege: updateData.addMatchPrivilege,
       betFairMatchPrivilege: updateData.betFairMatchPrivilege,
       bookmakerMatchPrivilege: updateData.bookmakerMatchPrivilege,
       sessionMatchPrivilege: updateData.sessionMatchPrivilege,
-    });
-      // Send success response with the updated user data
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: {
-            msg: "updated",
-            keys: {
-              name: "User",
-            },
+    }
+    await addDataInRedis(id, privilegeobject)
+
+
+    // Send success response with the updated user data
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "updated",
+          keys: {
+            name: "User",
           },
-          data : updateData
         },
-        req,
-        res
-      );
-    
+        data: updateData
+      },
+      req,
+      res
+    );
+
   } catch (err) {
     logger.error({
       error: `Error at update user for the expert.`,
@@ -288,14 +296,18 @@ exports.changeSelfPassword = async (req, res, next) => {
 exports.changePassword = async (req, res, next) => {
   try {
     // Destructure request body
-    let { password,id,createBy} = req.body;
+    let { password, id, createBy } = req.body;
 
-    let user = await getUser({id : id,createBy:createBy},["id"]);
-    if(!user){
+    let user = await getUser({ id: id, createBy: createBy }, ["id"]);
+    if (!user) {
       return ErrorResponse(
-        { statusCode: 404, message: { msg: "notFound",keys:{
-          name:"User"
-        } } },
+        {
+          statusCode: 404, message: {
+            msg: "notFound", keys: {
+              name: "User"
+            }
+          }
+        },
         req,
         res
       );
@@ -304,7 +316,7 @@ exports.changePassword = async (req, res, next) => {
     password = bcrypt.hashSync(password, 10);
 
     // Update only the password if conditions are not met
-    await updateUser(id, { loginAt:null, password });
+    await updateUser(id, { loginAt: null, password });
     await forceLogoutUser(id);
 
     return SuccessResponse(
@@ -336,18 +348,18 @@ exports.changePassword = async (req, res, next) => {
 
 exports.expertList = async (req, res, next) => {
   try {
-    let { searchBy,keyword, loginId, offset, limit } = req.query
-    
-if(!loginId){
-  return ErrorResponse(
-    {
-      statusCode: 403,
-      message: {msg:"auth.unauthorize"},
-    },
-    req,
-    res
-  );
-}
+    let { searchBy, keyword, loginId, offset, limit } = req.query
+
+    if (!loginId) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "auth.unauthorize" },
+        },
+        req,
+        res
+      );
+    }
 
 
     let where = {
@@ -355,7 +367,7 @@ if(!loginId){
     }
     if (searchBy) where[searchBy] = ILike(`%${keyword}%`);
 
-    
+
     let users = await getUsers(
       where,
       [
@@ -385,7 +397,7 @@ if(!loginId){
       return SuccessResponse(
         {
           statusCode: 200,
-          message: { msg: "fetched" , keys : { name : "User list"} },
+          message: { msg: "fetched", keys: { name: "User list" } },
           data: response,
         },
         req,
@@ -398,7 +410,7 @@ if(!loginId){
     return SuccessResponse(
       {
         statusCode: 200,
-        message: { msg: "fetched" , keys : { name : "Expert list"}},
+        message: { msg: "fetched", keys: { name: "Expert list" } },
         data: response,
       },
       req,

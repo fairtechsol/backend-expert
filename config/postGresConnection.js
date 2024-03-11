@@ -31,6 +31,12 @@ const dataSourceOption = {
   namingStrategy: new PluralNamingStrategy(),
 };
 
+if (process.env.NODE_ENV == 'production') {
+  dataSourceOption.ssl = {
+    rejectUnauthorized: false
+  }
+}
+
 const AppDataSource = new DataSource(dataSourceOption);
 
 AppDataSource.initialize()

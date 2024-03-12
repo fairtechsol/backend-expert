@@ -612,7 +612,7 @@ const checkResult = async (body) => {
       isReject: false,
     });
   }
-  else if (checkExistResult?.find((item) => item?.result != result && item?.userId == userId)) {
+  else if (checkExistResult?.find((item) => item?.userId == userId)) {
     await updateExpertResult({ betId: betId, userId: userId }, {
       result: result
     });

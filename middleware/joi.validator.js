@@ -11,16 +11,18 @@ module.exports = function (Schema) {
         } catch (err) {
             if (err.isJoi)
                 return ErrorResponse({ statusCode: 400, message: { msg: err.message.replace(/"/g, "") } }, req, res)
+            else
+                return ErrorResponse({ statusCode: 400, message: { msg: err?.message?.replace(/"/g, "") } }, req, res)
         }
     }
 }
 
-module.exports.jsonValidator =async (schema,body) =>{
+module.exports.jsonValidator = async (schema, body) => {
     try {
         const validated = await schema.validateAsync(body);
-        return {validated};
+        return { validated };
     } catch (error) {
-        return {error}
+        return { error }
     }
 }
 

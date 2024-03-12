@@ -23,11 +23,15 @@
     "unauthorize":"Unauthorized user."
   },
   "user" : {
-    "passwordMatch": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?).",
+    "passwordMatch": "Password must contain at least four letters, including at least one uppercase letter, and four digits.",
     "confirmPasswordNotMatch":"Password and confirm password did not match.",
     "userExist" : "User already exist on given user name." ,
-    "profile": "Profile get successfully."
-    
+    "profile": "Profile get successfully.",
+    "userBlockError":"User is already blocked.",
+    "blockCantAccess":"You can not unblock this user.",
+    "lock/unlockSuccessfully" : "User lock and unlock operation successfull.",
+    "blocked": "There is something wrong with your account. Please contact your administrator.",
+    "cannotUpdate":"Cannot update same condition"
   },
   "match":{
     "betAlreadyExistForMatch":"Bet already exist for this match.",
@@ -36,10 +40,13 @@
     "matchAddFail" : "Match add operation failed due to invalid data."
   },
   "bet":{
-    "matchDeclare":"Match Result already declared.",
-    "resultDuplicate":"You cannot declare result multiple times",
+    "matchDeclare": "Match Result already declared.",
+    "sessionDeclare": "Session Result already declared.",
+    "resultDuplicate": "You cannot declare result multiple times",
     "resultReject": "Your result has been rejected because of difference in result.",
-    "resultApprove": "Your result has been saved but need to be approve by other expert"
+    "resultApprove": "Your result has been saved but need to be approve by other expert.",
+    "notDeclared": "Result is not declared yet.",
+    "sessionAllResult": "Please declare all session result first."
 
   }
 }

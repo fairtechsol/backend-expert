@@ -28,7 +28,15 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
 };
 
 exports.allApiRoutes = {
-  wallet:{
-    declareSessionResult:"/expert/declare/result/session"
-  }
+  wallet: {
+    declareSessionResult: "/expert/declare/result/session",
+    declareSessionNoResult: "/expert/declare/noResult/session",
+    unDeclareSessionResult: "/expert/unDeclare/result/session",
+    declareMatchResult: "/expert/declare/result/match",
+    unDeclareMatchResult: "/expert/unDeclare/result/match",
+    bets: "/expert/bets",
+    loginData: "/expert/login/bet/data",
+    addMatch: "/match/add",
+  },
+
 };

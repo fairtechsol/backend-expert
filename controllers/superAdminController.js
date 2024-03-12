@@ -1,5 +1,6 @@
 
 const { logger } = require("../config/logger");
+const { commonGetMatchDetails } = require("../services/commonService");
 const { getMatchSuperAdmin } = require("../services/matchService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
@@ -13,6 +14,11 @@ exports.listMatchSuperAdmin = async (req, res) => {
       
       //   let userRedisData = await internalRedis.hgetall(user.userId);
       const match = await getMatchSuperAdmin(filters, fields?.split(",") || null, query);
+
+      for (let i = 0; i < match?.matches?.length; i++) {
+        await commonGetMatchDetails(match.matches[i].id);
+      }
+
       if (!match) {
         return ErrorResponse(
           {

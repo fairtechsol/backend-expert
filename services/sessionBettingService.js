@@ -1,3 +1,4 @@
+const { betStatusType } = require("../config/contants");
 const { AppDataSource } = require("../config/postGresConnection");
 
 // betting
@@ -30,9 +31,12 @@ exports.getSessionBettings = async (where, select) => {
   });
 };
 
-exports.getSessionBattingByMatchId = async (id, select) => {
+exports.getSessionBattingByMatchId = async (id, where = {}, select) => {
   return await SessionBetting.find({
-    where:  {matchId : id},
+    where: {
+      matchId: id,
+      ...where
+    },
     select: select,
   });
 };

@@ -2,7 +2,7 @@ const { AppDataSource } = require("../config/postGresConnection");
 const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
-const { matchBettingType } = require("../config/contants");
+const { matchBettingType, betStatusType, manualMatchBettingType } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
 
 
@@ -25,6 +25,10 @@ exports.getMatchByMarketId = async (marketId, select) => {
   });
 };
 
+exports.getOneMatchByCondition = (where, select) => {
+  return match.findOne({where, select});
+}
+
 exports.addMatch = async (body) => {
   let insertMatch = await match.save(body);
   return insertMatch;
@@ -37,14 +41,13 @@ exports.getMatch = async (filters, select, query) => {
     let matchQuery = new ApiFeature(
       match
         .createQueryBuilder()
-        .select(select)
-        .where(filters)
         .leftJoinAndSelect(
           "match.matchBettings",
           "matchBetting"
         )
-        .orderBy("match.startAt", "DESC")
-        .addOrderBy("matchBetting.marketId", "ASC"),
+        .where(filters)
+        .select(select)
+        .orderBy("match.startAt", "DESC"),
       query
     )
       .search()
@@ -122,8 +125,7 @@ exports.getMatchWithBettingAndSession = async (
   try {
     // Start building the query
     let matchQuery = match
-      .createQueryBuilder()
-      ;
+      .createQueryBuilder().where({ stopAt: IsNull() });
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery
         .leftJoinAndMapMany(
@@ -132,12 +134,7 @@ exports.getMatchWithBettingAndSession = async (
           "bookmakers",
           "bookmakers.type IN (:...types)",
           {
-            types: [
-              matchBettingType.quickbookmaker1,
-              matchBettingType.quickbookmaker2,
-              matchBettingType.quickbookmaker3,
-              matchBettingType.tiedMatch2,
-            ],
+            types: manualMatchBettingType,
           }
         );
     }
@@ -147,7 +144,7 @@ exports.getMatchWithBettingAndSession = async (
           "match.sessions",
           "match.sessionBettings",
           "sessions",
-          "sessions.isManual = true"
+          `sessions.isManual = true AND sessions.activeStatus <> '${betStatusType.result}'`
         );
     }
 

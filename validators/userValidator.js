@@ -1,16 +1,17 @@
 const Joi = require('joi');
+const { passwordRegex } = require('../config/contants');
 
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{6,30}$/;
 
 module.exports.CreateUser = Joi.object({
   userName: Joi.string().trim().required(),
-  fullName: Joi.string().min(3).max(255),
+  fullName: Joi.string().trim().allow("").min(3).max(255),
   password: Joi.string().pattern(passwordRegex).required().label('password').messages({
     'string.pattern.base': 'user.passwordMatch',
     'any.required': 'Password is required',
   }),
-  phoneNumber: Joi.string().allow(""),
-  city: Joi.string().max(255).allow(""),
+  phoneNumber: Joi.string().trim().allow(""),
+  city: Joi.string().trim().allow("").max(255),
+  remark:Joi.string().allow("").trim(),
   allPrivilege:Joi.boolean(),
   addMatchPrivilege:Joi.boolean(),
   betFairMatchPrivilege:Joi.boolean(),
@@ -26,16 +27,17 @@ module.exports.CreateUser = Joi.object({
 })
 
 module.exports.UpdateUser = Joi.object({
-  fullName: Joi.string().min(3).max(255),
-  phoneNumber: Joi.string().allow(""),
-  city: Joi.string().max(255).allow(""),
+  fullName: Joi.string().trim().allow("").min(3).max(255),
+  phoneNumber: Joi.string().trim().allow(""),
+  city: Joi.string().max(255).trim().allow(""),
+  remark:Joi.string().allow("").trim(),
   allPrivilege:Joi.boolean(),
   addMatchPrivilege:Joi.boolean(),
   betFairMatchPrivilege:Joi.boolean(),
   bookmakerMatchPrivilege:Joi.boolean(),
   sessionMatchPrivilege:Joi.boolean(),
   createBy:Joi.string().required(),
-  id:Joi.string().guid({ version: 'uuidv4' })
+  id:Joi.string().guid({ version: 'uuidv4' }).required()
 })
 
 module.exports.ChangeSelfPassword=Joi.object({
@@ -61,15 +63,10 @@ module.exports.ChangePassword=Joi.object({
       'string.pattern.base': 'user.passwordMatch',
         'any.required': 'Password is required',
     }),
-  confirmPassword: Joi.string()
-    .required()
-    .valid(Joi.ref("password"))
-    .label("Confirm Password")
-    .messages({
-      "string.base": "Confirm Password must be a string",
-      "any.required": "Confirm Password is required",
-      "any.only": "Confirm Password must match password",
-    }),
     createBy:Joi.string().required(),
 });
-
+module.exports.LockUnlockUser = Joi.object({
+  userId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  userBlock:  Joi.boolean().required(),
+  blockBy:Joi.string().required(),
+})

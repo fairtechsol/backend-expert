@@ -33,6 +33,10 @@ const userSchema = new EntitySchema({
       nullable: false,
       default:false
     },
+    remark: {
+      type: 'varchar',
+      nullable: true
+    },
     addMatchPrivilege: {
       type: "boolean",
       nullable: false,
@@ -58,6 +62,15 @@ const userSchema = new EntitySchema({
       nullable: true,
       default: null,
     },
+    userBlock:{
+      type:"boolean",
+      nullable:false,
+      default:false
+    },
+    blockBy:{
+      type:"uuid",
+      nullable:true
+    }
   },
   orderBy: {
     userName: "ASC",

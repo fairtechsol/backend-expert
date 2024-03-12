@@ -13,6 +13,8 @@ const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
 const { verifyToken } = require("../utils/authUtils");
 const { logger } = require("../config/logger");
+const { ILike } = require("typeorm");
+const { loginCount} = require('../services/redis/commonfunction')
 
 /**
  * Creates or updates a user based on the provided request data.
@@ -35,7 +37,8 @@ exports.createUser = async (req, res) => {
       betFairMatchPrivilege,
       bookmakerMatchPrivilege,
       sessionMatchPrivilege,
-      createBy
+      createBy,
+      remark
     } = req.body;
     
     userName = userName.toUpperCase();
@@ -67,6 +70,7 @@ exports.createUser = async (req, res) => {
       betFairMatchPrivilege,
       bookmakerMatchPrivilege,
       sessionMatchPrivilege,
+      remark
     };
 
     // Add the user to the database
@@ -118,6 +122,15 @@ exports.getProfile = async (req, res) => {
   );
 };
 
+exports.isUserExist = async (req, res) => {
+  let { userName } = req.query;
+
+  const isUserExist = await getUserByUserName(userName);
+
+  return SuccessResponse({ statusCode: 200, data: { isUserExist: Boolean(isUserExist) } }, req, res);
+}
+
+
 
 exports.updateUser = async (req, res) => {
   try {
@@ -133,9 +146,10 @@ exports.updateUser = async (req, res) => {
       bookmakerMatchPrivilege,
       sessionMatchPrivilege,
       id,
+      remark
     } = req.body;
 
-      const isUserPresent=await getUser({id : id,createBy:createBy},["id"]);
+      const isUserPresent=await getUser({id : id,createBy:createBy});
 
       if(!isUserPresent){
         return ErrorResponse(
@@ -155,6 +169,7 @@ exports.updateUser = async (req, res) => {
         betFairMatchPrivilege : betFairMatchPrivilege ?? isUserPresent.betFairMatchPrivilege,
         bookmakerMatchPrivilege : bookmakerMatchPrivilege ?? isUserPresent.bookmakerMatchPrivilege,
         sessionMatchPrivilege : sessionMatchPrivilege ?? isUserPresent.sessionMatchPrivilege,
+        remark: remark ?? isUserPresent.remark
       }
      await updateUser(id, updateData);
      updateData["id"] = id
@@ -266,7 +281,7 @@ exports.changeSelfPassword = async (req, res, next) => {
 exports.changePassword = async (req, res, next) => {
   try {
     // Destructure request body
-    let { password,confirmPassword,id,createBy} = req.body;
+    let { password,id,createBy} = req.body;
 
     let user = await getUser({id : id,createBy:createBy},["id"]);
     if(!user){
@@ -282,7 +297,7 @@ exports.changePassword = async (req, res, next) => {
     password = bcrypt.hashSync(password, 10);
 
     // Update only the password if conditions are not met
-    await updateUser(id, { loginAt: new Date(), password });
+    await updateUser(id, { loginAt:null, password });
     await forceLogoutUser(id);
 
     return SuccessResponse(
@@ -314,7 +329,7 @@ exports.changePassword = async (req, res, next) => {
 
 exports.expertList = async (req, res, next) => {
   try {
-    let { userName, loginId, offset, limit } = req.query
+    let { searchBy,keyword, loginId, offset, limit } = req.query
     
 if(!loginId){
   return ErrorResponse(
@@ -331,7 +346,7 @@ if(!loginId){
     let where = {
       createBy: loginId
     }
-    if (userName) where.userName = ILike(`%${userName}%`);
+    if (searchBy) where[searchBy] = ILike(`%${keyword}%`);
 
     
     let users = await getUsers(
@@ -349,6 +364,7 @@ if(!loginId){
         "betFairMatchPrivilege",
         "bookmakerMatchPrivilege",
         "sessionMatchPrivilege",
+        "userBlock"
       ],
       offset,
       limit
@@ -369,10 +385,7 @@ if(!loginId){
         res
       );
     }
-    response.count = users[1]
-
-
-    
+    response.count = users[1];
 
     response.list = users[0];
     return SuccessResponse(
@@ -391,5 +404,73 @@ if(!loginId){
       message: error.message
     });
     return ErrorResponse(error, req, res);
+  }
+}
+
+exports.totalLoginCount = async (req, res) => {
+  try {
+    let totalCount = await loginCount("loginUserCount");
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Total login count" } },
+        data: totalCount,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at get login count.`,
+      stack: error.stack,
+      message: error.message
+    });
+    return ErrorResponse(error, req, res);
+  }
+
+}
+
+exports.lockUnlockUser = async (req, res) => {
+  try {
+    const { userId, userBlock, blockBy } = req.body;
+
+    const user = await getUserById(userId)
+
+    if (!user) {
+      throw {
+        msg: "notFound",
+        keys: { name: "User" },
+      };
+    } else {
+      if (user.userBlock == userBlock) {
+        throw new Error("user.cannotUpdate");
+      }
+      if (userBlock == true) {
+        await updateUser(user.id, { userBlock, blockBy })
+        await forceLogoutUser(user.id);
+      } else {
+        if (user?.blockBy != blockBy) {
+          return ErrorResponse(
+            {
+              statusCode: 403,
+              message: { msg: "user.blockCantAccess" },
+            },
+            req,
+            res
+          );
+        }
+        await updateUser(user.id, { userBlock, blockBy })
+      }
+    }
+
+    return SuccessResponse(
+      { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+
   }
 }

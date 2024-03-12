@@ -15,6 +15,11 @@ module.exports.userRoleConstant = {
   user: "user",
 };
 
+module.exports.resultStatus = {
+  pending: "PENDING",
+  missMatched: "MISSMATCHED"
+}
+
 module.exports.betStatus = {
   save: "save",
   live: "live",

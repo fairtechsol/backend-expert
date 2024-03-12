@@ -160,7 +160,12 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
   let userId = jobData.userId;
   try {
     // Parse partnerships from userRedisData
-    let partnershipObj = JSON.parse(jobData.partnership);
+    let partnershipObj = {};
+    try{
+      partnershipObj = JSON.parse(jobData.partnership);
+    } catch {
+      partnershipObj = jobData.partnership;
+    }
 
     // Extract relevant data from jobData
     const userDeleteProfitLoss = jobData.userDeleteProfitLoss;
@@ -209,7 +214,8 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
           matchId: matchId,
           betPlacedId: betPlacedId,
           deleteReason: deleteReason,
-          domainUrl: domainUrl
+          domainUrl: domainUrl,
+          betId: betId
         });
       } catch (error) {
         // Log error if any during exposure update
@@ -295,7 +301,11 @@ expertMatchBetDeleteQueue.process(async function (job, done) {
           betPlacedId: betPlacedId,
           deleteReason: deleteReason,
           domainUrl: domainUrl,
-          matchBetType
+          matchBetType,
+          teamArateRedisKey: teamArateRedisKey,
+          teamBrateRedisKey: teamBrateRedisKey,
+          teamCrateRedisKey: teamCrateRedisKey,
+          redisObject: redisObj
         });
       } catch (error) {
         // Log error if any during exposure update
@@ -320,4 +330,4 @@ expertMatchBetDeleteQueue.process(async function (job, done) {
   }
 });
 
-module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, expertSessionBetDeleteQueue }
+module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, expertSessionBetDeleteQueue, expertMatchBetDeleteQueue }

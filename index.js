@@ -11,7 +11,8 @@ const error = require("./utils/error.js");
 const i18n = require("./config/i18n");
 const setI18Language = require("./middleware/setI18Language.js");
 const { logger } = require("./config/logger.js");
-const ExpertMatchQueue = require("./queue/consumer.js")
+const ExpertMatchQueue = require("./queue/consumer.js");
+const internalRedis = require("./config/internalRedisConnection.js");
 
 /**
  * Enable Cross-Origin Resource Sharing (CORS)
@@ -54,4 +55,5 @@ socketManager(server);
 const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  internalRedis.set("loginUserCount", 0);
 });

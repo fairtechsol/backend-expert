@@ -534,37 +534,13 @@
                   "minBet": {
                     "example": "any"
                   },
-                  "matchOddMaxBet": {
-                    "example": "any"
-                  },
-                  "betFairSessionMaxBet": {
-                    "example": "any"
-                  },
-                  "betFairBookmakerMaxBet": {
-                    "example": "any"
-                  },
                   "bookmakers": {
                     "example": "any"
                   },
-                  "marketTiedMatchMaxBet": {
+                  "marketData": {
                     "example": "any"
                   },
-                  "manualTiedMatchMaxBet": {
-                    "example": "any"
-                  },
-                  "completeMatchMaxBet": {
-                    "example": "any"
-                  },
-                  "matchOddMarketId": {
-                    "example": "any"
-                  },
-                  "tiedMatchMarketId": {
-                    "example": "any"
-                  },
-                  "marketBookmakerId": {
-                    "example": "any"
-                  },
-                  "completeMatchMarketId": {
+                  "betFairSessionMaxBet": {
                     "example": "any"
                   },
                   "isManualMatch": {
@@ -613,25 +589,13 @@
                   "minBet": {
                     "example": "any"
                   },
-                  "matchOddMaxBet": {
-                    "example": "any"
-                  },
                   "betFairSessionMaxBet": {
-                    "example": "any"
-                  },
-                  "betFairBookmakerMaxBet": {
                     "example": "any"
                   },
                   "bookmakers": {
                     "example": "any"
                   },
-                  "marketTiedMatchMaxBet": {
-                    "example": "any"
-                  },
-                  "manualTiedMatchMaxBet": {
-                    "example": "any"
-                  },
-                  "completeMatchMaxBet": {
+                  "marketData": {
                     "example": "any"
                   }
                 }

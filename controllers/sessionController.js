@@ -173,7 +173,7 @@ exports.updateSession = async (req, res) => {
             name: "Session",
           },
         },
-        data: sessionData
+        data: { ...sessionData, id: id }
       },
       req,
       res
@@ -268,10 +268,10 @@ exports.getSessions = async (req, res) => {
       }
 
       if (expertResults?.length != 0) {
-        if (expertResults?.length == expertResults?.filter((result) => result.userId == req.user.id)?.length && expertResults?.filter((result) => result.userId == req.user.id)?.length != 0) {
+        if (expertResults?.length == expertResults?.filter((result) => result.userId == req?.user?.id)?.length && expertResults?.filter((result) => result.userId == req?.user?.id)?.length != 0) {
           session.resultStatus = resultStatus.pending;
         }
-        else if (expertResults?.filter((result) => result.userId == req.user.id)?.length != 0) {
+        else if (expertResults?.filter((result) => result.userId == req?.user?.id)?.length != 0) {
           session.resultStatus = resultStatus.missMatched;
         }
       }

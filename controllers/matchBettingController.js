@@ -85,7 +85,6 @@ exports.getMatchBetting = async (req, res) => {
     }
 }
 
-
 exports.getMatchBettingDetails = async (req, res) => {
   try {
     const { matchId } = req.params;

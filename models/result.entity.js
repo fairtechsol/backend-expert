@@ -1,5 +1,6 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, bettingType } = require("../config/contants");
+const { ColumnNumericTransformer } = require("../services/dbService");
 
 const resultSchema = new EntitySchema({
   name: "result",
@@ -27,6 +28,14 @@ const resultSchema = new EntitySchema({
       type: "varchar",
       nullable: false,
     },
+    commission:{
+      type: 'decimal',
+      nullable: false,
+      precision: 13,
+      scale: 2,
+      default: 0,
+      transformer: new ColumnNumericTransformer()
+    }
   },
   relations: {
     match: {

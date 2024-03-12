@@ -17,6 +17,7 @@ const {
   addExpertResult,
   deleteExpertResult,
   updateExpertResult,
+  deleteAllExpertResult,
 } = require("../services/expertResultService");
 const { getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
 const { getMatchById, addMatch } = require("../services/matchService");
@@ -205,6 +206,7 @@ exports.declareSessionResult = async (req, res) => {
         matchId: matchId,
         result: score,
         profitLoss: fwProfitLoss,
+      commission: response?.data?.totalCommission
       });
 
       sendMessageToUser(
@@ -474,6 +476,7 @@ exports.unDeclareSessionResult = async (req, res) => {
           betId,
           userId,
           matchId,
+          sessionDetails: bet
         }
       )
         .then((data) => {
@@ -493,13 +496,13 @@ exports.unDeclareSessionResult = async (req, res) => {
         });
   
       await deleteResult(betId);
-      await updateExpertResult({ betId: betId },{ isApprove: false, isReject: false });
+      await deleteAllExpertResult(betId);
 
       bet.activeStatus=betStatusType.live;
       bet.result=null;
 
       if (bet?.selectionId && bet?.selectionId != "") {
-        await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet);
+        await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet.id);
       } else {
         await updateSessionMatchRedis(bet.matchId, bet.id, bet);
       }
@@ -547,14 +550,11 @@ exports.unDeclareSessionResult = async (req, res) => {
       return ErrorResponse(err, req, res);
     }
 };
-  
 
 const checkResult = async (body) => {
   const { betId, matchId, isSessionBet, userId, result, selectionId } = body;
   let checkExistResult = await getExpertResult({
-    betId: betId,
-    isApprove: true,
-    isReject: false,
+    betId: betId
   });
 
   if (isSessionBet) {
@@ -586,7 +586,7 @@ const checkResult = async (body) => {
     }
   }
 
-  if (!checkExistResult) {
+  if (!checkExistResult?.length) {
     await addExpertResult({
       betId: betId,
       matchId: matchId,
@@ -597,14 +597,31 @@ const checkResult = async (body) => {
     });
 
     return true;
-  } else if (checkExistResult && checkExistResult.userId == userId) {
-    await updateExpertResult({id:checkExistResult.id},{
-      result:result
+  }
+  else if (checkExistResult?.find((item) => item?.result == result && item?.userId != userId)) {
+
+    await updateExpertResult({ betId: betId, userId: userId }, {
+      result: result
+    });
+    await addExpertResult({
+      betId: betId,
+      matchId: matchId,
+      result: result,
+      userId: userId,
+      isApprove: true,
+      isReject: false,
+    });
+  }
+  else if (checkExistResult?.find((item) => item?.result != result && item?.userId == userId)) {
+    await updateExpertResult({ betId: betId, userId: userId }, {
+      result: result
     });
     return true;
-  } else if (checkExistResult && checkExistResult.result != result) {
-    checkExistResult.isReject = true;
-    addExpertResult(checkExistResult);
+  }
+  else if (!checkExistResult?.find((item) => item?.result == result)) {
+    await updateExpertResult({ betId: betId, userId: userId }, {
+      isReject: true
+    });
     await addExpertResult({
       betId: betId,
       matchId: matchId,
@@ -618,18 +635,7 @@ const checkResult = async (body) => {
       statusCode: 400,
       message: { msg: "bet.resultReject" },
     };
-  } else if (checkExistResult && checkExistResult.result == result) {
-    checkExistResult.isReject = 0;
-    addExpertResult(checkExistResult);
-    await addExpertResult({
-      betId: betId,
-      matchId: matchId,
-      result: result,
-      userId: userId,
-      isApprove: true,
-      isReject: false,
-    });
-  }
+  } 
 };
 
 exports.declareMatchResult = async (req, res) => {
@@ -771,12 +777,13 @@ exports.declareMatchResult = async (req, res) => {
 
     
     await addResult({
-        betType: bettingType.match,
-        betId: matchOddBetting.id,
-        matchId: matchId,
-        result: result,
-        profitLoss: fwProfitLoss,
-      });
+      betType: bettingType.match,
+      betId: matchOddBetting.id,
+      matchId: matchId,
+      result: result,
+      profitLoss: fwProfitLoss,
+      commission: response?.data?.totalCommission
+    });
 
       sendMessageToUser(
         socketData.expertRoomSocket,
@@ -925,7 +932,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       });
 
     await deleteResult(matchOddBetting.id);
-    await updateExpertResult({ betId: matchOddBetting.id },{ isApprove: false, isReject: false });
+    await deleteAllExpertResult(matchOddBetting.id);
     await deleteAllMatchRedis(matchId);
 
     if (response?.data?.profitLossWallet) {

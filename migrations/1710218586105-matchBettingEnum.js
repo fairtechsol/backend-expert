@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class MatchBetting1709096606997 {
-    name = 'MatchBetting1709096606997'
+module.exports = class MatchBettingEnum1710218586105 {
+    name = 'MatchBettingEnum1710218586105'
 
     async up(queryRunner) {
         await queryRunner.query(`ALTER TYPE "public"."matchBettings_type_enum" RENAME TO "matchBettings_type_enum_old"`);

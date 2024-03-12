@@ -32,15 +32,15 @@ exports.getSessionBettings = async (where, select) => {
 };
 
 exports.getSessionBattingByMatchId = async (id, where = {}, select) => {
-  return await SessionBetting.find({
-    where: {
-      matchId: id,
-      ...where
-    },
-    select: select,
-  });
+  return await SessionBetting.createQueryBuilder()
+  .leftJoinAndMapOne("sessionBetting.resultData", "result", "resultData", "resultData.betId = sessionBetting.id")
+  .where({
+    matchId: id,
+    ...where
+  })
+  .select(select)
+  .getMany();
 };
-
 
 exports.insertSessionBettings = async (data) =>{
   let insertSessionBettings  = await SessionBetting.insert(data)

@@ -9,6 +9,7 @@ const {
   noResult,
   redisKeys,
   matchBettingType,
+  resultStatus,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { addResult, deleteResult, getResult } = require("../services/betService");
@@ -596,6 +597,12 @@ const checkResult = async (body) => {
       isReject: false,
     });
 
+    sendMessageToUser(
+      userId,
+      socketData.updateInResultDeclare,
+      { matchId, betId, status: resultStatus.pending, userId }
+    );
+
     return true;
   }
   else if (checkExistResult?.find((item) => item?.result == result && item?.userId != userId)) {
@@ -629,6 +636,20 @@ const checkResult = async (body) => {
       userId: userId,
       isApprove: false,
       isReject: true,
+    });
+
+    sendMessageToUser(
+      userId,
+      socketData.updateInResultDeclare,
+      { matchId, betId, status: resultStatus.missMatched, userId }
+    );
+
+    checkExistResult?.forEach((items) => {
+      sendMessageToUser(
+        items?.userId,
+        socketData.updateInResultDeclare,
+        { matchId, betId, status: resultStatus.missMatched, userId }
+      );
     });
 
     throw {

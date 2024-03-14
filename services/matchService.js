@@ -148,7 +148,7 @@ exports.getMatchWithBettingAndSession = async (
         );
     }
 
-    matchQuery = matchQuery.select(["match.id", "match.title","match.teamA","match.teamB","match.teamC","match.betFairSessionMaxBet"]);
+    matchQuery = matchQuery.select(["match.id", "match.title","match.teamA","match.teamB","match.teamC","match.betFairSessionMaxBet", "match.betFairSessionMinBet"]);
 
     if (sessionMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery.addSelect(["sessions.id", "sessions.name"]);

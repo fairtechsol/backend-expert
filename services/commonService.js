@@ -1,4 +1,4 @@
-const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType } = require("../config/contants");
+const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord } = require("../config/contants");
 const { __mf } = require("i18n");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
@@ -317,7 +317,18 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     const categorizedMatchBettings = {quickBookmaker:[]};
     Object.keys(marketBettingTypeByBettingType).forEach((bettingType) => {
       if (match[marketBettingTypeByBettingType[bettingType]]) {
-        categorizedMatchBettings[matchBettingKeysForMatchDetails[bettingType]] = match[marketBettingTypeByBettingType[bettingType]];
+        let records = Object.keys(multiMatchBettingRecord)?.find((bettingItem) => bettingType?.includes(multiMatchBettingRecord[bettingItem]));
+        if (records) {
+          if (!categorizedMatchBettings[multiMatchBettingRecord[records]]) {
+            categorizedMatchBettings[multiMatchBettingRecord[records]] = [];
+          }
+
+          categorizedMatchBettings[multiMatchBettingRecord[records]].push(match[marketBettingTypeByBettingType[bettingType]]);
+          delete match[marketBettingTypeByBettingType[bettingType]];
+        }
+        else {
+          categorizedMatchBettings[matchBettingKeysForMatchDetails[bettingType]] = match[marketBettingTypeByBettingType[bettingType]];
+        }
       }
     }
     );
@@ -326,8 +337,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     (Object.values(betting) || []).forEach(
       (item) => {
         item = JSON.parse(item);
+       
 
-        if (quickBookmakers.includes(item?.type)) {
+         if (quickBookmakers.includes(item?.type)) {
           categorizedMatchBettings.quickBookmaker.push(item);
 
         }
@@ -368,7 +380,6 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 
       if (quickBookmakers.includes(item?.type)) {
         categorizedMatchBettings.quickBookmaker.push(item);
-
       }
       else {
         categorizedMatchBettings[matchBettingKeysForMatchDetails[item?.type]]=item;
@@ -381,7 +392,20 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     };
 
     Object.keys(marketMatchBettingType)?.forEach((item) => {
+
       payload[marketBettingTypeByBettingType[item]] = categorizedMatchBettings[matchBettingKeysForMatchDetails[item]];
+
+      if (categorizedMatchBettings[matchBettingKeysForMatchDetails[item]]) {
+        let records = Object.keys(multiMatchBettingRecord)?.find((bettingItem) => item?.includes(multiMatchBettingRecord[bettingItem]));
+        if (records) {
+          if (!categorizedMatchBettings[multiMatchBettingRecord[records]]) {
+            categorizedMatchBettings[multiMatchBettingRecord[records]] = [];
+          }
+
+          categorizedMatchBettings[multiMatchBettingRecord[records]].push(categorizedMatchBettings[matchBettingKeysForMatchDetails[item]]);
+          delete categorizedMatchBettings[matchBettingKeysForMatchDetails[item]]
+        }
+      }
     });
 
     await addMatchInCache(match.id, payload);

@@ -61,6 +61,15 @@ module.exports.matchBettingType = {
   tiedMatch2: "tiedMatch2",
   completeMatch: "completeMatch",
   completeManual: "completeManual",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
+    return prev;
+  }, {})),
+  halfTime: "halfTime"
 };
 
 module.exports.manualMatchBettingType = [
@@ -81,14 +90,32 @@ module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.matchOdd]: "matchOdd",
   [this.matchBettingType.bookmaker]: "marketBookmaker",
   [this.matchBettingType.tiedMatch1]: "marketTiedMatch",
-  [this.matchBettingType.completeMatch]: "marketCompleteMatch"
+  [this.matchBettingType.completeMatch]: "marketCompleteMatch",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
+    return prev;
+  }, {})),
+  [this.matchBettingType.halfTime]: "halfTime"
 }
 
 module.exports.marketMatchBettingType = {
   [this.matchBettingType.matchOdd]: "matchOdd",
   [this.matchBettingType.bookmaker]: "bookmaker",
   [this.matchBettingType.tiedMatch1]: "tiedMatch1",
-  [this.matchBettingType.completeMatch]: "completeMatch"
+  [this.matchBettingType.completeMatch]: "completeMatch",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
+    return prev;
+  }, {})),
+  [this.matchBettingType.halfTime]: "halfTime"
 }
 
 module.exports.intialMatchBettingsName = {
@@ -98,6 +125,15 @@ module.exports.intialMatchBettingsName = {
   [this.matchBettingType.tiedMatch2]: "tied_manual",
   [this.matchBettingType.completeMatch]: "complete_match",
   [this.matchBettingType.completeManual]: "complete_manual",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`overUnder${curr}.5`] = `over_under_${curr}.5`
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`firstHalfGoal${curr}.5`] = `first_half_goal_${curr}.5`
+    return prev;
+  }, {})),
+  [this.matchBettingType.halfTime]: "half_time"
 };
 
 module.exports.matchBettingKeysForMatchDetails={
@@ -107,6 +143,20 @@ module.exports.matchBettingKeysForMatchDetails={
   [this.matchBettingType.bookmaker]: "bookmaker",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
   [this.matchBettingType.completeManual]: "completeManual",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
+    return prev;
+  }, {})),
+  [this.matchBettingType.halfTime]: "halfTime"
+}
+
+module.exports.multiMatchBettingRecord={
+  "overUnder":"overUnder",
+  firstHalfGoal:"firstHalfGoal"
 }
 
 module.exports.sessionBettingType = {

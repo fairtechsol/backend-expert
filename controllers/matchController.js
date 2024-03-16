@@ -674,7 +674,9 @@ exports.matchActiveInActive = async (req, res) => {
           };
 
           Object.keys(marketMatchBettingType)?.forEach((item) => {
-            payload[marketBettingTypeByBettingType[item]] = convertedData[matchBettingType[item]];
+            if (convertedData[matchBettingType[item]]) {
+              payload[marketBettingTypeByBettingType[item]] = convertedData[matchBettingType[item]];
+            }
           });
 
           await updateMatchInCache(match.id, payload);

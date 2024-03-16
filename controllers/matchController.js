@@ -263,7 +263,7 @@ exports.createMatch = async (req, res) => {
       ...match,
       matchOdd: convertedData[matchBettingType.matchOdd],
       marketBookmaker: convertedData[matchBettingType.bookmaker],
-      marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
+      marketTiedMatch: convertedData[matchBettingType.tiedMatch1],
       marketCompleteMatch: convertedData[matchBettingType.completeMatch]
     };
     await addMatchInCache(match.id, payload);
@@ -436,7 +436,7 @@ const updateMatchDataAndBettingInRedis = async (id) => {
     ...match,
     matchOdd: convertedData[matchBettingType.matchOdd],
     marketBookmaker: convertedData[matchBettingType.bookmaker],
-    marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
+    marketTiedMatch: convertedData[matchBettingType.tiedMatch1],
     marketCompleteMatch: convertedData[matchBettingType.completeMatch],
   };
   updateMatchInCache(match.id, payload);
@@ -642,7 +642,7 @@ exports.matchActiveInActive = async (req, res) => {
           ...sessionBetType,
           matchOdd: convertedData[matchBettingType.matchOdd],
           marketBookmaker: convertedData[matchBettingType.bookmaker],
-          marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
+          marketTiedMatch: convertedData[matchBettingType.tiedMatch1],
           marketCompleteMatch: convertedData[matchBettingType.completeMatch],
         };
         await updateMatchInCache(match.id, payload);
@@ -728,7 +728,7 @@ exports.matchActiveInActive = async (req, res) => {
             ...match,
             matchOdd: convertedData[matchBettingType.matchOdd],
             marketBookmaker: convertedData[matchBettingType.bookmaker],
-            marketTiedMatch: convertedData[matchBettingType.tiedMatch2],
+            marketTiedMatch: convertedData[matchBettingType.tiedMatch1],
             marketCompleteMatch: convertedData[matchBettingType.completeMatch],
           };
           await updateMatchInCache(match.id, payload);

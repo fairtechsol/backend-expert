@@ -50,7 +50,6 @@ exports.addMatchInCache = async (matchId, data) => {
   return res;
 }
 
-
 exports.updateMatchInCache = async (matchId, data) => {
   // Log the update information
   logger.info({
@@ -135,9 +134,6 @@ exports.getKeyFromMatchRedis = async (matchId, key) => {
 //     return Object.keys(match)?.length > 0 ? match : null;
 // }
 
-
-
-
 /**
  * Updates betting match data in Redis.
  *
@@ -160,7 +156,6 @@ exports.updateSessionMatchRedis = async (matchId, sessionId, data) => {
     .expire(`${matchId}_session`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
     .exec();
 };
-
 
 exports.hasSessionInCache = async (matchId) => {
   let sessionKey = `${matchId}_session`;
@@ -187,7 +182,6 @@ exports.settingAllSessionMatchRedis = async (matchId, data) => {
     .expire(`${matchId}_session`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
     .exec();
 }
-
 
 /**
  * Retrieves session data from Redis based on match and session IDs.
@@ -220,12 +214,9 @@ exports.getAllSessionRedis = async (matchId) => {
   return Object.keys(sessionData)?.length == 0 ? null : sessionData;
 };
 
-
-
 exports.updateExpiryTimeSession = async (matchId) => {
   await internalRedis.expire(`${matchId}_session`, expiry);
 };
-
 
 /**
 * Updates bookmaker match data in Redis.
@@ -271,7 +262,6 @@ exports.settingAllBettingMatchRedis = async (matchId, data) => {
     .exec();
 }
 
-
 /**
  * Retrieves betting data from Redis based on match and betting type.
  *
@@ -303,17 +293,14 @@ exports.getAllBettingRedis = async (matchId) => {
   return Object.keys(bettingData)?.length == 0 ? null : bettingData;
 };
 
-
 exports.updateExpiryTimeBetting = async (matchId) => {
   await internalRedis.expire(`${matchId}_manualBetting`, expiry);
 };
-
 
 exports.hasBettingInCache = async (matchId) => {
   let bettingKey = `${matchId}_manualBetting`;
   return await internalRedis.exists(bettingKey);
 }
-
 
 exports.getMatchFromCache = async (matchId) => {
   let matchKey = `${matchId}_match`;
@@ -347,7 +334,6 @@ exports.getSingleMatchKey = async (matchId, key, type) => {
   }
   return MatchData;
 }
-
 
 exports.getMultipleMatchKey = async (matchId) => {
   let matchKey = `${matchId}_match`;
@@ -385,8 +371,6 @@ exports.addAllsessionInRedis = async (matchId, result) => {
   }
   await this.settingAllSessionMatchRedis(matchId, session);
 }
-
-
 
 exports.addAllMatchBetting = async (matchId, result) => {
   if (!result)
@@ -479,7 +463,6 @@ exports.getExpertsRedisData = async () => {
 
 }
 
-
 exports.getExpertsRedisSessionData = async (sessionId) => {
   // Retrieve session data from Redis
   const sessionData = await internalRedis.hget(redisKeys.expertRedisData, sessionId + redisKeys.profitLoss);
@@ -488,7 +471,6 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
   return sessionData;
 
 }
-
 
 exports.getExpertsRedisSessionDataByKeys = async (keys) => {
   // Retrieve expert data from Redis
@@ -525,16 +507,19 @@ exports.getExpertsRedisMatchData = async (matchId) => {
   return teamRates;
 
 }
+
 // create function for remove key from market session
 exports.deleteKeyFromExpertRedisData = async (...key) => {
   const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData, key);
   return deleteKey;
 }
+
 // create function for remove key from market session
 exports.deleteKeyFromMatchRedisData = async (matchId, ...key) => {
   const deleteKey = await internalRedis.hdel(`${matchId}_match`, key);
   return deleteKey;
 }
+
 // create function for remove key from redis
 exports.deleteAllMatchRedis = async (matchId) => {
   await internalRedis.del(matchId + "_match", matchId + "_manualBetting", matchId + "_session", matchId + "_selectionId");

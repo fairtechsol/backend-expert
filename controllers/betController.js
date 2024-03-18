@@ -565,29 +565,28 @@ const checkResult = async (body) => {
       let redisSession = await getSessionFromRedis(matchId, betId);
       if (redisSession) {
         try {
-          let redisSessionData = JSON.parse(redisSession);
+          let redisSessionData = redisSession;
           if (redisSessionData["noRate"] || redisSessionData["yesRate"]) {
-            sendMessageToUser(
-              socketData.expertRoomSocket,
-              socketData.updateSessionRateClient,
-              { matchId, betId, status: teamStatus.suspended }
-            );
-
             redisSessionData["noRate"] = null;
             redisSessionData["yesRate"] = null;
             redisSessionData["yesPercent"] = null;
             redisSessionData["noPercent"] = null;
             redisSessionData["status"] = teamStatus.suspended;
+            sendMessageToUser(
+              socketData.expertRoomSocket,
+              socketData.updateSessionRateClient,
+              redisSessionData
+            );
 
             updateSessionBetting({ id: betId }, redisSessionData);
             updateSessionMatchRedis(matchId, betId, redisSession);
           }
-        } catch {}
+        } catch (error) { }
       }
     }
   }
 
-  if (!checkExistResult?.length) {
+  if (!checkExistResult?.length) { 
     await addExpertResult({
       betId: betId,
       matchId: matchId,
@@ -672,27 +671,18 @@ exports.declareMatchResult = async (req, res) => {
     });
 
     if(!match){
-      
-      return ErrorResponse(
-        {
+      return ErrorResponse({
           statusCode: 403,
-          message: { msg: "notFound",keys:{
-            name:"Match"
-          } },
-        },
-        req,
-        res
+          message: { msg: "notFound",keys:{ name:"Match"  } },
+        },  req,  res
       );
     }
 
     if (match?.stopAt) {
-      return ErrorResponse(
-        {
+      return ErrorResponse({
           statusCode: 403,
           message: { msg: "bet.matchDeclare" },
-        },
-        req,
-        res
+        }, req, res
       );
     }
 
@@ -712,23 +702,26 @@ exports.declareMatchResult = async (req, res) => {
       );
     }
 
-    const isMatchDeclared = await getResult({
-      betId: matchOddBetting.id,
-      matchId: matchId
-    }, ["id"]);
-
+    const isMatchDeclared = await getResult({ betId: matchOddBetting.id,  matchId: matchId  }, ["id"]);
     if(isMatchDeclared){
-      return ErrorResponse(
-        {
+      return ErrorResponse({
           statusCode: 403,
           message: { msg: "bet.matchDeclare" },
-        },
-        req,
-        res
-      );
+        },  req,  res );
     }
 
-
+   const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) },["id"]);
+   if (sessions?.length > 0) {
+     logger.error({
+       error: `Sessions is not declared yet.`,
+     });
+     return ErrorResponse(
+       { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
+       req,
+       res
+     );
+   }
+   
     const resultValidate = await checkResult({
       betId: matchOddBetting.id,
       matchId: matchOddBetting.matchId,
@@ -749,21 +742,7 @@ exports.declareMatchResult = async (req, res) => {
       );
     }
 
-   const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) },["id"]);
-   if (sessions?.length > 0) {
-     await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.save, result: null });
-
-     logger.error({
-       error: `Sessions is not declared yet.`,
-     });
-
-     return ErrorResponse(
-       { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
-       req,
-       res
-     );
-   }
-
+    await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.save, result: null });
     let fwProfitLoss;
   
       const response = await apiCall(

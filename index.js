@@ -12,6 +12,7 @@ const setI18Language = require("./middleware/setI18Language.js");
 const { logger } = require("./config/logger.js");
 const ExpertMatchQueue = require("./queue/consumer.js");
 const internalRedis = require("./config/internalRedisConnection.js");
+const helmet = require('helmet');
 
 const allowSubdomainsAndLocalhost = (origin, callback) => {
   // Check if the request comes from the specified domain or localhost
@@ -30,6 +31,8 @@ if (process.env.NODE_ENV == 'production') {
 }
 
 app.enable('trust proxy');
+app.use(helmet());
+
 /**
  * Parse incoming JSON data
  */

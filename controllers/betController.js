@@ -84,9 +84,10 @@ exports.getPlacedBets = async (req, res, next) => {
   }
 }
 exports.declareSessionResult = async (req, res) => {
+  let isResultChange = false;
+  const { betId, matchId, score } = req.body;
+  const { id: userId } = req.user;
   try {
-    const { betId, matchId, score } = req.body;
-    const { id: userId } = req.user;
 
     const match = await getMatchById(matchId);
     logger.info({
@@ -135,6 +136,9 @@ exports.declareSessionResult = async (req, res) => {
     await updateSessionBetting({ id: betId },
       { activeStatus: betStatus.result, result: score }
     );
+
+    isResultChange = true;
+
     const resultValidate = await checkResult({
       betId: resultDeclare.id,
       matchId: resultDeclare.matchId,
@@ -143,12 +147,7 @@ exports.declareSessionResult = async (req, res) => {
       result: score,
       selectionId: resultDeclare.selectionId,
       match: match
-    }).catch(error => {
-      updateSessionBetting({ id: betId },
-        { activeStatus: betStatus.save, result: null }
-      );
-      throw error;
-    });
+    })
 
     if (resultValidate) {
       updateSessionBetting({ id: betId },
@@ -194,6 +193,7 @@ exports.declareSessionResult = async (req, res) => {
         await deleteExpertResult(betId, userId);
         throw err;
       });
+    isResultChange = false;
 
     fwProfitLoss = response?.data?.profitLoss
       ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
@@ -247,17 +247,22 @@ exports.declareSessionResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+
+    if(isResultChange){
+      updateSessionBetting({ id: betId },
+        { activeStatus: betStatus.save, result: null }
+      );
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
 };
 
 exports.declareSessionNoResult = async (req, res) => {
+  let isResultChange = false;
+  const { betId, matchId } = req.body;
+  const { id: userId } = req.user;
   try {
-    const { betId, matchId } = req.body;
-    const { id: userId } = req.user;
-
-
     const match = await getMatchById(matchId);
     logger.info({
       message: "Result declare",
@@ -304,7 +309,7 @@ exports.declareSessionNoResult = async (req, res) => {
       );
     }
     await updateSessionBetting({ id: betId }, { activeStatus: betStatus.result, result: noResult });
-
+    isResultChange = true;
     const resultValidate = await checkResult({
       betId: resultDeclare.id,
       matchId: resultDeclare.matchId,
@@ -312,12 +317,7 @@ exports.declareSessionNoResult = async (req, res) => {
       userId: userId,
       result: noResult,
       selectionId: resultDeclare.selectionId,
-    }).catch(error => {
-      updateSessionBetting({ id: betId },
-        { activeStatus: betStatus.save, result: null }
-      );
-      throw error;
-    });;
+    })
 
     if (resultValidate) {
       updateSessionBetting({ id: betId },
@@ -361,6 +361,8 @@ exports.declareSessionNoResult = async (req, res) => {
         await deleteExpertResult(betId, userId);
         throw err;
       });
+
+    isResultChange = false;
 
     await addResult({
       betType: bettingType.session,
@@ -410,15 +412,23 @@ exports.declareSessionNoResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+    if (isResultChange) {
+      updateSessionBetting({ id: betId },
+        { activeStatus: betStatus.save, result: null }
+      );
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
 };
 
 exports.unDeclareSessionResult = async (req, res) => {
+  let isResultChange = false;
+  let oldResult = null;
+
+  const { betId, matchId } = req.body;
+  const { id: userId } = req.user;
   try {
-    const { betId, matchId } = req.body;
-    const { id: userId } = req.user;
 
     // check result already declare
     let bet = await getSessionBettingById(betId);
@@ -468,7 +478,8 @@ exports.unDeclareSessionResult = async (req, res) => {
         result: null,
       }
     );
-
+    isResultChange = true;
+    oldResult = bet.result;
 
     let response = await apiCall(
       apiMethod.post,
@@ -495,6 +506,8 @@ exports.unDeclareSessionResult = async (req, res) => {
         await addSessionBetting(bettingGame);
         throw err;
       });
+
+    isResultChange = false;
 
     await deleteResult(betId);
     await deleteAllExpertResult(betId);
@@ -547,6 +560,15 @@ exports.unDeclareSessionResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+    if (isResultChange) {
+      await updateSessionBetting(
+        { id: betId },
+        {
+          activeStatus: betStatus.result,
+          result: oldResult,
+        }
+      );
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -659,6 +681,7 @@ const checkResult = async (body) => {
 };
 
 exports.declareMatchResult = async (req, res) => {
+  let isResultChange = false;
   const { matchId, result } = req.body;
   const { id: userId } = req.user;
   try {
@@ -708,6 +731,7 @@ exports.declareMatchResult = async (req, res) => {
       }, req, res);
     }
     await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
+    isResultChange = true;
 
     const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
     if (sessions?.length > 0) {
@@ -728,10 +752,7 @@ exports.declareMatchResult = async (req, res) => {
       userId: userId,
       result: result,
       match: match
-    }).catch((err) => {
-      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
-      throw err;
-    });
+    })
 
     if (resultValidate) {
       updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
@@ -772,6 +793,8 @@ exports.declareMatchResult = async (req, res) => {
         await deleteExpertResult(matchOddBetting.id, userId);
         throw err;
       });
+    isResultChange = false;
+
 
     fwProfitLoss = response?.data?.profitLoss
       ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
@@ -828,7 +851,9 @@ exports.declareMatchResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
-    updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+    if (isResultChange) {
+      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }

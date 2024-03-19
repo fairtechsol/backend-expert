@@ -44,7 +44,7 @@ const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 
-exports.getPlacedBets=async (req,res,next)=>{
+exports.getPlacedBets = async (req, res, next) => {
   try {
     const result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.wallet.bets, null, {}, req.query)
       .then((data) => {
@@ -84,25 +84,10 @@ exports.getPlacedBets=async (req,res,next)=>{
   }
 }
 exports.declareSessionResult = async (req, res) => {
+  let isResultChange = false;
+  const { betId, matchId, score } = req.body;
+  const { id: userId } = req.user;
   try {
-    const { betId, matchId, score } = req.body;
-    const { id: userId } = req.user;
-
-    const isSessionDeclared = await getResult({
-      betId: betId,
-      matchId: matchId
-    }, ["id"]);
-
-    if(isSessionDeclared){
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.sessionDeclare" },
-        },
-        req,
-        res
-      );
-    }
 
     const match = await getMatchById(matchId);
     logger.info({
@@ -121,6 +106,21 @@ exports.declareSessionResult = async (req, res) => {
       );
     }
 
+    const isSessionDeclared = await getResult({
+      betId: betId,
+      matchId: matchId
+    }, ["id"]);
+
+    if (isSessionDeclared) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.sessionDeclare" },
+        },
+        req,
+        res
+      );
+    }
     // check result already declare
     let resultDeclare = await getSessionBettingById(betId);
     if (resultDeclare && resultDeclare.activeStatus == betStatus.result) {
@@ -133,6 +133,11 @@ exports.declareSessionResult = async (req, res) => {
         res
       );
     }
+    await updateSessionBetting({ id: betId },
+      { activeStatus: betStatus.result, result: score }
+    );
+
+    isResultChange = true;
 
     const resultValidate = await checkResult({
       betId: resultDeclare.id,
@@ -142,9 +147,12 @@ exports.declareSessionResult = async (req, res) => {
       result: score,
       selectionId: resultDeclare.selectionId,
       match: match
-    });
+    })
 
     if (resultValidate) {
+      updateSessionBetting({ id: betId },
+        { activeStatus: betStatus.save, result: null }
+      );
       return SuccessResponse(
         {
           statusCode: 200,
@@ -155,73 +163,63 @@ exports.declareSessionResult = async (req, res) => {
       );
     }
 
-    await updateSessionBetting(
-      { id: betId },
-      {
-        activeStatus: betStatus.result,
-        result: score,
-      }
-    );
-
     let fwProfitLoss;
-  
-      const response = await apiCall(
-        apiMethod.post,
-        walletDomain + allApiRoutes.wallet.declareSessionResult,
-        {
-          betId,
-          score,
-          sessionDetails: resultDeclare,
-          userId,
-          matchId,
-          match
-        }
-      )
-        .then((data) => {
-          return data;
-        })
-        .catch(async (err) => {
-          logger.error({
-            error: `Error at result declare match wallet side`,
-            stack: err.stack,
-            message: err.message,
-          });
-          let bet = await getSessionBettingById(betId);
-          bet.activeStatus = betStatusType.save;
-          bet.result = null;
-          await addSessionBetting(bet);
-          await deleteExpertResult(betId, userId);
-          throw err;
+
+    const response = await apiCall(
+      apiMethod.post,
+      walletDomain + allApiRoutes.wallet.declareSessionResult,
+      {
+        betId,
+        score,
+        sessionDetails: resultDeclare,
+        userId,
+        matchId,
+        match
+      }
+    )
+      .then((data) => {
+        return data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at result declare match wallet side`,
+          stack: err.stack,
+          message: err.message,
         });
+        let bet = await getSessionBettingById(betId);
+        bet.activeStatus = betStatusType.save;
+        bet.result = null;
+        await addSessionBetting(bet);
+        await deleteExpertResult(betId, userId);
+        throw err;
+      });
+    isResultChange = false;
 
-      fwProfitLoss = response?.data?.profitLoss
-        ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
-        : 0;
-
-    
-    
+    fwProfitLoss = response?.data?.profitLoss
+      ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
+      : 0;
 
     await addResult({
-        betType: bettingType.session,
-        betId: betId,
-        matchId: matchId,
-        result: score,
-        profitLoss: fwProfitLoss,
+      betType: bettingType.session,
+      betId: betId,
+      matchId: matchId,
+      result: score,
+      profitLoss: fwProfitLoss,
       commission: response?.data?.totalCommission
-      });
+    });
 
-      sendMessageToUser(
-        socketData.expertRoomSocket,
-        socketData.sessionResultDeclared,
-        {
-          matchId: matchId,
-          betId: betId,
-          score,
-          profitLoss: fwProfitLoss,
-          stopAt: match.stopAt,
-          activeStatus: betStatusType.result
-        }
-      );
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.sessionResultDeclared,
+      {
+        matchId: matchId,
+        betId: betId,
+        score,
+        profitLoss: fwProfitLoss,
+        stopAt: match.stopAt,
+        activeStatus: betStatusType.result
+      }
+    );
 
     await deleteKeyFromManualSessionId(matchId, betId);
     await deleteKeyFromExpertRedisData(betId + redisKeys.profitLoss);
@@ -249,32 +247,22 @@ exports.declareSessionResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+
+    if(isResultChange){
+      updateSessionBetting({ id: betId },
+        { activeStatus: betStatus.save, result: null }
+      );
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
 };
 
 exports.declareSessionNoResult = async (req, res) => {
+  let isResultChange = false;
+  const { betId, matchId } = req.body;
+  const { id: userId } = req.user;
   try {
-    const { betId, matchId } = req.body;
-    const { id: userId } = req.user;
-
-    const isSessionDeclared = await getResult({
-      betId: betId,
-      matchId: matchId
-    }, ["id"]);
-
-    if(isSessionDeclared){
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.sessionDeclare" },
-        },
-        req,
-        res
-      );
-    }
-
     const match = await getMatchById(matchId);
     logger.info({
       message: "Result declare",
@@ -286,6 +274,22 @@ exports.declareSessionNoResult = async (req, res) => {
         {
           statusCode: 403,
           message: { msg: "bet.matchDeclare" },
+        },
+        req,
+        res
+      );
+    }
+
+    const isSessionDeclared = await getResult({
+      betId: betId,
+      matchId: matchId
+    }, ["id"]);
+
+    if (isSessionDeclared) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.sessionDeclare" },
         },
         req,
         res
@@ -304,7 +308,8 @@ exports.declareSessionNoResult = async (req, res) => {
         res
       );
     }
-
+    await updateSessionBetting({ id: betId }, { activeStatus: betStatus.result, result: noResult });
+    isResultChange = true;
     const resultValidate = await checkResult({
       betId: resultDeclare.id,
       matchId: resultDeclare.matchId,
@@ -312,9 +317,12 @@ exports.declareSessionNoResult = async (req, res) => {
       userId: userId,
       result: noResult,
       selectionId: resultDeclare.selectionId,
-    });
+    })
 
     if (resultValidate) {
+      updateSessionBetting({ id: betId },
+        { activeStatus: betStatus.save, result: null }
+      );
       return SuccessResponse(
         {
           statusCode: 200,
@@ -325,19 +333,11 @@ exports.declareSessionNoResult = async (req, res) => {
       );
     }
 
-    await updateSessionBetting(
-      { id: betId },
-      {
-        activeStatus: betStatus.result,
-        result: noResult,
-      }
-    );
-
     await apiCall(
       apiMethod.post,
       walletDomain + allApiRoutes.wallet.declareSessionNoResult,
       {
-        score:noResult,
+        score: noResult,
         betId,
         noResult,
         userId,
@@ -362,6 +362,8 @@ exports.declareSessionNoResult = async (req, res) => {
         throw err;
       });
 
+    isResultChange = false;
+
     await addResult({
       betType: bettingType.session,
       betId: betId,
@@ -376,7 +378,7 @@ exports.declareSessionNoResult = async (req, res) => {
       {
         matchId: matchId,
         betId: betId,
-        score:noResult,
+        score: noResult,
         profitLoss: 0,
         stopAt: match.stopAt,
         activeStatus: betStatusType.result
@@ -410,146 +412,166 @@ exports.declareSessionNoResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+    if (isResultChange) {
+      updateSessionBetting({ id: betId },
+        { activeStatus: betStatus.save, result: null }
+      );
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
 };
 
 exports.unDeclareSessionResult = async (req, res) => {
-    try {
-      const { betId, matchId } = req.body;
-      const { id: userId } = req.user;
-  
-    
-      // check result already declare
-      let bet = await getSessionBettingById(betId);
-      if (!bet) {
-        logger.error({
-            message:"Error in unDeclare no bet found",
-            data:{
-                betId
-            }
-        });
-        return ErrorResponse(
-          {
-            statusCode: 404,
-            message: { msg: "notFound",keys:{
-                name:"Bet"
-            } },
-          },
-          req,
-          res
-        );
-      }
+  let isResultChange = false;
+  let oldResult = null;
 
+  const { betId, matchId } = req.body;
+  const { id: userId } = req.user;
+  try {
 
-      if(bet.activeStatus==betStatusType.live){
-        logger.error({
-            message:"Error in unDeclare no bet found",
-            data:{
-                betId
-            }
-        });
-
-        return ErrorResponse(
-            {
-              statusCode: 404,
-              message: { msg: "bet.notDeclared"},
-            },
-            req,
-            res
-          );
-      }
-
-      await updateSessionBetting(
-        { id: betId },
-        {
-          activeStatus: betStatus.live,
-          result: null,
+    // check result already declare
+    let bet = await getSessionBettingById(betId);
+    if (!bet) {
+      logger.error({
+        message: "Error in unDeclare no bet found",
+        data: {
+          betId
         }
-      );
-      
-  
-      let response = await apiCall(
-        apiMethod.post,
-        walletDomain + allApiRoutes.wallet.unDeclareSessionResult,
-        {
-          betId,
-          userId,
-          matchId,
-          sessionDetails: bet
-        }
-      )
-        .then((data) => {
-          return data;
-        })
-        .catch(async (err) => {
-          logger.error({
-            error: `Error at result undeclare match wallet side`,
-            stack: err.stack,
-            message: err.message,
-          });
-          let bettingGame = await getSessionBettingById(betId);
-          bettingGame.activeStatus = betStatusType.result;
-          bettingGame.result = bet.result;
-          await addSessionBetting(bettingGame);
-          throw err;
-        });
-  
-      await deleteResult(betId);
-      await deleteAllExpertResult(betId);
-
-      bet.activeStatus=betStatusType.live;
-      bet.result=null;
-
-      if (bet?.selectionId && bet?.selectionId != "") {
-        await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet.id);
-      } else {
-        await updateSessionMatchRedis(bet.matchId, bet.id, bet);
-      }
-
-      await setExpertsRedisData({
-        [`${bet.id}${redisKeys.profitLoss}`]: JSON.stringify(response?.data?.profitLossObj),
       });
-  
-      sendMessageToUser(
-        socketData.expertRoomSocket,
-        socketData.sessionResultDeclared,
+      return ErrorResponse(
         {
-          matchId: matchId,
-          betId: betId,
-          profitLoss: response?.data?.profitLoss,
-          profitLossObj: response?.data?.profitLossObj,
-          activeStatus: betStatusType.live
-        }
-      );
-
-      return SuccessResponse(
-        {
-          statusCode: 200,
+          statusCode: 404,
           message: {
-            msg: "success",
-            keys: {
-              name: "Bet result undeclared",
-            },
-          },
-          data: {
-            betId,
-            matchId,
+            msg: "notFound", keys: {
+              name: "Bet"
+            }
           },
         },
         req,
         res
       );
-    } catch (err) {
-      logger.error({
-        error: `Error at result undeclare match`,
-        stack: err.stack,
-        message: err.message,
-      });
-      // Handle any errors and return an error response
-      return ErrorResponse(err, req, res);
     }
+
+    if (bet.activeStatus == betStatusType.live || bet.activeStatus == betStatusType.save) {
+      logger.error({
+        message: "Error in unDeclare no bet found",
+        data: {
+          betId
+        }
+      });
+
+      return ErrorResponse(
+        {
+          statusCode: 404,
+          message: { msg: "bet.notDeclared" },
+        },
+        req,
+        res
+      );
+    }
+
+    await updateSessionBetting(
+      { id: betId },
+      {
+        activeStatus: betStatus.live,
+        result: null,
+      }
+    );
+    isResultChange = true;
+    oldResult = bet.result;
+
+    let response = await apiCall(
+      apiMethod.post,
+      walletDomain + allApiRoutes.wallet.unDeclareSessionResult,
+      {
+        betId,
+        userId,
+        matchId,
+        sessionDetails: bet
+      }
+    )
+      .then((data) => {
+        return data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at result undeclare match wallet side`,
+          stack: err.stack,
+          message: err.message,
+        });
+        let bettingGame = await getSessionBettingById(betId);
+        bettingGame.activeStatus = betStatusType.result;
+        bettingGame.result = bet.result;
+        await addSessionBetting(bettingGame);
+        throw err;
+      });
+
+    isResultChange = false;
+
+    await deleteResult(betId);
+    await deleteAllExpertResult(betId);
+
+    bet.activeStatus = betStatusType.live;
+    bet.result = null;
+
+    if (bet?.selectionId && bet?.selectionId != "") {
+      await updateMarketSessionIdRedis(bet.matchId, bet.selectionId, bet.id);
+    } else {
+      await updateSessionMatchRedis(bet.matchId, bet.id, bet);
+    }
+
+    await setExpertsRedisData({
+      [`${bet.id}${redisKeys.profitLoss}`]: JSON.stringify(response?.data?.profitLossObj),
+    });
+
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.sessionResultDeclared,
+      {
+        matchId: matchId,
+        betId: betId,
+        profitLoss: response?.data?.profitLoss,
+        profitLossObj: response?.data?.profitLossObj,
+        activeStatus: betStatusType.live
+      }
+    );
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "success",
+          keys: {
+            name: "Bet result undeclared",
+          },
+        },
+        data: {
+          betId,
+          matchId,
+        },
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at result undeclare match`,
+      stack: err.stack,
+      message: err.message,
+    });
+    if (isResultChange) {
+      await updateSessionBetting(
+        { id: betId },
+        {
+          activeStatus: betStatus.result,
+          result: oldResult,
+        }
+      );
+    }
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
 };
 
 const checkResult = async (body) => {
@@ -586,7 +608,7 @@ const checkResult = async (body) => {
     }
   }
 
-  if (!checkExistResult?.length) { 
+  if (!checkExistResult?.length) {
     await addExpertResult({
       betId: betId,
       matchId: matchId,
@@ -655,34 +677,33 @@ const checkResult = async (body) => {
       statusCode: 400,
       message: { msg: "bet.resultReject" },
     };
-  } 
+  }
 };
 
 exports.declareMatchResult = async (req, res) => {
+  let isResultChange = false;
+  const { matchId, result } = req.body;
+  const { id: userId } = req.user;
   try {
-    const { matchId, result } = req.body;
-    const { id: userId } = req.user;
-
-    
     const match = await getMatchById(matchId);
     logger.info({
       message: "Result declare",
       data: match,
     });
 
-    if(!match){
+    if (!match) {
       return ErrorResponse({
-          statusCode: 403,
-          message: { msg: "notFound",keys:{ name:"Match"  } },
-        },  req,  res
+        statusCode: 403,
+        message: { msg: "notFound", keys: { name: "Match" } },
+      }, req, res
       );
     }
 
     if (match?.stopAt) {
       return ErrorResponse({
-          statusCode: 403,
-          message: { msg: "bet.matchDeclare" },
-        }, req, res
+        statusCode: 403,
+        message: { msg: "bet.matchDeclare" },
+      }, req, res
       );
     }
 
@@ -702,26 +723,28 @@ exports.declareMatchResult = async (req, res) => {
       );
     }
 
-    const isMatchDeclared = await getResult({ betId: matchOddBetting.id,  matchId: matchId  }, ["id"]);
-    if(isMatchDeclared){
+    const isMatchDeclared = await getResult({ betId: matchOddBetting.id, matchId: matchId }, ["id"]);
+    if (isMatchDeclared) {
       return ErrorResponse({
-          statusCode: 403,
-          message: { msg: "bet.matchDeclare" },
-        },  req,  res );
+        statusCode: 403,
+        message: { msg: "bet.matchDeclare" },
+      }, req, res);
+    }
+    await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
+    isResultChange = true;
+
+    const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
+    if (sessions?.length > 0) {
+      logger.error({
+        error: `Sessions is not declared yet.`,
+      });
+      return ErrorResponse(
+        { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
+        req,
+        res
+      );
     }
 
-   const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) },["id"]);
-   if (sessions?.length > 0) {
-     logger.error({
-       error: `Sessions is not declared yet.`,
-     });
-     return ErrorResponse(
-       { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
-       req,
-       res
-     );
-   }
-   
     const resultValidate = await checkResult({
       betId: matchOddBetting.id,
       matchId: matchOddBetting.matchId,
@@ -729,9 +752,10 @@ exports.declareMatchResult = async (req, res) => {
       userId: userId,
       result: result,
       match: match
-    });
+    })
 
     if (resultValidate) {
+      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
       return SuccessResponse(
         {
           statusCode: 200,
@@ -742,40 +766,41 @@ exports.declareMatchResult = async (req, res) => {
       );
     }
 
-    await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.save, result: null });
     let fwProfitLoss;
-  
-      const response = await apiCall(
-        apiMethod.post,
-        walletDomain + allApiRoutes.wallet.declareMatchResult,
-        {
-          result,
-          matchDetails: resultDeclare,
-          userId,
-          matchId,
-          matchOddId: matchOddBetting.id,
-          match
-        }
-      )
-        .then((data) => {
-          return data;
-        })
-        .catch(async (err) => {
-          logger.error({
-            error: `Error at result declare match wallet side`,
-            stack: err.stack,
-            message: err.message,
-          });
-          await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.save, result: null, stopAt: null });
-          await deleteExpertResult(matchOddBetting.id, userId);
-          throw err;
+
+    const response = await apiCall(
+      apiMethod.post,
+      walletDomain + allApiRoutes.wallet.declareMatchResult,
+      {
+        result,
+        matchDetails: resultDeclare,
+        userId,
+        matchId,
+        matchOddId: matchOddBetting.id,
+        match
+      }
+    )
+      .then((data) => {
+        return data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at result declare match wallet side`,
+          stack: err.stack,
+          message: err.message,
         });
+        await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+        await deleteExpertResult(matchOddBetting.id, userId);
+        throw err;
+      });
+    isResultChange = false;
 
-      fwProfitLoss = response?.data?.profitLoss
-        ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
-        : 0;
 
-    
+    fwProfitLoss = response?.data?.profitLoss
+      ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
+      : 0;
+
+
     await addResult({
       betType: bettingType.match,
       betId: matchOddBetting.id,
@@ -785,24 +810,23 @@ exports.declareMatchResult = async (req, res) => {
       commission: response?.data?.totalCommission
     });
 
-      sendMessageToUser(
-        socketData.expertRoomSocket,
-        socketData.matchResultDeclared,
-        {
-          matchId: matchId,
-          result,
-          profitLoss: fwProfitLoss,
-          stopAt: match.stopAt,
-          activeStatus: betStatusType.result
-        }
-      );
-      await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.result, result: result, stopAt: new Date() });
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchResultDeclared,
+      {
+        matchId: matchId,
+        result,
+        profitLoss: fwProfitLoss,
+        stopAt: match.stopAt,
+        activeStatus: betStatusType.result
+      }
+    );
 
-      deleteAllMatchRedis(matchId);
-      deleteKeyFromExpertRedisData(redisKeys.userTeamARate + matchId,redisKeys.userTeamBRate + matchId,redisKeys.userTeamCRate + matchId,redisKeys.yesRateTie + matchId,redisKeys.noRateTie + matchId,redisKeys.yesRateComplete + matchId,redisKeys.noRateComplete + matchId)
-      match.stopAt=new Date();
+    deleteAllMatchRedis(matchId);
+    deleteKeyFromExpertRedisData(redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId)
+    match.stopAt = new Date();
 
-      addMatch(match);
+    addMatch(match);
 
     return SuccessResponse(
       {
@@ -827,20 +851,24 @@ exports.declareMatchResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+    if (isResultChange) {
+      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
 };
 
 exports.unDeclareMatchResult = async (req, res) => {
+  let isResultChange = false;
+  let oldResult = null;
+  let oldStopAt = null;
+  const { matchId } = req.body;
+  const { id: userId } = req.user;
   try {
-    const { matchId } = req.body;
-    const { id: userId } = req.user;
-
     const match = await getMatchById(matchId);
 
     if (!match) {
-
       return ErrorResponse(
         {
           statusCode: 403,
@@ -905,7 +933,9 @@ exports.unDeclareMatchResult = async (req, res) => {
     }
 
     await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.live, result: null, stopAt: null });
-    
+    isResultChange = true;
+    oldResult = matchOddBetting.result;
+    oldStopAt = match?.stopAt;
 
     let response = await apiCall(
       apiMethod.post,
@@ -927,9 +957,11 @@ exports.unDeclareMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
-        await updateMatchBetting({ matchId: matchId },{ activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: match?.stopAt });
+        await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: match?.stopAt });
         throw err;
       });
+
+    isResultChange = false;
 
     await deleteResult(matchOddBetting.id);
     await deleteAllExpertResult(matchOddBetting.id);
@@ -948,32 +980,19 @@ exports.unDeclareMatchResult = async (req, res) => {
       }
     );
 
-    match.stopAt=null;
-
+    match.stopAt = null;
     addMatch(match);
 
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        message: {
-          msg: "success",
-          keys: {
-            name: "Match result undeclared",
-          },
-        },
-        data: {
-          matchId,
-        },
-      },
-      req,
-      res
-    );
+    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match result undeclared" } }, data: { matchId } }, req, res);
   } catch (err) {
     logger.error({
       error: `Error at result undeclare match`,
       stack: err.stack,
       message: err.message,
     });
+    if (isResultChange) {
+      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }

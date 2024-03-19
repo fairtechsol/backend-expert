@@ -483,11 +483,7 @@ exports.lockUnlockUser = async (req, res) => {
       }
     }
 
-    return SuccessResponse(
-      { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },
-      req,
-      res
-    );
+    return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" }, data: { id: user.id } },req,res);
   } catch (error) {
     return ErrorResponse(error, req, res);
 

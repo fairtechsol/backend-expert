@@ -738,6 +738,7 @@ exports.declareMatchResult = async (req, res) => {
       logger.error({
         error: `Sessions is not declared yet.`,
       });
+      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
       return ErrorResponse(
         { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
         req,

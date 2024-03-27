@@ -20,7 +20,7 @@ const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const { commonGetMatchDetails } = require("../services/commonService");
+const { commonGetMatchDetails,commonGetMatchDetailsForFootball } = require("../services/commonService");
 /**
  * Create or update a match.
  *
@@ -508,7 +508,43 @@ exports.matchDetails = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+exports.matchDetailsForFootball = async (req, res) => {
+  try {
+    const { id: matchId } = req.params;
+    const userId = req?.user?.id;
 
+    let match;
+
+    // splitting match ids to check if user asking for multiple match or single
+    const matchIds = matchId?.split(",");
+    if (matchIds?.length > 1) {
+      match = [];
+      for (let i = 0; i < matchIds?.length; i++) {
+        match.push(await commonGetMatchDetailsForFootball(matchIds[i], userId));
+      }
+    } else {
+      match = await commonGetMatchDetailsForFootball(matchId, userId);
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match Details" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error while getting match detail for match: ${req.params.id}.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
 // Controller method for updating the active status of betting
 exports.matchActiveInActive = async (req, res) => {
   try {

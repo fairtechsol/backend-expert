@@ -48,11 +48,8 @@ exports.createUser = async (req, res) => {
       logger.error({
         error: `user exist for user id ${userExist?.id}`
       });
-      return ErrorResponse(
-        { statusCode: 400, message: { msg: "user.userExist" } },
-        req,
-        res
-      );
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } },
+        req,  res);
     }
 
     // Hash the password using bcrypt
@@ -81,20 +78,11 @@ exports.createUser = async (req, res) => {
     let response = lodash.omit(insertUser, ["password"]);
 
     // Send success response with the created user data
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        message: {
-          msg: "created",
-          keys: {
-            name: "User",
-          },
-        },
-        data: response,
-      },
-      req,
-      res
-    );
+    return SuccessResponse({
+        statusCode: 200,  message: {  msg: "created",
+          keys: { name: "User"  },},
+          data: response,
+      },  req,  res);
   } catch (err) {
     logger.error({
       error: `Error at add user for the expert.`,
@@ -105,7 +93,6 @@ exports.createUser = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
-
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -118,9 +105,7 @@ exports.getProfile = async (req, res) => {
   let response = lodash.omit(user, ["password"]);
   return SuccessResponse(
     { statusCode: 200, message: { msg: "user.profile" }, data: response },
-    req,
-    res
-  );
+    req,  res );
 };
 
 exports.isUserExist = async (req, res) => {
@@ -153,17 +138,11 @@ exports.updateUser = async (req, res) => {
     const isUserPresent = await getUser({ id: id, createBy: createBy });
 
     if (!isUserPresent) {
-      return ErrorResponse(
-        {
+      return ErrorResponse({
           statusCode: 404, message: {
-            msg: "notFound", keys: {
-              name: "User"
-            }
-          }
-        },
-        req,
-        res
-      );
+            msg: "notFound", keys: {  name: "User"  }
+          }},
+        req,  res );
     }
     let updateData = {
       fullName: fullName || isUserPresent.fullName,
@@ -189,20 +168,11 @@ exports.updateUser = async (req, res) => {
 
 
     // Send success response with the updated user data
-    return SuccessResponse(
-      {
+    return SuccessResponse({
         statusCode: 200,
-        message: {
-          msg: "updated",
-          keys: {
-            name: "User",
-          },
-        },
+        message: {  msg: "updated", keys: { name: "User"  } },
         data: updateData
-      },
-      req,
-      res
-    );
+      },  req,  res );
 
   } catch (err) {
     logger.error({
@@ -221,10 +191,7 @@ const checkOldPassword = async (userId, oldPassword) => {
   const user = await getUserById(userId, ["password"]);
   if (!user) {
     // User not found, return error response
-    throw {
-      msg: "notFound",
-      keys: { name: "User" },
-    };
+    throw { msg: "notFound",  keys: { name: "User" }  };
   }
   // Compare old password with the stored password
   return bcrypt.compareSync(oldPassword, user.password);
@@ -252,28 +219,20 @@ exports.changeSelfPassword = async (req, res, next) => {
     const isPasswordMatch = await checkOldPassword(userId, oldPassword);
 
     if (!isPasswordMatch) {
-      return ErrorResponse(
-        {
+      return ErrorResponse({
           statusCode: 403,
           message: { msg: "auth.invalidPass", keys: { type: "old" } },
-        },
-        req,
-        res
-      );
+        },  req,  res );
     }
 
     // Update only the password if conditions are not met
     await updateUser(userId, { loginAt: new Date(), password });
     await forceLogoutUser(userId);
 
-    return SuccessResponse(
-      {
+    return SuccessResponse({
         statusCode: 200,
         message: { msg: "auth.passwordChanged" },
-      },
-      req,
-      res
-    );
+      },  req,  res );
   } catch (error) {
     logger.error({
       error: `Error at change password for self.`,
@@ -281,17 +240,12 @@ exports.changeSelfPassword = async (req, res, next) => {
       message: error.message
     });
     // Log any errors that occur
-    return ErrorResponse(
-      {
+    return ErrorResponse({
         statusCode: 500,
         message: error.message,
-      },
-      req,
-      res
-    );
+      },  req,  res );
   }
 };
-
 
 exports.changePassword = async (req, res, next) => {
   try {
@@ -300,17 +254,11 @@ exports.changePassword = async (req, res, next) => {
 
     let user = await getUser({ id: id, createBy: createBy }, ["id"]);
     if (!user) {
-      return ErrorResponse(
-        {
+      return ErrorResponse({
           statusCode: 404, message: {
-            msg: "notFound", keys: {
-              name: "User"
-            }
+            msg: "notFound", keys: {  name: "User"  }
           }
-        },
-        req,
-        res
-      );
+        },  req,  res);
     }
     // Hash the new password
     password = bcrypt.hashSync(password, 10);
@@ -319,14 +267,10 @@ exports.changePassword = async (req, res, next) => {
     await updateUser(id, { loginAt: null, password });
     await forceLogoutUser(id);
 
-    return SuccessResponse(
-      {
+    return SuccessResponse({
         statusCode: 200,
         message: { msg: "auth.passwordChanged" },
-      },
-      req,
-      res
-    );
+      },  req,  res);
   } catch (error) {
     logger.error({
       error: `Error at change password for expert.`,
@@ -334,14 +278,10 @@ exports.changePassword = async (req, res, next) => {
       message: error.message
     });
     // Log any errors that occur
-    return ErrorResponse(
-      {
+    return ErrorResponse({
         statusCode: 500,
         message: error.message,
-      },
-      req,
-      res
-    );
+      },  req,  res);
   }
 };
 
@@ -351,23 +291,14 @@ exports.expertList = async (req, res, next) => {
     let { searchBy, keyword, loginId, offset, limit } = req.query
 
     if (!loginId) {
-      return ErrorResponse(
-        {
+      return ErrorResponse({
           statusCode: 403,
           message: { msg: "auth.unauthorize" },
-        },
-        req,
-        res
-      );
+        },  req,  res);
     }
 
-
-    let where = {
-      createBy: loginId
-    }
+    let where = { createBy: loginId }
     if (searchBy) where[searchBy] = ILike(`%${keyword}%`);
-
-
     let users = await getUsers(
       where,
       [
@@ -385,7 +316,7 @@ exports.expertList = async (req, res, next) => {
         "sessionMatchPrivilege",
         "userBlock"
       ],
-      offset,
+      offset - 1,
       limit
     );
 
@@ -394,28 +325,20 @@ exports.expertList = async (req, res, next) => {
       list: []
     }
     if (!users[1]) {
-      return SuccessResponse(
-        {
+      return SuccessResponse({
           statusCode: 200,
           message: { msg: "fetched", keys: { name: "User list" } },
           data: response,
-        },
-        req,
-        res
-      );
+        },  req,  res);
     }
     response.count = users[1];
 
     response.list = users[0];
-    return SuccessResponse(
-      {
+    return SuccessResponse({
         statusCode: 200,
         message: { msg: "fetched", keys: { name: "Expert list" } },
         data: response,
-      },
-      req,
-      res
-    );
+      },  req,  res);
   } catch (error) {
     logger.error({
       error: `Error at get expert list.`,
@@ -430,15 +353,11 @@ exports.totalLoginCount = async (req, res) => {
   try {
     let totalCount = await loginCount("loginUserCount");
 
-    return SuccessResponse(
-      {
+    return SuccessResponse({
         statusCode: 200,
         message: { msg: "fetched", keys: { name: "Total login count" } },
         data: totalCount,
-      },
-      req,
-      res
-    );
+      },  req,  res);
   } catch (error) {
     logger.error({
       error: `Error at get login count.`,
@@ -447,7 +366,6 @@ exports.totalLoginCount = async (req, res) => {
     });
     return ErrorResponse(error, req, res);
   }
-
 }
 
 exports.lockUnlockUser = async (req, res) => {
@@ -457,10 +375,7 @@ exports.lockUnlockUser = async (req, res) => {
     const user = await getUserById(userId)
 
     if (!user) {
-      throw {
-        msg: "notFound",
-        keys: { name: "User" },
-      };
+      throw { msg: "notFound",  keys: { name: "User" }  };
     } else {
       if (user.userBlock == userBlock) {
         throw new Error("user.cannotUpdate");
@@ -470,14 +385,10 @@ exports.lockUnlockUser = async (req, res) => {
         await forceLogoutUser(user.id);
       } else {
         if (user?.blockBy != blockBy) {
-          return ErrorResponse(
-            {
+          return ErrorResponse({
               statusCode: 403,
               message: { msg: "user.blockCantAccess" },
-            },
-            req,
-            res
-          );
+            },  req,  res);
         }
         await updateUser(user.id, { userBlock, blockBy })
       }
@@ -486,6 +397,5 @@ exports.lockUnlockUser = async (req, res) => {
     return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" }, data: { id: user.id } },req,res);
   } catch (error) {
     return ErrorResponse(error, req, res);
-
   }
 }

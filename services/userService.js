@@ -22,14 +22,12 @@ exports.updateUser = async (id, body) => {
   return updateUser;
 };
 
-
 exports.getUserByUserName = async (userName, select) => {
   return await user.findOne({
     where: { userName: ILike(userName) },
     select: select,
   });
 };
-
 
 exports.getUser = async (where = {}, select) => {
   //find list with filter and pagination
@@ -40,14 +38,13 @@ exports.getUser = async (where = {}, select) => {
 
 };
 
-
 exports.getUsers = async (where, select, offset, limit, relations) => {
   //find list with filter and pagination
   
   return await user.findAndCount({
     where: where,
     select: select,
-    skip: offset,
+    skip: offset * limit,
     take: limit,
     relations: relations
   });

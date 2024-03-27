@@ -52,9 +52,6 @@ exports.createMatch = async (req, res) => {
     } = req.body;
 
 
-   
-
-
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
@@ -163,7 +160,8 @@ exports.createMatch = async (req, res) => {
           name: intialMatchBettingsName[item?.type],
           maxBet: item?.maxBet,
           marketId: item?.marketId,
-          activeStatus: betStatusType.save
+          activeStatus: betStatusType.save,
+          isManual: false
         }
        
       }

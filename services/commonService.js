@@ -5,7 +5,7 @@ const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchBattingByMatchId } = require("./matchBettingService");
 const { getMatchDetails } = require("./matchService");
-const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData,  getExpertsRedisSessionDataByKeys } = require("./redis/commonfunction");
+const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 const { getExpertResult } = require("./expertResultService");
 
@@ -332,14 +332,14 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       }
     }
     );
-    
+
     // Iterate through matchBettings and categorize them
     (Object.values(betting) || []).forEach(
       (item) => {
         item = JSON.parse(item);
-       
 
-         if (quickBookmakers.includes(item?.type)) {
+
+        if (quickBookmakers.includes(item?.type)) {
           categorizedMatchBettings.quickBookmaker.push(item);
 
         }
@@ -347,7 +347,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           categorizedMatchBettings[matchBettingKeysForMatchDetails[item?.type]]=item;
         }
 
-       
+
       }
     );
     // Assign the categorized match betting to the match object
@@ -510,38 +510,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
       settingAllBettingMatchRedis(match.id, manualBettingRedisData);
     }
 
-    // Retrieve all session data from Redis for the given match
-    // let sessions = await getAllSessionRedis(matchId);
 
-    // If session data is found in Redis, update its expiry time
-    // if (!sessions) {
-
-      // If no session data is found in Redis, fetch it from the database
-    //   sessions = await getSessionBattingByMatchId(matchId, !userId ? { activeStatus: betStatusType.live } : {});
-
-    //   let result = {};
-    //   let apiSelectionIdObj = {};
-    //   for (let index = 0; index < sessions?.length; index++) {
-    //     if (sessions?.[index]?.activeStatus == betStatusType.live) {
-    //       if (sessions?.[index]?.selectionId) {
-    //         apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
-    //       }
-    //       result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
-    //     }
-    //     sessions[index] = JSON.stringify(sessions?.[index]);
-    //   }
-    //   settingAllSessionMatchRedis(matchId, result);
-    //   addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
-    // }
-    // else {
-    //   if (userId) {
-    //     sessions = await getSessionBattingByMatchId(matchId);
-    //     sessions = sessions?.map((item) => JSON.stringify(item));
-    //   }
-    //   else {
-    //     sessions = Object.values(sessions);
-    //   }
-    // }
     const categorizedMatchBettings = {
       ...(match.matchOdd
         ? { [matchBettingType.matchOdd]: match.matchOdd }
@@ -656,22 +625,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
     // Update Redis with the manual betting data for the current match
     settingAllBettingMatchRedis(matchId, manualBettingRedisData);
 
-    // let sessions = match?.sessionBettings;
-    // let result = {};
-    // let apiSelectionIdObj = {};
-    // for (let index = 0; index < sessions?.length; index++) {
-    //   if (sessions?.[index]?.activeStatus == betStatusType.live) {
-    //     if (sessions?.[index]?.selectionId) {
-    //       apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
-    //     }
-    //     result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
-    //   }
-    //   sessions[index] = JSON.stringify(sessions?.[index]);
-    // }
-    // settingAllSessionMatchRedis(matchId, result);
-    // addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
 
-    // match.sessionBettings = sessions;
     // Assign the categorized match betting to the match object
     Object.assign(match, categorizedMatchBettings);
 
@@ -679,32 +633,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
   }
   let teamRates = await getExpertsRedisMatchData(matchId);
 
-
-
-
   match.teamRates = teamRates;
-  // if (userId) {
-  //   const redisIds = match.sessionBettings?.map((item, index) => {
-  //     const sessionBettingData = JSON.parse(item);
-  //     const currSessionExpertResult = expertResults.filter((result) => result.betId == sessionBettingData?.id);
 
-  //     if (currSessionExpertResult?.length != 0) {
-  //       if (currSessionExpertResult?.length == currSessionExpertResult?.filter((result) => result.userId == userId)?.length && currSessionExpertResult?.filter((result) => result.userId == userId)?.length != 0) {
-  //         sessionBettingData.resultStatus = resultStatus.pending;
-  //         match.sessionBettings[index] = JSON.stringify(sessionBettingData);
-  //       }
-  //       else if (currSessionExpertResult?.filter((result) => result.userId == userId)?.length != 0) {
-  //         sessionBettingData.resultStatus = resultStatus.missMatched;
-  //         match.sessionBettings[index] = JSON.stringify(sessionBettingData);
-  //       }
-  //     }
-
-  //     return (sessionBettingData?.id + redisKeys.profitLoss)
-  //   });
-  //   if (redisIds?.length > 0) {
-  //     let sessionData = await getExpertsRedisSessionDataByKeys(redisIds);
-  //     match.sessionProfitLoss = sessionData;
-  //   }
-  // }
   return match;
 }

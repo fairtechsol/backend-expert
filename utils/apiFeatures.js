@@ -61,6 +61,9 @@ class ApiFeature {
             case "eq":
               this.query.andWhere({ [key]: Equal(filterValue) });
               break;
+              case "ne":
+              this.query.andWhere({ [key]: Not(filterValue) });
+              break;
             case "gt":
               this.query.andWhere({ [key]: MoreThan(filterValue) });
               break;

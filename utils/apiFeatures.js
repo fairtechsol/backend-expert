@@ -43,7 +43,6 @@ class ApiFeature {
       "page",
       "limit",
       "statementType",
-      "matchType"
     ];
     let filterObject = {};
     Object.keys(this.options)
@@ -51,7 +50,7 @@ class ApiFeature {
       ?.forEach((item) => {
         filterObject = { ...filterObject, [item]: this.options[item] };
       });
-    if (filterObject || this.options.matchType) { // Check if filterObject or matchType exists
+    if (filterObject) {
       // Implement filter logic based on your requirements
       Object.entries(filterObject).forEach(([key, value]) => {
         const [operator, filterValue] = this.parseFilterValue(value);
@@ -61,9 +60,6 @@ class ApiFeature {
           switch (operator) {
             case "eq":
               this.query.andWhere({ [key]: Equal(filterValue) });
-              break;
-            case "ne":
-              this.query.andWhere({ [key]: Not(filterValue) });
               break;
             case "gt":
               this.query.andWhere({ [key]: MoreThan(filterValue) });
@@ -78,14 +74,14 @@ class ApiFeature {
               this.query.andWhere({ [key]: LessThanOrEqual(filterValue) });
               break;
             case "inArr":
-              this.query.andWhere({ [key]: In(filterValue) });
-              break;
+                this.query.andWhere({ [key]: In(filterValue) });
+                break;
             case "isNull":
-              this.query.andWhere({ [key]: IsNull() });
-              break;
+                this.query.andWhere({ [key]: IsNull() });
+                break;
             case "notNull":
-              this.query.andWhere({ [key]: Not(IsNull()) });
-              break;
+                this.query.andWhere({ [key]: Not(IsNull()) });
+                break;
             case "between":
               if (filterValue?.split("|")?.length === 2) {
                 let from = filterValue?.split("|")?.[0];
@@ -111,18 +107,9 @@ class ApiFeature {
           this.query.andWhere(`${key} = :value`, { value });
         }
       });
-    } else {
-      // If no filter is provided, return all data
-      this.query;
     }
-
-    if (this.options.matchType) {
-      // Handle matchType filter if provided
-      this.query.andWhere({ matchType: this.options.matchType });
-    }
-
     return this;
-}
+  }
 
   sort() {
     if (this.options.sort) {

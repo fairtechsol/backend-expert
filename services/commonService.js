@@ -493,23 +493,17 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
 
       // If no betting data is found in Redis, fetch it from the database
       const matchBetting = await getMatchBattingByMatchId(matchId);
-
-      // Create an empty object to store manual betting Redis data
-      const manualBettingRedisData = {};
       betting = {};
       // Iterate through each item in manualMatchBettingType
       matchBetting?.forEach((item) => {
         // Check if the item exists in the convertedData object
         if (manualMatchBettingType.includes(item?.type)) {
-          // If the item exists, add it to the manualBettingRedisData object
-          // with its value stringified using JSON.stringify
-          manualBettingRedisData[item?.type] = JSON.stringify(item);
           betting[item?.type] = JSON.stringify(item);
         }
       });
 
       // Update Redis with the manual betting data for the current match
-      settingAllBettingMatchRedis(match.id, manualBettingRedisData);
+      settingAllBettingMatchRedis(match.id, betting);
     }
 
 
@@ -631,6 +625,6 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
     delete match.matchBettings;
   }
   let teamRates = await getExpertsRedisMatchData(matchId);
-match.teamRates = teamRates;
- return match;
+  match.teamRates = teamRates;
+  return match;
 }

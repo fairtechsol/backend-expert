@@ -15,6 +15,11 @@ module.exports.userRoleConstant = {
   user: "user",
 };
 
+module.exports.gameType = {
+  cricket: "cricket",
+  football: "football",
+}
+
 module.exports.resultStatus = {
   pending: "PENDING",
   missMatched: "MISSMATCHED"

@@ -2,7 +2,7 @@ const { AppDataSource } = require("../config/postGresConnection");
 const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
-const { matchBettingType, betStatusType, manualMatchBettingType } = require("../config/contants");
+const { matchBettingType, betStatusType, manualMatchBettingType, gameType } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
 
 
@@ -120,12 +120,13 @@ exports.getMatchWithBettingAndSession = async (
   allPrivilege,
   addMatchPrivilege,
   bookmakerMatchPrivilege,
-  sessionMatchPrivilege
+  sessionMatchPrivilege,
+  matchType
 ) => {
   try {
     // Start building the query
     let matchQuery = match
-      .createQueryBuilder().where({ stopAt: IsNull() });
+      .createQueryBuilder().where({ stopAt: IsNull(), ...(matchType ? { matchType: matchType } : { matchType: gameType.cricket }) });
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery
         .leftJoinAndMapMany(
@@ -148,7 +149,7 @@ exports.getMatchWithBettingAndSession = async (
         );
     }
 
-    matchQuery = matchQuery.select(["match.id", "match.title","match.teamA","match.teamB","match.teamC","match.betFairSessionMaxBet", "match.betFairSessionMinBet"]);
+    matchQuery = matchQuery.select(["match.id", "match.title", "match.teamA", "match.teamB", "match.teamC", "match.betFairSessionMaxBet", "match.betFairSessionMinBet", "match.matchType"]);
 
     if (sessionMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery.addSelect(["sessions.id", "sessions.name"]);

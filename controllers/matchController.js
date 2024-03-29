@@ -825,7 +825,7 @@ exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
 
 exports.matchListWithManualBetting = async (req, res) => {
   try {
-
+    const { matchType } = req.query;
     const {
       allPrivilege,
       addMatchPrivilege,
@@ -837,7 +837,8 @@ exports.matchListWithManualBetting = async (req, res) => {
       allPrivilege,
       addMatchPrivilege,
       bookmakerMatchPrivilege,
-      sessionMatchPrivilege
+      sessionMatchPrivilege,
+      matchType
     );
     if (!match) {
       return ErrorResponse(

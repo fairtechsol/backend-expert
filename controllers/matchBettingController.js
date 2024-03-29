@@ -1,5 +1,6 @@
-const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, redisKeys } = require("../config/contants");
+const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, redisKeys, matchBettingType, betStatus, resultStatus } = require("../config/contants");
 const { logger } = require("../config/logger");
+const { getExpertResult } = require("../services/expertResultService");
 const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting } = require("../services/matchBettingService");
 const { getMatchById } = require("../services/matchService");
 const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData } = require("../services/redis/commonfunction");
@@ -57,9 +58,20 @@ exports.getMatchBetting = async (req, res) => {
             }
 
           let teamRates = await getExpertsRedisMatchData(matchId);
-         
           matchBetting.matchRates = teamRates;
         }
+      if (!(matchBetting.activeStatus == betStatus.result)) {
+        let qBookId = await getMatchAllBettings({ type: matchBettingType.quickbookmaker1, matchId  }, ['id']);
+        let expertResults = await getExpertResult({ betId: qBookId[0].id });
+        
+        if (expertResults?.length != 0) {
+          if (expertResults?.length == 1) {
+            matchBetting.resultStatus = resultStatus.pending;
+          } else if (expertResults?.length > 1) {
+            matchBetting.resultStatus = resultStatus.missMatched;
+          }
+        }
+      }
 
         return SuccessResponse(
             {

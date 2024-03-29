@@ -619,7 +619,7 @@ const checkResult = async (body) => {
     });
 
     sendMessageToUser(
-      userId,
+      socketData.expertRoomSocket,
       socketData.updateInResultDeclare,
       { matchId, betId, status: resultStatus.pending, userId }
     );

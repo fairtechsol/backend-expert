@@ -833,8 +833,6 @@ exports.matchListWithManualBetting = async (req, res) => {
       sessionMatchPrivilege,
     } = req.user;
 
-
-
     const match = await getMatchWithBettingAndSession(
       allPrivilege,
       addMatchPrivilege,

@@ -451,9 +451,6 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
   }
   let teamRates = await getExpertsRedisMatchData(matchId);
 
-
-
-
   match.teamRates = teamRates;
   if (userId) {
     const redisIds = match.sessionBettings?.map((item, index) => {

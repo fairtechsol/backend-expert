@@ -465,7 +465,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           sessionBettingData.resultStatus = resultStatus.pending;
           match.sessionBettings[index] = JSON.stringify(sessionBettingData);
         }
-        else if (currSessionExpertResult?.length > 1) {
+        else {
           sessionBettingData.resultStatus = resultStatus.missMatched;
           match.sessionBettings[index] = JSON.stringify(sessionBettingData);
         }
@@ -480,11 +480,11 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 
     if (!(match.stopAt)) {
       let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
-      let matchResult = expertResults.filter((result) => result.betId == qBookId[0].id);
+      let matchResult = expertResults.filter((result) => result.betId == qBookId[0]?.id);
       if (matchResult?.length != 0) {
         if (matchResult?.length == 1) {
           match.resultStatus = resultStatus.pending;
-        } else if (matchResult?.length > 1) {
+        } else {
           match.resultStatus = resultStatus.missMatched;
         }
       }

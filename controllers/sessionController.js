@@ -1,12 +1,12 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings, getSessionBetting } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const {getUserById} = require("../services/userService");
+const { getUserById } = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis, updateMultipleMarketSessionIdRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
-const {getSpecificResultsSession} = require("../services/betService");
+const { getSpecificResultsSession } = require("../services/betService");
 const { getExpertResult } = require("../services/expertResultService");
 
 exports.addSession = async (req, res) => {
@@ -267,12 +267,11 @@ exports.getSessions = async (req, res) => {
         ]);
       }
 
-      if (expertResults?.length != 0 && !(session.activeStatus == betStatus.result) ) {
+      if (expertResults?.length != 0 && !(session.activeStatus == betStatus.result)) {
         if (expertResults?.length == 1) {
           session.resultStatus = resultStatus.pending;
         }
-
-        else if (expertResults?.length > 1) {
+        else {
           session.resultStatus = resultStatus.missMatched;
         }
 

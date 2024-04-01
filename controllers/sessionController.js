@@ -11,11 +11,8 @@ const { getExpertResult } = require("../services/expertResultService");
 
 exports.addSession = async (req, res) => {
   try {
-    let { matchType, matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId } = req.body
+    let { matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId } = req.body
     const { id: loginId } = req.user;
-    if (matchType == gameType.football) {
-      return ErrorResponse({ statusCode: 400, message: { msg: `Session can't create for ${matchType}`, keys: { name: "Session" } } }, req, res);
-    }
     if (type == sessionBettingType.marketSession && !selectionId) {
       return ErrorResponse({ statusCode: 400, message: { msg: "required", keys: { name: "Selection id" } } }, req, res);
     }
@@ -24,7 +21,7 @@ exports.addSession = async (req, res) => {
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
-    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet"])
+    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet","matchType"])
     if (!match) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
     }
@@ -34,6 +31,9 @@ exports.addSession = async (req, res) => {
           return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
         }
       }
+    }
+    if(match.matchType==gameType.football){
+      return ErrorResponse({ statusCode: 400, message: { msg: "notCreated", keys: { name: "Session" } } }, req, res); 
     }
     let isManual = true;
     if (!minBet) {

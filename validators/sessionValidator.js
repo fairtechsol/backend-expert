@@ -46,7 +46,8 @@ exports.addsessionBettingValidator = Joi.object({
     }),
     selectionId: Joi.string().messages({
         "string.base": "Selection ID must be a string",
-    })
+    }),
+   
 });
 
 exports.updateSessionBettingValidator = Joi.object({

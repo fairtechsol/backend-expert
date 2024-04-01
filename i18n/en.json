@@ -12,6 +12,7 @@
   "fetched" : "{name} fetch successfully.",
   "required" : "{name} is required.",
   "notAuthorized" : "{name} not authorize to take this action.",
+  "notCreated":"{name} can't Create for football",
   
   "auth": {
     "loginSuccess": "Login successfully.",
@@ -50,4 +51,5 @@
     "sessionAllResult": "Please declare all session result first."
 
   }
+  
 }

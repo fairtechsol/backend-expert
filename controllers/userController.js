@@ -118,8 +118,6 @@ exports.isUserExist = async (req, res) => {
   return SuccessResponse({ statusCode: 200, data: { isUserExist: Boolean(isUserExist) } }, req, res);
 }
 
-
-
 exports.updateUser = async (req, res) => {
   try {
     // Destructuring request body for relevant user information
@@ -287,7 +285,6 @@ exports.changePassword = async (req, res, next) => {
     }, req, res);
   }
 };
-
 
 exports.expertList = async (req, res, next) => {
   try {

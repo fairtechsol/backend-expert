@@ -619,7 +619,7 @@ const checkResult = async (body) => {
     });
 
     sendMessageToUser(
-      userId,
+      socketData.expertRoomSocket,
       socketData.updateInResultDeclare,
       { matchId, betId, status: resultStatus.pending, userId }
     );
@@ -660,18 +660,10 @@ const checkResult = async (body) => {
     });
 
     sendMessageToUser(
-      userId,
+      socketData.expertRoomSocket,
       socketData.updateInResultDeclare,
       { matchId, betId, status: resultStatus.missMatched, userId }
     );
-
-    checkExistResult?.forEach((items) => {
-      sendMessageToUser(
-        items?.userId,
-        socketData.updateInResultDeclare,
-        { matchId, betId, status: resultStatus.missMatched, userId }
-      );
-    });
 
     throw {
       statusCode: 400,

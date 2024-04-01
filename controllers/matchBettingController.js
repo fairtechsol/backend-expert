@@ -1,5 +1,6 @@
-const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, redisKeys } = require("../config/contants");
+const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, redisKeys, matchBettingType, betStatus, resultStatus } = require("../config/contants");
 const { logger } = require("../config/logger");
+const { getExpertResult } = require("../services/expertResultService");
 const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting } = require("../services/matchBettingService");
 const { getMatchById } = require("../services/matchService");
 const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData } = require("../services/redis/commonfunction");
@@ -8,81 +9,92 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
 
 exports.getMatchBetting = async (req, res) => {
-    try {
-        const { matchId } = req.params;
-        const { id: matchBetId, type } = req.query;
-        let matchBetting;
+  try {
+    const { matchId } = req.params;
+    const { id: matchBetId, type } = req.query;
+    let matchBetting;
 
-        if (!matchBetId && !type) {
-            const redisMatchData = await getAllBettingRedis(matchId);
+    if (!matchBetId && !type) {
+      const redisMatchData = await getAllBettingRedis(matchId);
 
-            if (redisMatchData) {
-                matchBetting = Object.values(redisMatchData).map(item => JSON.parse(item));
-            } else {
-                matchBetting = await getMatchAllBettings({ matchId });
-                if (!matchBetting) {
-                    return ErrorResponse(
-                        {
-                            statusCode: 404,
-                            message: { msg: "notFound", keys: { name: "Match Betting" } },
-                        },
-                        req,
-                        res
-                    );
-                }
-                addAllMatchBetting(matchId, matchBetting);
-            }
-        } else {
-            if (!matchBetId || !type) {
-                return ErrorResponse({ statusCode: 404, message: { msg: "required", keys: { name: "Match Betting id and type" } } }, req, res);
-            }
-            const redisMatchData = await getBettingFromRedis(matchId, type);
-
-            if (redisMatchData) {
-                matchBetting = redisMatchData;
-            } else {
-                matchBetting = await getMatchBetting({ id: matchBetId });
-                if (!matchBetting) {
-                    return ErrorResponse(
-
-                        {
-                            statusCode: 404,
-                            message: { msg: "notFound", keys: { name: "Match betting" } },
-                        },
-                        req,
-                        res
-                    );
-                }
-                addAllMatchBetting(matchId, null);
-            }
-
-          let teamRates = await getExpertsRedisMatchData(matchId);
-         
-          matchBetting.matchRates = teamRates;
-        }
-
-        return SuccessResponse(
+      if (redisMatchData) {
+        matchBetting = Object.values(redisMatchData).map(item => JSON.parse(item));
+      } else {
+        matchBetting = await getMatchAllBettings({ matchId });
+        if (!matchBetting) {
+          return ErrorResponse(
             {
-                statusCode: 200,
-                message: {
-                    msg: "success",
-                    keys: {
-                        name: "Match Betting",
-                    },
-                },
-                data: matchBetting,
+              statusCode: 404,
+              message: { msg: "notFound", keys: { name: "Match Betting" } },
             },
             req,
             res
-        );
-    } catch (error) {
-        logger.error({
-            error: `Error at get list match betting.`,
-            stack: error.stack,
-            message: error.message,
-        });
-        return ErrorResponse(error, req, res);
+          );
+        }
+        addAllMatchBetting(matchId, matchBetting);
+      }
+    } else {
+      if (!matchBetId || !type) {
+        return ErrorResponse({ statusCode: 404, message: { msg: "required", keys: { name: "Match Betting id and type" } } }, req, res);
+      }
+      const redisMatchData = await getBettingFromRedis(matchId, type);
+
+      if (redisMatchData) {
+        matchBetting = redisMatchData;
+      } else {
+        matchBetting = await getMatchBetting({ id: matchBetId });
+        if (!matchBetting) {
+          return ErrorResponse(
+
+            {
+              statusCode: 404,
+              message: { msg: "notFound", keys: { name: "Match betting" } },
+            },
+            req,
+            res
+          );
+        }
+        addAllMatchBetting(matchId, null);
+      }
+
+      let teamRates = await getExpertsRedisMatchData(matchId);
+      matchBetting.matchRates = teamRates;
     }
+    if (!(matchBetting.activeStatus == betStatus.result)) {
+      let qBookId = await getMatchAllBettings({ type: matchBettingType.quickbookmaker1, matchId }, ['id']);
+      let expertResults = await getExpertResult({ betId: qBookId[0]?.id });
+
+      if (expertResults?.length != 0) {
+        if (expertResults?.length == 1) {
+          matchBetting.resultStatus = resultStatus.pending;
+        } else{
+          matchBetting.resultStatus = resultStatus.missMatched;
+        }
+      }
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "success",
+          keys: {
+            name: "Match Betting",
+          },
+        },
+        data: matchBetting,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at get list match betting.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
+  }
 }
 
 exports.getMatchBettingDetails = async (req, res) => {
@@ -96,8 +108,8 @@ exports.getMatchBettingDetails = async (req, res) => {
       matchDetails = await getMatchById(matchId);
     }
     if (!matchDetails || lodash.isEmpty(matchDetails)) {
-      return ErrorResponse({statusCode: 404,message: { msg: "notFound", keys: { name: "Match Betting" } }},req,res);
-  }
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match Betting" } } }, req, res);
+    }
     let match = {
       id: matchDetails.id,
       eventId: matchDetails.eventId,

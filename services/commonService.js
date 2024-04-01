@@ -1,6 +1,5 @@
-const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord } = require("../config/contants");
+const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord } = require("../config/contants");
 const { __mf } = require("i18n");
-const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");

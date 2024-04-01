@@ -1,7 +1,7 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings, getSessionBetting } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { getUserById } = require("../services/userService");
-const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus } = require("../config/contants");
+const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus, gameType } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis, updateMultipleMarketSessionIdRedis } = require("../services/redis/commonfunction");
@@ -11,8 +11,11 @@ const { getExpertResult } = require("../services/expertResultService");
 
 exports.addSession = async (req, res) => {
   try {
-    let { matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId } = req.body
+    let { matchType, matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId } = req.body
     const { id: loginId } = req.user;
+    if (matchType == gameType.football) {
+      return ErrorResponse({ statusCode: 400, message: { msg: `Session can't create for ${matchType}`, keys: { name: "Session" } } }, req, res);
+    }
     if (type == sessionBettingType.marketSession && !selectionId) {
       return ErrorResponse({ statusCode: 400, message: { msg: "required", keys: { name: "Selection id" } } }, req, res);
     }

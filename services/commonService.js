@@ -1,5 +1,6 @@
 const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord } = require("../config/contants");
 const { __mf } = require("i18n");
+const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
@@ -623,5 +624,40 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
   }
   let teamRates = await getExpertsRedisMatchData(matchId);
   match.teamRates = teamRates;
+  if (userId) {
+    const redisIds = match.sessionBettings?.map((item, index) => {
+      const sessionBettingData = JSON.parse(item);
+      const currSessionExpertResult = expertResults.filter((result) => result.betId == sessionBettingData?.id);
+
+      if (currSessionExpertResult?.length != 0 && !(sessionBettingData.activeStatus == betStatus.result)) {
+        if (currSessionExpertResult?.length == 1) {
+          sessionBettingData.resultStatus = resultStatus.pending;
+          match.sessionBettings[index] = JSON.stringify(sessionBettingData);
+        }
+        else {
+          sessionBettingData.resultStatus = resultStatus.missMatched;
+          match.sessionBettings[index] = JSON.stringify(sessionBettingData);
+        }
+      }
+
+      return (sessionBettingData?.id + redisKeys.profitLoss)
+    });
+    if (redisIds?.length > 0) {
+      let sessionData = await getExpertsRedisSessionDataByKeys(redisIds);
+      match.sessionProfitLoss = sessionData;
+    }
+
+    if (!(match.stopAt)) {
+      let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
+      let matchResult = expertResults.filter((result) => result.betId == qBookId[0]?.id);
+      if (matchResult?.length != 0) {
+        if (matchResult?.length == 1) {
+          match.resultStatus = resultStatus.pending;
+        } else {
+          match.resultStatus = resultStatus.missMatched;
+        }
+      }
+    }
+  }
   return match;
 }

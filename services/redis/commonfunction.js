@@ -1,5 +1,5 @@
 
-const { redisKeys, betStatusType, marketBettingTypeByBettingType } = require("../../config/contants");
+const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatchWise } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
@@ -506,6 +506,27 @@ exports.getExpertsRedisSessionDataByKeys = async (keys) => {
 exports.getExpertsRedisMatchData = async (matchId) => {
   // Retrieve match data from Redis
   let redisIds = [`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`];
+
+  const matchData = await internalRedis.hmget(redisKeys.expertRedisData, ...redisIds);
+  let teamRates = {};
+  matchData?.forEach((item, index) => {
+    if (item) {
+      teamRates[redisIds?.[index]?.split("_")[0]] = item;
+    }
+  });
+  // Parse and return the match data or null if it doesn't exist
+  return teamRates;
+
+}
+
+exports.getExpertsRedisOtherMatchData = async (matchId, gameType) => {
+  // Retrieve match data from Redis
+  const redisIds = [];
+  redisIds.push(
+    ...redisKeysMatchWise[gameType].map(
+      (key) => key + matchId
+    )
+  );
 
   const matchData = await internalRedis.hmget(redisKeys.expertRedisData, ...redisIds);
   let teamRates = {};

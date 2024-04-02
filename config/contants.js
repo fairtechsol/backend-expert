@@ -231,4 +231,28 @@ module.exports.redisKeys = {
   noRateTie: "noRateTie_",
   yesRateComplete: "yesRateComplete_",
   noRateComplete: "noRateComplete_",
+
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`yesRateUnderOver${curr}.5`] = `yesRateUnderOver${curr}.5_`;
+    prev[`noRateUnderOver${curr}.5`] = `noRateUnderOver${curr}.5_`;
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`yesRateFirstHalfGoal${curr}.5`] = `yesRateFirstHalfGoal${curr}.5_`;
+    prev[`noRateFirstHalfGoal${curr}.5`] = `noRateFirstHalfGoal${curr}.5_`;
+    return prev;
+  }, {})),
+
+  userTeamARateHalfTime: "userTeamARateHalfTime_",
+  userTeamBRateHalfTime: "userTeamBRateHalfTime_",
+  userTeamCRateHalfTime: "userTeamCRateHalfTime_",
+  profitLoss: "_profitLoss"
+}
+
+module.exports.redisKeysMatchWise = {
+  [this.gameType.cricket]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete, this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
+  [this.gameType.football]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, this.redisKeys.userTeamARateHalfTime, this.redisKeys.userTeamBRateHalfTime, this.redisKeys.userTeamCRateHalfTime, ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`yesRateUnderOver${index}.5`]),
+  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateUnderOver${index}.5`]),
+  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`yesRateFirstHalfGoal${index}.5`]),
+  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateFirstHalfGoal${index}.5`])]
 }

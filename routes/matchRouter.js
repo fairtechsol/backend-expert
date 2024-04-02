@@ -15,6 +15,6 @@ router.get('/competition/dates/:competitionId', getMatchDatesByCompetitionId);
 router.get('/competition/getMatch/:competitionId/:date', getMatchDatesByCompetitionIdAndDate);
 router.post('/updateActiveStatus', isAuthenticate, validator(MatchActiveInactive), matchActiveInActive);
 router.get('/:id', isAuthenticate, matchDetails);
-router.get('/otherMatch/:id', matchDetailsForFootball);
+router.get('/otherMatch/:id', isAuthenticate, matchDetailsForFootball);
 
 module.exports = router;

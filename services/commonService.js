@@ -5,7 +5,7 @@ const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchBattingByMatchId } = require("./matchBettingService");
 const { getMatchDetails } = require("./matchService");
-const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys } = require("./redis/commonfunction");
+const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 const { getExpertResult } = require("./expertResultService");
 
@@ -621,31 +621,8 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
 
     delete match.matchBettings;
   }
-  let teamRates = await getExpertsRedisMatchData(matchId);
-  match.teamRates = teamRates;
+
   if (userId) {
-    const redisIds = match.sessionBettings?.map((item, index) => {
-      const sessionBettingData = JSON.parse(item);
-      const currSessionExpertResult = expertResults.filter((result) => result.betId == sessionBettingData?.id);
-
-      if (currSessionExpertResult?.length != 0 && !(sessionBettingData.activeStatus == betStatus.result)) {
-        if (currSessionExpertResult?.length == 1) {
-          sessionBettingData.resultStatus = resultStatus.pending;
-          match.sessionBettings[index] = JSON.stringify(sessionBettingData);
-        }
-        else {
-          sessionBettingData.resultStatus = resultStatus.missMatched;
-          match.sessionBettings[index] = JSON.stringify(sessionBettingData);
-        }
-      }
-
-      return (sessionBettingData?.id + redisKeys.profitLoss)
-    });
-    if (redisIds?.length > 0) {
-      let sessionData = await getExpertsRedisSessionDataByKeys(redisIds);
-      match.sessionProfitLoss = sessionData;
-    }
-
     if (!(match.stopAt)) {
       let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
       let matchResult = expertResults.filter((result) => result.betId == qBookId[0]?.id);
@@ -656,6 +633,9 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
           match.resultStatus = resultStatus.missMatched;
         }
       }
+
+      let teamRates = await getExpertsRedisOtherMatchData(matchId, match.matchType);
+      match.teamRates = teamRates;
     }
   }
   return match;

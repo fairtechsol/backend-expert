@@ -1,23 +1,10 @@
 const { ILike, IsNull } = require("typeorm");
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, redisKeys, walletDomain } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
-const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, addMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
-const {
-  getMatchById,
-  getMatchByMarketId,
-  addMatch,
-  updateMatch,
-  getMatch,
-  getMatchDetails,
-  getMatchCompetitions,
-  getMatchDates,
-  getMatchByCompetitionIdAndDates,
-  getMatchWithBettingAndSession,
-  getOneMatchByCondition,
-} = require("../services/matchService");
-const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, getAllBettingRedis, getAllSessionRedis, settingAllSessionMatchRedis, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, addDataInRedis, getExpertsRedisData, getExpertsRedisMatchData } = require("../services/redis/commonfunction");
-const { getSessionBattingByMatchId } = require("../services/sessionBettingService");
+const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
+const { getMatchById, getMatchByMarketId, addMatch, updateMatch, getMatch, getMatchCompetitions, getMatchDates, getMatchByCompetitionIdAndDates, getMatchWithBettingAndSession, getOneMatchByCondition } = require("../services/matchService");
+const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -36,29 +23,7 @@ exports.createMatch = async (req, res) => {
   try {
     // Extract relevant information from the request body
     let {
-      matchType,
-      competitionId,
-      competitionName,
-      title,
-      marketId,
-      eventId,
-      teamA,
-      teamB,
-      teamC,
-      startAt,
-      minBet,
-      matchOddMaxBet,
-      betFairSessionMaxBet,
-      betFairBookmakerMaxBet,
-      bookmakers,
-      marketTiedMatchMaxBet,
-      manualTiedMatchMaxBet,
-      completeMatchMaxBet,
-      matchOddMarketId,
-      tiedMatchMarketId,
-      marketBookmakerId,
-      completeMatchMarketId,
-      isManualMatch = false
+      matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, minBet, matchOddMaxBet, betFairSessionMaxBet, betFairBookmakerMaxBet, bookmakers, marketTiedMatchMaxBet, manualTiedMatchMaxBet, completeMatchMaxBet, matchOddMarketId, tiedMatchMarketId, marketBookmakerId, completeMatchMarketId, isManualMatch = false
     } = req.body;
 
     /* access work left */
@@ -109,19 +74,7 @@ exports.createMatch = async (req, res) => {
 
     // Prepare match data for a new match
     let matchData = {
-      matchType,
-      competitionId,
-      competitionName,
-      title,
-      marketId,
-      eventId,
-      teamA,
-      teamB,
-      teamC,
-      startAt,
-      betFairSessionMaxBet: betFairSessionMaxBet,
-      betFairSessionMinBet: minBet,
-      createBy: loginId
+      matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, betFairSessionMaxBet: betFairSessionMaxBet, betFairSessionMinBet: minBet, createBy: loginId
     };
 
     let maxBetValues = bookmakers.map(item => item.maxBet);
@@ -335,15 +288,7 @@ exports.updateMatch = async (req, res) => {
   try {
     // Extract relevant information from the request body
     const {
-      id,
-      minBet,
-      matchOddMaxBet,
-      betFairSessionMaxBet,
-      betFairBookmakerMaxBet,
-      bookmakers,
-      marketTiedMatchMaxBet,
-      manualTiedMatchMaxBet,
-      completeMatchMaxBet
+      id, minBet, matchOddMaxBet, betFairSessionMaxBet, betFairBookmakerMaxBet, bookmakers, marketTiedMatchMaxBet, manualTiedMatchMaxBet, completeMatchMaxBet
     } = req.body;
     //get user data to check privilages
     const { id: loginId } = req.user;
@@ -463,12 +408,7 @@ exports.listMatch = async (req, res) => {
     const { query } = req;
     const { fields } = query;
     const {
-      id: loginId,
-      allPrivilege,
-      addMatchPrivilege,
-      betFairMatchPrivilege,
-      bookmakerMatchPrivilege,
-      sessionMatchPrivilege,
+      id: loginId, allPrivilege, addMatchPrivilege, betFairMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege,
     } = req.user;
 
 
@@ -570,9 +510,7 @@ exports.matchDetails = async (req, res) => {
 exports.matchActiveInActive = async (req, res) => {
   try {
     // Destructuring properties from the request body
-    const { matchId, bettingId, type, isManualBet, isActive } =
-      req.body;
-
+    const { matchId, bettingId, type, isManualBet, isActive } = req.body;
 
     const { allPrivilege, addMatchPrivilege } = req.user;
 
@@ -845,34 +783,18 @@ exports.matchListWithManualBetting = async (req, res) => {
   try {
 
     const {
-      allPrivilege,
-      addMatchPrivilege,
-      betFairMatchPrivilege,
-      bookmakerMatchPrivilege,
-      sessionMatchPrivilege,
+      allPrivilege, addMatchPrivilege, betFairMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege,
     } = req.user;
 
-
-
     const match = await getMatchWithBettingAndSession(
-      allPrivilege,
-      addMatchPrivilege,
-      bookmakerMatchPrivilege,
-      sessionMatchPrivilege
+      allPrivilege, addMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege
     );
     if (!match) {
       return ErrorResponse(
         {
-          statusCode: 400,
-          message: {
-            msg: "notFound",
-            keys: {
-              name: "Match",
-            },
-          },
-        },
-        req,
-        res
+          statusCode: 400, 
+          message: { msg: "notFound", keys: { name: "Match" }, }, },
+          req, res
       );
     }
 

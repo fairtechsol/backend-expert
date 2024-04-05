@@ -592,9 +592,6 @@ const checkResult = async (body) => {
   });
 
   if (isSessionBet) {
-    if (selectionId) {
-      deleteKeyFromMarketSessionId(matchId, selectionId);
-    } else {
       let redisSession = await getSessionFromRedis(matchId, betId);
       if (redisSession) {
         try {
@@ -617,7 +614,6 @@ const checkResult = async (body) => {
           }
         } catch (error) { }
       }
-    }
   }
 
   if (!checkExistResult?.length) {

@@ -604,6 +604,7 @@ const checkResult = async (body) => {
             redisSessionData["yesRate"] = null;
             redisSessionData["yesPercent"] = null;
             redisSessionData["noPercent"] = null;
+            redisSessionData["activeStatus"] = betStatus.save;
             redisSessionData["status"] = teamStatus.suspended;
             sendMessageToUser(
               socketData.expertRoomSocket,

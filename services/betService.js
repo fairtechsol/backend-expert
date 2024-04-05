@@ -15,6 +15,7 @@ exports.getSpecificResultsSession = async (where, select) => {
     .leftJoinAndMapOne("result.betId", "sessionBettings", "sessionBettings", "result.betId = sessionBettings.id")
     .where(where)
     .select(select)
+    .orderBy("result.createdAt", "ASC")
     .getMany()
     return data;
 }

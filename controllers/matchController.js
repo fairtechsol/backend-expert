@@ -100,19 +100,7 @@ exports.createMatch = async (req, res) => {
 
     // Prepare match data for a new match
     let matchData = {
-      matchType,
-      competitionId,
-      competitionName,
-      title,
-      marketId,
-      eventId,
-      teamA,
-      teamB,
-      teamC,
-      startAt,
-      betFairSessionMaxBet: betFairSessionMaxBet,
-      betFairSessionMinBet: minBet,
-      createBy: loginId
+      matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, betFairSessionMaxBet: betFairSessionMaxBet, betFairSessionMinBet: minBet, createBy: loginId
     };
 
     let maxBetValues = bookmakers.map(item => item.maxBet);
@@ -549,9 +537,7 @@ exports.matchDetailsForFootball = async (req, res) => {
 exports.matchActiveInActive = async (req, res) => {
   try {
     // Destructuring properties from the request body
-    const { matchId, bettingId, type, isManualBet, isActive } =
-      req.body;
-
+    const { matchId, bettingId, type, isManualBet, isActive } = req.body;
 
     const { allPrivilege, addMatchPrivilege } = req.user;
 
@@ -843,16 +829,9 @@ exports.matchListWithManualBetting = async (req, res) => {
     if (!match) {
       return ErrorResponse(
         {
-          statusCode: 400,
-          message: {
-            msg: "notFound",
-            keys: {
-              name: "Match",
-            },
-          },
-        },
-        req,
-        res
+          statusCode: 400, 
+          message: { msg: "notFound", keys: { name: "Match" }, }, },
+          req, res
       );
     }
 

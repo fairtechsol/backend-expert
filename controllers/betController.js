@@ -592,9 +592,6 @@ const checkResult = async (body) => {
   });
 
   if (isSessionBet) {
-    if (selectionId) {
-      deleteKeyFromMarketSessionId(matchId, selectionId);
-    } else {
       let redisSession = await getSessionFromRedis(matchId, betId);
       if (redisSession) {
         try {
@@ -604,6 +601,7 @@ const checkResult = async (body) => {
             redisSessionData["yesRate"] = null;
             redisSessionData["yesPercent"] = null;
             redisSessionData["noPercent"] = null;
+            redisSessionData["activeStatus"] = betStatus.save;
             redisSessionData["status"] = teamStatus.suspended;
             sendMessageToUser(
               socketData.expertRoomSocket,
@@ -616,7 +614,6 @@ const checkResult = async (body) => {
           }
         } catch (error) { }
       }
-    }
   }
 
   if (!checkExistResult?.length) {

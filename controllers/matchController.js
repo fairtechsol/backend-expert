@@ -273,9 +273,7 @@ exports.createMatch = async (req, res) => {
 exports.updateMatch = async (req, res) => {
   try {
     // Extract relevant information from the request body
-    const {
-      id, minBet, matchOddMaxBet,marketData, betFairSessionMaxBet, betFairBookmakerMaxBet, bookmakers, marketTiedMatchMaxBet, manualTiedMatchMaxBet, completeMatchMaxBet
-    } = req.body;
+    const { id, minBet, marketData, betFairSessionMaxBet, bookmakers } = req.body;
     //get user data to check privilages
     const { id: loginId } = req.user;
 
@@ -395,12 +393,8 @@ exports.listMatch = async (req, res) => {
     const { query } = req;
     const { fields } = query;
     const {
-      id: loginId, allPrivilege, addMatchPrivilege, betFairMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege,
+      id: loginId, allPrivilege, betFairMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege,
     } = req.user;
-
-
-
-
     const filters =
       allPrivilege ||
         betFairMatchPrivilege ||
@@ -809,7 +803,7 @@ exports.matchListWithManualBetting = async (req, res) => {
   try {
     const { matchType } = req.query;
     const {
-      allPrivilege, addMatchPrivilege,bookmakerMatchPrivilege, sessionMatchPrivilege,
+      allPrivilege, addMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege,
     } = req.user;
 
     const match = await getMatchWithBettingAndSession(

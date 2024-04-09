@@ -1,9 +1,9 @@
 const { ILike, IsNull } = require("typeorm");
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain } = require("../config/contants");
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, marketBettingTypeByBettingType, socketData, betStatusType,  walletDomain, marketMatchBettingType } = require("../config/contants");
+
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain, marketMatchBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
-const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting,  updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
+const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
 const {
   getMatchById,
   getMatchByMarketId,
@@ -17,14 +17,14 @@ const {
   getOneMatchByCondition,
 } = require("../services/matchService");
 const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
-const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
-const { getMatchById, getMatchByMarketId, addMatch, updateMatch, getMatch, getMatchCompetitions, getMatchDates, getMatchByCompetitionIdAndDates, getMatchWithBettingAndSession, getOneMatchByCondition } = require("../services/matchService");
-const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
+
+
+
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const { commonGetMatchDetails,commonGetMatchDetailsForFootball } = require("../services/commonService");
+const { commonGetMatchDetails, commonGetMatchDetailsForFootball } = require("../services/commonService");
 /**
  * Create or update a match.
  *
@@ -89,7 +89,7 @@ exports.createMatch = async (req, res) => {
         competitionId = isCompetitionExist.competitionId;
       }
       competitionId = competitionId || marketId;
-      
+
       if (!title) {
         title = teamA + ' v ' + teamB;
       }
@@ -163,7 +163,7 @@ exports.createMatch = async (req, res) => {
           activeStatus: betStatusType.save,
           isManual: false
         }
-       
+
       }
       return {
         ...matchBetting,
@@ -373,9 +373,9 @@ const updateMatchDataAndBettingInRedis = async (id) => {
     ...match
   };
 
-  Object.keys(convertedData)?.forEach((item)=>{
-    if(marketMatchBettingType[item]){
-      payload[marketBettingTypeByBettingType[item]]= convertedData[item];
+  Object.keys(convertedData)?.forEach((item) => {
+    if (marketMatchBettingType[item]) {
+      payload[marketBettingTypeByBettingType[item]] = convertedData[item];
     }
   });
 
@@ -829,9 +829,10 @@ exports.matchListWithManualBetting = async (req, res) => {
     if (!match) {
       return ErrorResponse(
         {
-          statusCode: 400, 
-          message: { msg: "notFound", keys: { name: "Match" }, }, },
-          req, res
+          statusCode: 400,
+          message: { msg: "notFound", keys: { name: "Match" }, },
+        },
+        req, res
       );
     }
 

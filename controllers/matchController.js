@@ -49,17 +49,9 @@ exports.createMatch = async (req, res) => {
       teamC,
       startAt,
       minBet,
-      matchOddMaxBet,
       betFairSessionMaxBet,
-      betFairBookmakerMaxBet,
+      marketData,
       bookmakers,
-      marketTiedMatchMaxBet,
-      manualTiedMatchMaxBet,
-      completeMatchMaxBet,
-      matchOddMarketId,
-      tiedMatchMarketId,
-      marketBookmakerId,
-      completeMatchMarketId,
       isManualMatch = false
     } = req.body;
 

@@ -358,6 +358,9 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       if (!sessionData) {
         return ErrorResponse({ statusCode: 404, message: { msg: "NotFound", keys: "Session" } });
       }
+      if(sessionData.activeStatus == betStatus.result || sessionData == betStatus.close){
+        return ErrorResponse({ statusCode: 403, message: { msg: "bet.resultDeclareOrProgress" } });
+      }
       if (sessionData.createBy != reqUser.id) {
         if (!user.allPrivilege) {
           if (!user.sessionMatchPrivilege) {

@@ -429,6 +429,17 @@ exports.unDeclareSessionResult = async (req, res) => {
   const { betId, matchId } = req.body;
   const { id: userId } = req.user;
   try {
+    const match = await getMatchById(matchId);
+    if (match?.stopAt) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.matchDeclare" },
+        },
+        req,
+        res
+      );
+    }
 
     // check result already declare
     let bet = await getSessionBettingById(betId);

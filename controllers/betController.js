@@ -597,10 +597,10 @@ const checkResult = async (body) => {
         try {
           let redisSessionData = redisSession;
           if (redisSessionData["noRate"] || redisSessionData["yesRate"]) {
-            redisSessionData["noRate"] = null;
-            redisSessionData["yesRate"] = null;
-            redisSessionData["yesPercent"] = null;
-            redisSessionData["noPercent"] = null;
+            redisSessionData["noRate"] = 0;
+            redisSessionData["yesRate"] = 0;
+            redisSessionData["yesPercent"] = 0;
+            redisSessionData["noPercent"] = 0;
             redisSessionData["activeStatus"] = betStatus.save;
             redisSessionData["status"] = teamStatus.suspended;
             sendMessageToUser(

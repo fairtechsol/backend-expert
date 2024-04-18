@@ -21,9 +21,12 @@ exports.addSession = async (req, res) => {
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
-    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet"])
+    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "stopAt"])
     if (!match) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
+    }
+    if(match?.stopAt){
+      return ErrorResponse({ statusCode: 400, message: { msg: "bet.matchDeclare" } }, req, res);
     }
     if (match.createBy != loginId) {
       if (!user.allPrivilege) {

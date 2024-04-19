@@ -32,6 +32,7 @@ const {
   setExpertsRedisData,
   deleteAllMatchRedis,
   deleteKeyFromMatchRedisData,
+  settingAllBettingMatchRedisStatus,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -619,6 +620,9 @@ const checkResult = async (body) => {
         );
       } catch (error) { }
     }
+  }
+  else {
+    await settingAllBettingMatchRedisStatus(matchId, betStatus.save)
   }
 
   if (!checkExistResult?.length) {

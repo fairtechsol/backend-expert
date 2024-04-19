@@ -592,28 +592,33 @@ const checkResult = async (body) => {
   });
 
   if (isSessionBet) {
-      let redisSession = await getSessionFromRedis(matchId, betId);
-      if (redisSession) {
-        try {
-          let redisSessionData = redisSession;
-          if (redisSessionData["noRate"] || redisSessionData["yesRate"]) {
-            redisSessionData["noRate"] = 0;
-            redisSessionData["yesRate"] = 0;
-            redisSessionData["yesPercent"] = 0;
-            redisSessionData["noPercent"] = 0;
-            redisSessionData["activeStatus"] = betStatus.save;
-            redisSessionData["status"] = teamStatus.suspended;
-            sendMessageToUser(
-              socketData.expertRoomSocket,
-              socketData.updateSessionRateClient,
-              redisSessionData
-            );
+    let redisSession = await getSessionFromRedis(matchId, betId);
+    if (redisSession) {
+      try {
+        let redisSessionData = redisSession;
+        redisSessionData["noRate"] = 0;
+        redisSessionData["yesRate"] = 0;
+        redisSessionData["yesPercent"] = 0;
+        redisSessionData["noPercent"] = 0;
+        redisSessionData["activeStatus"] = betStatus.save;
+        redisSessionData["status"] = teamStatus.suspended;
 
-            updateSessionBetting({ id: betId }, redisSessionData);
-            updateSessionMatchRedis(matchId, betId, redisSession);
-          }
-        } catch (error) { }
-      }
+        await updateSessionMatchRedis(matchId, betId, redisSession);
+        await updateSessionBetting({ id: betId }, {
+          noRate: 0,
+          yesRate: 0,
+          yesPercent: 0,
+          noPercent: 0,
+          status: teamStatus.suspended
+        });
+
+        sendMessageToUser(
+          socketData.expertRoomSocket,
+          socketData.updateSessionRateClient,
+          redisSessionData
+        );
+      } catch (error) { }
+    }
   }
 
   if (!checkExistResult?.length) {

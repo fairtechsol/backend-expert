@@ -378,7 +378,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
         deleteKeyFromMarketSessionId(sessionData.matchId, sessionData.selectionId);
       }
     }
-    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "Session" } } }, req, res);
+    return SuccessResponse({ statusCode: 200 }, req, res);
 
   } catch (error) {
     logger.error({

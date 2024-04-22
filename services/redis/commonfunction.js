@@ -1,5 +1,5 @@
 
-const { redisKeys, betStatusType } = require("../../config/contants");
+const { redisKeys, betStatusType, marketBettingTypeByBettingType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
@@ -529,4 +529,48 @@ exports.loginCount = async (key) => {
   let totalCount = await internalRedis.get(key);
   totalCount = parseInt(totalCount) || 0
   return totalCount
+}
+
+/**
+ * Updates betting data in Redis.
+ *
+ * @param {string} matchId - The ID of the match.
+ * @param {Object} data - The data to be updated in the session.
+ * @returns {Promise<void>} - A Promise that resolves when the update is complete.
+ */
+exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
+  logger.info({
+    message: `updating data in redis for betting of match ${matchId}`,
+    status: status
+  });
+
+
+  const manualBettingData = await internalRedis.hgetall(`${matchId}_manualBetting`);
+
+  let redisPipeline = internalRedis
+    .pipeline();
+
+  if (manualBettingData) {
+    Object.keys(manualBettingData)?.forEach((item) => {
+      let data = JSON.parse(manualBettingData[item]);
+      data.activeStatus = status;
+      manualBettingData[item] = JSON.stringify(data);
+    });
+
+    redisPipeline = redisPipeline.hset(`${matchId}_manualBetting`, manualBettingData).expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
+  }
+
+  let matchDetails=await internalRedis.hgetall(`${matchId}_match`);
+
+  if(matchDetails){
+    Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+      let data = JSON.parse(matchDetails[item]);
+      data.activeStatus = status;
+      matchDetails[item] = JSON.stringify(data);
+    });
+    redisPipeline = redisPipeline.hset(`${matchId}_match`, matchDetails).expire(`${matchId}_match`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
+  }
+
+  // Use a Redis pipeline for atomicity and efficiency
+  await redisPipeline.exec();
 }

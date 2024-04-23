@@ -21,9 +21,12 @@ exports.addSession = async (req, res) => {
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
-    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet","matchType"])
+    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "stopAt", "matchType"])
     if (!match) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
+    }
+    if(match?.stopAt){
+      return ErrorResponse({ statusCode: 400, message: { msg: "bet.matchDeclare" } }, req, res);
     }
     if (match.createBy != loginId) {
       if (!user.allPrivilege) {
@@ -378,7 +381,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
         deleteKeyFromMarketSessionId(sessionData.matchId, sessionData.selectionId);
       }
     }
-    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "Session" } } }, req, res);
+    return SuccessResponse({ statusCode: 200 }, req, res);
 
   } catch (error) {
     logger.error({

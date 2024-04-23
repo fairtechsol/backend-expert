@@ -213,7 +213,7 @@ exports.createMatch = async (req, res) => {
     });
 
     await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
-    broadcastEvent(socketData.addMatchEvent);
+    broadcastEvent(socketData.addMatchEvent, { gameType: match?.matchType });
 
     await apiCall(
       apiMethod.post,

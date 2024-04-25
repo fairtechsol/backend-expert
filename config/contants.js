@@ -1,5 +1,6 @@
 module.exports.redisTimeOut = 12 * 60 * 60;
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
+module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
 module.exports.noResult="No Result";
 module.exports.passwordRegex = /^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z])(?=.*\d.*\d.*\d.*\d).{8,}$/;
 
@@ -14,6 +15,10 @@ module.exports.userRoleConstant = {
   expert: "expert",
   user: "user",
 };
+
+module.exports.gameType={
+  cricket: "cricket"
+}
 
 module.exports.resultStatus = {
   pending: "PENDING",
@@ -152,4 +157,9 @@ module.exports.redisKeys = {
   noRateTie: "noRateTie_",
   yesRateComplete: "yesRateComplete_",
   noRateComplete: "noRateComplete_",
+}
+
+module.exports.thirdPartyMarketKey = {
+  [this.matchBettingType.tiedMatch1]: "TIED_MATCH",
+  [this.matchBettingType.completeMatch]: "COMPLETED_MATCH",
 }

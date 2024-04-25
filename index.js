@@ -78,7 +78,7 @@ server.listen(PORT, () => {
   internalRedis.set("loginUserCount", 0);
 
 
-  cron.schedule('*/100 * * * * *', () => {
+  cron.schedule('30 21 * * *', () => {
     updateMatchMarketsByCron();
   }).start();
 

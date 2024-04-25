@@ -172,7 +172,7 @@ exports.createMatch = async (req, res) => {
         name: marketName,
         maxBet: maxBet,
       };
-    })));
+    }) || []));
 
 
     // Attach bookmakers to the match
@@ -446,7 +446,6 @@ exports.listMatch = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
-
 
 exports.matchDetails = async (req, res) => {
   try {

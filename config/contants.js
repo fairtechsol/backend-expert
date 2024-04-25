@@ -1,5 +1,6 @@
 module.exports.redisTimeOut = 10 * 60 * 60;
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
+module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
 module.exports.noResult="No Result";
 module.exports.passwordRegex = /^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z])(?=.*\d.*\d.*\d.*\d).{8,}$/;
 
@@ -18,6 +19,7 @@ module.exports.userRoleConstant = {
 module.exports.gameType = {
   cricket: "cricket",
   football: "football",
+  tennis:"tennis"
 }
 
 module.exports.resultStatus = {
@@ -74,7 +76,9 @@ module.exports.matchBettingType = {
     prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
     return prev;
   }, {})),
-  halfTime: "halfTime"
+  halfTime: "halfTime",
+  setWinner1:"setWinner1",
+  setWinner2:"setWinner2",
 };
 
 module.exports.manualMatchBettingType = [
@@ -104,7 +108,9 @@ module.exports.marketBettingTypeByBettingType = {
     prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
     return prev;
   }, {})),
-  [this.matchBettingType.halfTime]: "halfTime"
+  [this.matchBettingType.halfTime]: "halfTime",
+  [this.matchBettingType.setWinner1]: "setWinner1",
+  [this.matchBettingType.setWinner2]: "setWinner2",
 }
 
 module.exports.marketMatchBettingType = {
@@ -120,7 +126,9 @@ module.exports.marketMatchBettingType = {
     prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
     return prev;
   }, {})),
-  [this.matchBettingType.halfTime]: "halfTime"
+  [this.matchBettingType.halfTime]: "halfTime",
+  [this.matchBettingType.setWinner1]: "setWinner1",
+  [this.matchBettingType.setWinner2]: "setWinner2",
 }
 
 module.exports.intialMatchBettingsName = {
@@ -138,7 +146,9 @@ module.exports.intialMatchBettingsName = {
     prev[`firstHalfGoal${curr}.5`] = `first_half_goal_${curr}.5`
     return prev;
   }, {})),
-  [this.matchBettingType.halfTime]: "half_time"
+  [this.matchBettingType.halfTime]: "half_time",
+  [this.matchBettingType.setWinner1]: "set_winner_1",
+  [this.matchBettingType.setWinner2]: "set_winner_2",
 };
 
 module.exports.matchBettingKeysForMatchDetails={
@@ -156,7 +166,9 @@ module.exports.matchBettingKeysForMatchDetails={
     prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
     return prev;
   }, {})),
-  [this.matchBettingType.halfTime]: "halfTime"
+  [this.matchBettingType.halfTime]: "halfTime",
+  [this.matchBettingType.setWinner1]: "setWinner1",
+  [this.matchBettingType.setWinner2]: "setWinner2",
 }
 
 module.exports.multiMatchBettingRecord={
@@ -196,7 +208,6 @@ module.exports.bettingType = {
   session: "session",
   match: "match",
 };
-
 
 module.exports.socketData ={
   expertRoomSocket : "expertRoom",
@@ -246,6 +257,15 @@ module.exports.redisKeys = {
   userTeamARateHalfTime: "userTeamARateHalfTime_",
   userTeamBRateHalfTime: "userTeamBRateHalfTime_",
   userTeamCRateHalfTime: "userTeamCRateHalfTime_",
+
+  userTeamARateSetWinner1: "userTeamARateSetWinner1_",
+  userTeamBRateSetWinner1: "userTeamBRateSetWinner1_",
+  userTeamCRateSetWinner1: "userTeamCRateSetWinner1_",
+
+  userTeamARateSetWinner2: "userTeamARateSetWinner2_",
+  userTeamBRateSetWinner2: "userTeamBRateSetWinner2_",
+  userTeamCRateSetWinner2: "userTeamCRateSetWinner2_",
+
   profitLoss: "_profitLoss"
 }
 
@@ -254,5 +274,6 @@ module.exports.redisKeysMatchWise = {
   [this.gameType.football]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, this.redisKeys.userTeamARateHalfTime, this.redisKeys.userTeamBRateHalfTime, this.redisKeys.userTeamCRateHalfTime, ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`yesRateUnderOver${index}.5`]),
   ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateUnderOver${index}.5`]),
   ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`yesRateFirstHalfGoal${index}.5`]),
-  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateFirstHalfGoal${index}.5`])]
+  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateFirstHalfGoal${index}.5`])],
+  [this.gameType.tennis]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, this.redisKeys.userTeamARateSetWinner1, this.redisKeys.userTeamBRateSetWinner1, this.redisKeys.userTeamCRateSetWinner1, this.redisKeys.userTeamARateSetWinner2, this.redisKeys.userTeamBRateSetWinner2, this.redisKeys.userTeamCRateSetWinner2],
 }

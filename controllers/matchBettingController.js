@@ -60,7 +60,7 @@ exports.getMatchBetting = async (req, res) => {
       let teamRates = await getExpertsRedisMatchData(matchId);
       matchBetting.matchRates = teamRates;
     }
-    if (!(matchBetting.activeStatus == betStatus.result)) {
+    if (matchBetting.activeStatus != betStatus.result) {
       let qBookId = await getMatchAllBettings({ type: matchBettingType.quickbookmaker1, matchId }, ['id']);
       let expertResults = await getExpertResult({ betId: qBookId[0]?.id });
 

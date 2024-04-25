@@ -503,10 +503,12 @@ exports.updateMatchMarketsByCron = async () => {
   const matchs = await getMatch({ startAt: MoreThan(currentDate), matchType: gameType.cricket }, ["match.startAt", "match.id", "matchBetting", "match.eventId"], {});
 
   for (let item of (matchs?.matches || [])) {
+    let isMarketIdChange = false;
     const marketMatchData = await apiCall(apiMethod.get, `${microServiceDomain}${allApiRoutes.thirdParty.extraMarket}${item?.eventId}?eventType=cricket`);
     for (let market of (item?.matchBettings?.filter((data) => [matchBettingType.tiedMatch1, matchBettingType.completeMatch].includes(data.type)) || [])) {
       const matchMarketId = marketMatchData?.find((data) => data?.description?.marketType == thirdPartyMarketKey[market?.type])?.marketId;
       if (market?.marketId != matchMarketId) {
+        isMarketIdChange = true;
         await updateMatchBetting({ id: market.id }, { marketId: matchMarketId });
         logger.info({
           message: `Market changing for market in node crone.`,
@@ -515,6 +517,8 @@ exports.updateMatchMarketsByCron = async () => {
         });
       }
     }
-    await deleteAllMatchRedis(item.id);
+    if(isMarketIdChange){
+      await deleteAllMatchRedis(item.id);
+    }
   }
 }

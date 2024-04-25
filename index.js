@@ -77,7 +77,6 @@ server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   internalRedis.set("loginUserCount", 0);
 
-
   cron.schedule('30 21 * * *', () => {
     updateMatchMarketsByCron();
   }).start();

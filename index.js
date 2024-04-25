@@ -13,6 +13,9 @@ const { logger } = require("./config/logger.js");
 const ExpertMatchQueue = require("./queue/consumer.js");
 const internalRedis = require("./config/internalRedisConnection.js");
 const helmet = require('helmet');
+const { updateMatchMarketsByCron } = require("./services/commonService.js");
+const cron = require('node-cron');
+
 
 const allowSubdomainsAndLocalhost = (origin, callback) => {
   // Check if the request comes from the specified domain or localhost
@@ -73,4 +76,10 @@ const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   internalRedis.set("loginUserCount", 0);
+
+
+  cron.schedule('*/100 * * * * *', () => {
+    updateMatchMarketsByCron();
+  }).start();
+
 });

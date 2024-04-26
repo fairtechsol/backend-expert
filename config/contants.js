@@ -182,8 +182,9 @@ module.exports.matchBettingKeysForMatchDetails={
 }
 
 module.exports.multiMatchBettingRecord={
-  "overUnder":"overUnder",
-  firstHalfGoal:"firstHalfGoal"
+  overUnder:"overUnder",
+  firstHalfGoal:"firstHalfGoal",
+  setWinner: "setWinner"
 }
 
 module.exports.sessionBettingType = {

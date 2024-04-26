@@ -68,6 +68,7 @@ exports.UpdateMatchBettingRateInSocket = Joi.object({
         'string.guid': `Bet id must be a valid GUID`,
         'any.required': `Bet id is a required field`
     }),
-    isStop: Joi.boolean().required()
+    isStop: Joi.boolean().required(),
+    isManual: Joi.boolean().required()
   });
   

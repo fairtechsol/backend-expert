@@ -38,5 +38,8 @@ exports.allApiRoutes = {
     loginData: "/expert/login/bet/data",
     addMatch: "/match/add",
   },
+  thirdParty:{
+    extraMarket:"/extraMarketList/"
+  }
 
 };

@@ -54,8 +54,7 @@ let addMatchSchema = Joi.object({
   }),
   betFairSessionMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
     "number.base": "Maximum bet amount for BetFair session must be a number",
-    "number.greater":
-      "Maximum bet amount for BetFair session must be greater than minimum bet amount",
+    "number.greater": "Maximum bet amount for BetFair session must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for BetFair session is required",
   }),
   

@@ -57,16 +57,23 @@ module.exports.ChangeSelfPassword=Joi.object({
     }),
 });
 
-module.exports.ChangePassword=Joi.object({
-  id:Joi.string().guid({ version: 'uuidv4' }),
-  password:Joi.string().pattern(passwordRegex).required().label('password').messages({
-      'string.pattern.base': 'user.passwordMatch',
-        'any.required': 'Password is required',
-    }),
-    createBy:Joi.string().required(),
+module.exports.ChangePassword = Joi.object({
+  id: Joi.string().guid({ version: 'uuidv4' }),
+  password: Joi.string().pattern(passwordRegex).required().label('password').messages({
+    'string.pattern.base': 'user.passwordMatch',
+    'any.required': 'Password is required',
+  }),
+  createBy: Joi.string().required(),
 });
+
 module.exports.LockUnlockUser = Joi.object({
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
   userBlock:  Joi.boolean().required(),
   blockBy:Joi.string().required(),
-})
+});
+
+module.exports.CheckOldPassword = Joi.object({
+  oldPassword: Joi.string().required().label('password').messages({
+    'any.required': 'Password is required',
+  })
+});

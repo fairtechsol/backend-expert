@@ -11,7 +11,6 @@ const bcrypt = require("bcryptjs");
 const lodash = require("lodash");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
-const { verifyToken } = require("../utils/authUtils");
 const { logger } = require("../config/logger");
 const { ILike } = require("typeorm");
 const { loginCount, addDataInRedis } = require('../services/redis/commonfunction')
@@ -396,6 +395,20 @@ exports.lockUnlockUser = async (req, res) => {
 
     return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" }, data: { id: user.id } }, req, res);
   } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.checkOldPasswordData = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { oldPassword } = req.body;
+    let isOldPassword = await checkOldPassword(id, oldPassword);
+
+    return SuccessResponse({ statusCode: 200, data: { isPasswordMatch: isOldPassword } }, req, res);
+
+  } catch (error) {
+    logger.error({ message: "Error in checking old password.", stack: error?.stack, context: error?.message });
     return ErrorResponse(error, req, res);
   }
 }

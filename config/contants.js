@@ -1,5 +1,6 @@
 module.exports.redisTimeOut = 10 * 60 * 60;
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
+module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
 module.exports.noResult="No Result";
 module.exports.passwordRegex = /^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z])(?=.*\d.*\d.*\d.*\d).{8,}$/;
 
@@ -18,6 +19,7 @@ module.exports.userRoleConstant = {
 module.exports.gameType = {
   cricket: "cricket",
   football: "football",
+  tennis:"tennis"
 }
 
 module.exports.resultStatus = {
@@ -74,7 +76,11 @@ module.exports.matchBettingType = {
     prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
     return prev;
   }, {})),
-  halfTime: "halfTime"
+  halfTime: "halfTime",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = `setWinner${curr}`
+    return prev;
+  }, {}))
 };
 
 module.exports.manualMatchBettingType = [
@@ -104,7 +110,11 @@ module.exports.marketBettingTypeByBettingType = {
     prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
     return prev;
   }, {})),
-  [this.matchBettingType.halfTime]: "halfTime"
+  [this.matchBettingType.halfTime]: "halfTime",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = `setWinner${curr}`
+    return prev;
+  }, {}))
 }
 
 module.exports.marketMatchBettingType = {
@@ -120,7 +130,11 @@ module.exports.marketMatchBettingType = {
     prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
     return prev;
   }, {})),
-  [this.matchBettingType.halfTime]: "halfTime"
+  [this.matchBettingType.halfTime]: "halfTime",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = `setWinner${curr}`
+    return prev;
+  }, {})),
 }
 
 module.exports.intialMatchBettingsName = {
@@ -138,7 +152,11 @@ module.exports.intialMatchBettingsName = {
     prev[`firstHalfGoal${curr}.5`] = `first_half_goal_${curr}.5`
     return prev;
   }, {})),
-  [this.matchBettingType.halfTime]: "half_time"
+  [this.matchBettingType.halfTime]: "half_time",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = `set_winner${curr}`
+    return prev;
+  }, {}))
 };
 
 module.exports.matchBettingKeysForMatchDetails={
@@ -156,12 +174,17 @@ module.exports.matchBettingKeysForMatchDetails={
     prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
     return prev;
   }, {})),
-  [this.matchBettingType.halfTime]: "halfTime"
+  [this.matchBettingType.halfTime]: "halfTime",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = `setWinner${curr}`
+    return prev;
+  }, {}))
 }
 
 module.exports.multiMatchBettingRecord={
-  "overUnder":"overUnder",
-  firstHalfGoal:"firstHalfGoal"
+  overUnder:"overUnder",
+  firstHalfGoal:"firstHalfGoal",
+  setWinner: "setWinner"
 }
 
 module.exports.sessionBettingType = {
@@ -196,7 +219,6 @@ module.exports.bettingType = {
   session: "session",
   match: "match",
 };
-
 
 module.exports.socketData ={
   expertRoomSocket : "expertRoom",
@@ -246,6 +268,13 @@ module.exports.redisKeys = {
   userTeamARateHalfTime: "userTeamARateHalfTime_",
   userTeamBRateHalfTime: "userTeamBRateHalfTime_",
   userTeamCRateHalfTime: "userTeamCRateHalfTime_",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`userTeamARateSetWinner${curr}`] = `userTeamARateSetWinner${curr}_`;
+    prev[`userTeamBRateSetWinner${curr}`] = `userTeamBRateSetWinner${curr}_`;
+    prev[`userTeamCRateSetWinner${curr}`] = `userTeamCRateSetWinner${curr}_`;
+    return prev;
+  }, {})),
+
   profitLoss: "_profitLoss"
 }
 
@@ -254,5 +283,13 @@ module.exports.redisKeysMatchWise = {
   [this.gameType.football]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, this.redisKeys.userTeamARateHalfTime, this.redisKeys.userTeamBRateHalfTime, this.redisKeys.userTeamCRateHalfTime, ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`yesRateUnderOver${index}.5`]),
   ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateUnderOver${index}.5`]),
   ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`yesRateFirstHalfGoal${index}.5`]),
-  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateFirstHalfGoal${index}.5`])]
+  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateFirstHalfGoal${index}.5`])],
+  [this.gameType.tennis]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`userTeamARateSetWinner${index}`]),
+    ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`userTeamBRateSetWinner${index}`]), ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`userTeamCRateSetWinner${index}`])],
+}
+
+
+module.exports.thirdPartyMarketKey = {
+  [this.matchBettingType.tiedMatch1]: "TIED_MATCH",
+  [this.matchBettingType.completeMatch]: "COMPLETED_MATCH",
 }

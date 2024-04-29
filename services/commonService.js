@@ -1,13 +1,15 @@
-const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord } = require("../config/contants");
+const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord,gameType, microServiceDomain, thirdPartyMarketKey } = require("../config/contants");
 const { __mf } = require("i18n");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
-const { getMatchBattingByMatchId } = require("./matchBettingService");
-const { getMatchDetails } = require("./matchService");
-const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData } = require("./redis/commonfunction");
+const { getMatchBattingByMatchId, updateMatchBetting } = require("./matchBettingService");
+const { getMatchDetails, getMatch } = require("./matchService");
+const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 const { getExpertResult } = require("./expertResultService");
+const { MoreThan } = require("typeorm");
+const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   logger.info({ message: `Force logout user: ${userId} if already login.` });
@@ -639,4 +641,32 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
     }
   }
   return match;
+}
+
+exports.updateMatchMarketsByCron = async () => {
+  const currentDate = new Date();
+  logger.info({
+    message: `Market updating by crone at ${currentDate}`,
+  });
+  const matchs = await getMatch({ startAt: MoreThan(currentDate), matchType: gameType.cricket }, ["match.startAt", "match.id", "matchBetting", "match.eventId"], {});
+
+  for (let item of (matchs?.matches || [])) {
+    let isMarketIdChange = false;
+    const marketMatchData = await apiCall(apiMethod.get, `${microServiceDomain}${allApiRoutes.thirdParty.extraMarket}${item?.eventId}?eventType=cricket`);
+    for (let market of (item?.matchBettings?.filter((data) => [matchBettingType.tiedMatch1, matchBettingType.completeMatch].includes(data.type)) || [])) {
+      const matchMarketId = marketMatchData?.find((data) => data?.description?.marketType == thirdPartyMarketKey[market?.type])?.marketId;
+      if (market?.marketId != matchMarketId) {
+        isMarketIdChange = true;
+        await updateMatchBetting({ id: market.id }, { marketId: matchMarketId });
+        logger.info({
+          message: `Market changing for market in node crone.`,
+          match: item,
+          market: market
+        });
+      }
+    }
+    if(isMarketIdChange){
+      await deleteAllMatchRedis(item.id);
+    }
+  }
 }

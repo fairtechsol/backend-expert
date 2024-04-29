@@ -3,7 +3,7 @@ const { logger } = require("../config/logger");
 const { getExpertResult } = require("../services/expertResultService");
 const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting } = require("../services/matchBettingService");
 const { getMatchById } = require("../services/matchService");
-const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData } = require("../services/redis/commonfunction");
+const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData, updateBettingMatchRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
@@ -161,7 +161,7 @@ exports.getMatchBettingDetails = async (req, res) => {
 
 exports.matchBettingStatusChange = async (req, res) => {
   try {
-    const { isStop, betId } = req.body;
+    const { isStop, betId, isManual } = req.body;
 
     const matchBettingUpdate = await getMatchBettingById(betId);
 
@@ -172,16 +172,24 @@ exports.matchBettingStatusChange = async (req, res) => {
     }
 
     await addMatchBetting(matchBettingUpdate);
+    if (isManual) {
+      const hasMatchBettingInCache = await hasBettingInCache(matchBettingUpdate?.matchId);
+      if (hasMatchBettingInCache) {
+        await updateBettingMatchRedis(matchBettingUpdate?.matchId, matchBettingType[matchBettingUpdate?.type], matchBettingUpdate);
+      }
+    }
+    else {
 
-    const hasMatchDetailsInCache = await hasMatchInCache(
-      matchBettingUpdate?.matchId
-    );
+      const hasMatchDetailsInCache = await hasMatchInCache(
+        matchBettingUpdate?.matchId
+      );
 
-    if (hasMatchDetailsInCache) {
-      await settingMatchKeyInCache(matchBettingUpdate?.matchId, {
-        [marketBettingTypeByBettingType[matchBettingUpdate?.type]]:
-          JSON.stringify(matchBettingUpdate),
-      });
+      if (hasMatchDetailsInCache) {
+        await settingMatchKeyInCache(matchBettingUpdate?.matchId, {
+          [marketBettingTypeByBettingType[matchBettingUpdate?.type]]:
+            JSON.stringify(matchBettingUpdate),
+        });
+      }
     }
 
     sendMessageToUser(

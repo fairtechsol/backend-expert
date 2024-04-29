@@ -287,3 +287,9 @@ module.exports.redisKeysMatchWise = {
   [this.gameType.tennis]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`userTeamARateSetWinner${index}`]),
     ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`userTeamBRateSetWinner${index}`]), ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`userTeamCRateSetWinner${index}`])],
 }
+
+
+module.exports.thirdPartyMarketKey = {
+  [this.matchBettingType.tiedMatch1]: "TIED_MATCH",
+  [this.matchBettingType.completeMatch]: "COMPLETED_MATCH",
+}

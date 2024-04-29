@@ -1,5 +1,5 @@
 const { ILike, IsNull } = require("typeorm");
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, marketBettingTypeByBettingType, socketData, betStatusType,  walletDomain, marketMatchBettingType } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType,initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType,  walletDomain, marketMatchBettingType,teamStatus } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
@@ -608,6 +608,15 @@ exports.matchActiveInActive = async (req, res) => {
       // If it's not a session betting type, update the active status for the specific betting ID
       await updateMatchBettingById(bettingId, {
         isActive: isActive,
+        statusTeamA: teamStatus.suspended,
+        statusTeamB: teamStatus.suspended,
+        statusTeamC: teamStatus.suspended,
+        backTeamA: 0,
+        backTeamB: 0,
+        backTeamC: 0,
+        layTeamA: 0,
+        layTeamB: 0,
+        layTeamC: 0
       });
 
       const matchBetting = await getMatchBetting({ id: bettingId });

@@ -339,6 +339,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       sessionData?.map((item) => {
         sessions[item?.selectionId] = item?.id;
         item.activeStatus = status;
+        item.updatedAt = new Date();
         sessionDetailData[item?.id] = JSON.stringify(item);
       });
 
@@ -370,6 +371,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       }
       await updateSessionBetting({ id: sessionId }, { activeStatus: status });
       sessionData.activeStatus = status;
+      sessionData.updatedAt = new Date();
       updateSessionMatchRedis(sessionData.matchId, sessionData.id, sessionData);
       // Update redis cache
       if (status == betStatusType.live) {

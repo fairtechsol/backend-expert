@@ -594,11 +594,13 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
 
   let matchDetails=await internalRedis.hgetall(`${matchId}_match`);
 
-  if(matchDetails){
+  if (matchDetails) {
     Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
-      let data = JSON.parse(matchDetails[item]);
-      data.activeStatus = status;
-      matchDetails[item] = JSON.stringify(data);
+      if (matchDetails[item]) {
+        let data = JSON.parse(matchDetails[item]);
+        data.activeStatus = status;
+        matchDetails[item] = JSON.stringify(data);
+      }
     });
     redisPipeline = redisPipeline.hset(`${matchId}_match`, matchDetails).expire(`${matchId}_match`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
   }

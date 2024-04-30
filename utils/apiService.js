@@ -33,6 +33,7 @@ exports.allApiRoutes = {
     declareSessionNoResult: "/expert/declare/noResult/session",
     unDeclareSessionResult: "/expert/unDeclare/result/session",
     declareMatchResult: "/expert/declare/result/match",
+    declareOtherMatchResult: "/expert/declare/result/other/match",
     unDeclareMatchResult: "/expert/unDeclare/result/match",
     bets: "/expert/bets",
     loginData: "/expert/login/bet/data",

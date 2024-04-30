@@ -49,8 +49,8 @@
     "resultApprove": "Your result has been saved but need to be approve by other expert.",
     "notDeclared": "Result is not declared yet.",
     "sessionAllResult": "Please declare all session result first.",
-    "resultDeclareOrProgress": "Result is alredy declare or inprogress."
-
+    "resultDeclareOrProgress": "Result is already declare or inprogress.",
+    "declareOtherMarket":"Please declare all other market results."
   }
   
 }

@@ -459,12 +459,12 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       const sessionBettingData = JSON.parse(item);
       const currSessionExpertResult = expertResults.filter((result) => result.betId == sessionBettingData?.id);
 
-      if (currSessionExpertResult?.length != 0) {
-        if (currSessionExpertResult?.length == currSessionExpertResult?.filter((result) => result.userId == userId)?.length && currSessionExpertResult?.filter((result) => result.userId == userId)?.length != 0) {
+      if (currSessionExpertResult?.length != 0 && !(sessionBettingData.activeStatus == betStatus.result)) {
+        if (currSessionExpertResult?.length == 1) {
           sessionBettingData.resultStatus = resultStatus.pending;
           match.sessionBettings[index] = JSON.stringify(sessionBettingData);
         }
-        else if (currSessionExpertResult?.filter((result) => result.userId == userId)?.length != 0) {
+        else {
           sessionBettingData.resultStatus = resultStatus.missMatched;
           match.sessionBettings[index] = JSON.stringify(sessionBettingData);
         }

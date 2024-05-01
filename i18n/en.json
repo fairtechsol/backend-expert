@@ -50,7 +50,8 @@
     "notDeclared": "Result is not declared yet.",
     "sessionAllResult": "Please declare all session result first.",
     "resultDeclareOrProgress": "Result is already declare or inprogress.",
-    "declareOtherMarket":"Please declare all other market results."
+    "declareOtherMarket":"Please declare all other market results.",
+    "matchAlreadyDeclared":"You can not undeclare this market as match result is already declared."
   }
   
 }

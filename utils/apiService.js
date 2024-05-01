@@ -35,6 +35,7 @@ exports.allApiRoutes = {
     declareMatchResult: "/expert/declare/result/match",
     declareOtherMatchResult: "/expert/declare/result/other/match",
     unDeclareMatchResult: "/expert/unDeclare/result/match",
+    unDeclareOtherMatchResult: "/expert/unDeclare/result/other/match",
     bets: "/expert/bets",
     loginData: "/expert/login/bet/data",
     addMatch: "/match/add",

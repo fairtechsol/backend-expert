@@ -584,9 +584,11 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
 
   if (manualBettingData) {
     Object.keys(manualBettingData)?.forEach((item) => {
-      let data = JSON.parse(manualBettingData[item]);
-      data.activeStatus = status;
-      manualBettingData[item] = JSON.stringify(data);
+      if (manualBettingData[item]) {
+        let data = JSON.parse(manualBettingData[item]);
+        data.activeStatus = status;
+        manualBettingData[item] = JSON.stringify(data);
+      }
     });
 
     redisPipeline = redisPipeline.hset(`${matchId}_manualBetting`, manualBettingData).expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;

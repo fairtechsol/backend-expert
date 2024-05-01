@@ -13,6 +13,7 @@ const {
   mainMatchMarketType,
   marketBettingTypeByBettingType,
   redisKeysMarketWise,
+  scoreBasedMarket,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { addResult, deleteResult, getResult } = require("../services/betService");
@@ -48,6 +49,7 @@ const {
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
+const { extractNumbersFromString } = require("../services/commonService");
 
 
 exports.getPlacedBets = async (req, res, next) => {
@@ -1071,6 +1073,13 @@ exports.declareOtherMatchResult = async (req, res) => {
       );
     }
 
+    let dbScore = result;
+
+    if(scoreBasedMarket.find((item)=>matchOddBetting?.type?.startsWith(item))){
+      const currScore=extractNumbersFromString(matchOddBetting?.type);
+      dbScore = parseFloat(result) < parseFloat(currScore) ? "UNDER" : "OVER";
+    }
+
     if(!betId){
       let isOtherMatchResultDeclared = resultDeclare?.filter((item) => !mainMatchMarketType.includes(item?.type) && item?.activeStatus != betStatus.result);
 
@@ -1103,7 +1112,7 @@ exports.declareOtherMatchResult = async (req, res) => {
       result: result,
       match: match,
       ...(betId ? { betType: matchOddBetting.type } : {})
-    })
+    });
 
     if (resultValidate) {
       await updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.save, result: null, stopAt: null });
@@ -1123,7 +1132,7 @@ exports.declareOtherMatchResult = async (req, res) => {
       apiMethod.post,
       walletDomain + allApiRoutes.wallet.declareOtherMatchResult,
       {
-        result,
+        result: dbScore,
         matchDetails: resultDeclare,
         userId,
         matchId,

@@ -670,3 +670,8 @@ exports.updateMatchMarketsByCron = async () => {
     }
   }
 }
+
+exports.extractNumbersFromString = (str) => {
+  const matches = str.match(/\d+(\.\d+)?/);
+  return matches ? parseFloat(matches[0]) : null;
+}

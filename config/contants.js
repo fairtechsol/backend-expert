@@ -319,3 +319,5 @@ module.exports.thirdPartyMarketKey = {
   [this.matchBettingType.tiedMatch1]: "TIED_MATCH",
   [this.matchBettingType.completeMatch]: "COMPLETED_MATCH",
 }
+
+module.exports.scoreBasedMarket = ["firstHalfGoal", "overUnder"];

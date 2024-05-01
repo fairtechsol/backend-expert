@@ -1169,7 +1169,8 @@ exports.declareOtherMatchResult = async (req, res) => {
         profitLoss: fwProfitLoss,
         stopAt: match.stopAt,
         activeStatus: betStatusType.result,
-        betId: matchOddBetting.id,
+        betId: matchOddBetting?.id,
+        betType: matchOddBetting?.type
       }
     );
 

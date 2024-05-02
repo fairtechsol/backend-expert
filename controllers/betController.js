@@ -595,7 +595,7 @@ exports.unDeclareSessionResult = async (req, res) => {
 };
 
 const checkResult = async (body) => {
-  const { betId, matchId, isSessionBet, userId, result, betType } = body;
+  const { betId, matchId, isSessionBet, userId, result, betType, isOtherMatch } = body;
   let checkExistResult = await getExpertResult({
     betId: betId
   });
@@ -635,8 +635,11 @@ const checkResult = async (body) => {
     matchData.activeStatus = betStatus.save;
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[betType]]: JSON.stringify(matchData) });
   }
-  else {
+  else if(isOtherMatch) {
     await settingAllBettingOtherMatchRedisStatus(matchId, betStatus.save);
+  }
+  else{
+    await settingAllBettingMatchRedisStatus(matchId, betStatus.save);
   }
 
 
@@ -1115,7 +1118,8 @@ exports.declareOtherMatchResult = async (req, res) => {
       userId: userId,
       result: result,
       match: match,
-      ...(betId ? { betType: matchOddBetting.type } : {})
+      ...(betId ? { betType: matchOddBetting.type } : {}),
+      isOtherMatch: true
     });
 
     if (resultValidate) {

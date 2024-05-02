@@ -570,7 +570,7 @@ exports.loginCount = async (key) => {
  * @param {Object} data - The data to be updated in the session.
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
-exports.settingAllBettingMatchRedisStatus = async (matchId, status, isOtherMatch) => {
+exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
   logger.info({
     message: `updating data in redis for betting of match ${matchId}`,
     status: status
@@ -618,7 +618,7 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status, isOtherMatch
  * @param {Object} data - The data to be updated in the session.
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
-exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status, isOtherMatch) => {
+exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
   logger.info({
     message: `updating data in redis for betting of other match ${matchId}`,
     status: status

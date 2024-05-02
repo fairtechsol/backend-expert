@@ -1188,6 +1188,13 @@ exports.declareOtherMatchResult = async (req, res) => {
       deleteAllMatchRedis(matchId);
       match.stopAt = new Date();
     }
+    else {
+      const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
+      matchData.activeStatus = betStatus.result;
+      matchData.result = result;
+      matchData.stopAt = new Date();
+      await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
+    }
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, ...redisKeysMarketWise[matchOddBetting.type].map((item) => item + matchId));
 
     await addMatch(match);

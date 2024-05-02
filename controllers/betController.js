@@ -1377,7 +1377,8 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
         matchId: matchId,
         profitLoss: response?.data?.profitLoss,
         activeStatus: betStatusType.live,
-        betId: matchOddBetting?.id
+        betId: matchOddBetting?.id,
+        betType: matchOddBetting?.type
       }
     );
     if (!betId) {

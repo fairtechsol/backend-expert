@@ -610,6 +610,7 @@ const checkResult = async (body) => {
         redisSessionData["noPercent"] = 0;
         redisSessionData["activeStatus"] = betStatus.save;
         redisSessionData["status"] = teamStatus.suspended;
+        redisSessionData["updatedAt"] = new Date();
 
         await updateSessionMatchRedis(matchId, betId, redisSession);
         await updateSessionBetting({ id: betId }, {

@@ -476,6 +476,17 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       let sessionData = await getExpertsRedisSessionDataByKeys(redisIds);
       match.sessionProfitLoss = sessionData;
     }
+    if (!(match.stopAt)) {
+      let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
+      let matchResult = expertResults.filter((result) => result.betId == qBookId[0]?.id);
+      if (matchResult?.length != 0) {
+        if (matchResult?.length == 1) {
+          match.resultStatus = resultStatus.pending;
+        } else {
+          match.resultStatus = resultStatus.missMatched;
+        }
+      }
+    }
   }
   return match;
 }

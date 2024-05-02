@@ -596,7 +596,7 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
 
   let matchDetails=await internalRedis.hgetall(`${matchId}_match`);
 
-  if(matchDetails){
+  if (matchDetails) {
     Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
       if (matchDetails[item]) {
         let data = JSON.parse(matchDetails[item]);

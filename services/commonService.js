@@ -7,7 +7,7 @@ const { getMatchBattingByMatchId, updateMatchBetting } = require("./matchBetting
 const { getMatchDetails, getMatch } = require("./matchService");
 const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
-const { getExpertResult } = require("./expertResultService");
+const { getExpertResult, getExpertResultBetWise } = require("./expertResultService");
 const { MoreThan } = require("typeorm");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 
@@ -492,7 +492,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 }
 exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
   let match = await getMatchFromCache(matchId);
-  let expertResults = await getExpertResult({ matchId: matchId });
+  let expertResults = await getExpertResultBetWise({ matchId: matchId });
   // Check if the match exists
   if (match) {
     // Retrieve all betting data from Redis for the given match
@@ -637,16 +637,10 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
 
   if (userId) {
     if (!(match.stopAt)) {
-      let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
-      let matchResult = expertResults.filter((result) => result.betId == qBookId[0]?.id);
-      if (matchResult?.length != 0) {
-        if (matchResult?.length == 1) {
-          match.resultStatus = resultStatus.pending;
-        } else {
-          match.resultStatus = resultStatus.missMatched;
-        }
-      }
-
+      match.resultStatus = expertResults?.reduce((prev, curr) => {
+        prev = { ...prev, [curr?.betId]: curr }
+        return prev;
+      }, {});
       let teamRates = await getExpertsRedisOtherMatchData(matchId, match.matchType);
       match.teamRates = teamRates;
     }
@@ -680,4 +674,9 @@ exports.updateMatchMarketsByCron = async () => {
       await deleteAllMatchRedis(item.id);
     }
   }
+}
+
+exports.extractNumbersFromString = (str) => {
+  const matches = str.match(/\d+(\.\d+)?/);
+  return matches ? parseFloat(matches[0]) : null;
 }

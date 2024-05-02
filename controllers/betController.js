@@ -1031,6 +1031,8 @@ exports.declareOtherMatchResult = async (req, res) => {
     logger.info({
       message: "Result declare other match",
       data: match,
+      result: result,
+      betId: betId
     });
 
     if (!match) {
@@ -1193,6 +1195,7 @@ exports.declareOtherMatchResult = async (req, res) => {
       matchData.activeStatus = betStatus.result;
       matchData.result = result;
       matchData.stopAt = new Date();
+      matchData.updatedAt = new Date();
       await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
     }
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, ...redisKeysMarketWise[matchOddBetting.type].map((item) => item + matchId));
@@ -1238,6 +1241,12 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
   const { id: userId } = req.user;
   try {
     const match = await getMatchById(matchId);
+
+    logger.info({
+      message: "Result un declare other match",
+      data: match,
+      betId: betId
+    });
 
     if (!match) {
       return ErrorResponse(
@@ -1374,6 +1383,14 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
     if (!betId) {
       await deleteAllMatchRedis(matchId);
       match.stopAt = null;
+    }
+    else {
+      const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
+      matchData.activeStatus = betStatus.save;
+      matchData.result = null;
+      matchData.stopAt = null;
+      matchData.updatedAt = new Date();
+      await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
     }
     await addMatch(match);
 

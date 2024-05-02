@@ -39,6 +39,7 @@ const {
   settingAllBettingMatchRedisStatus,
   getSingleMatchKey,
   settingMatchKeyInCache,
+  settingAllBettingOtherMatchRedisStatus,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -635,7 +636,7 @@ const checkResult = async (body) => {
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[betType]]: JSON.stringify(matchData) });
   }
   else {
-    await settingAllBettingMatchRedisStatus(matchId, betStatus.save)
+    await settingAllBettingOtherMatchRedisStatus(matchId, betStatus.save);
   }
 
 

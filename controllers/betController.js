@@ -1052,20 +1052,20 @@ exports.declareOtherMatchResult = async (req, res) => {
     }
 
     // check result already declare
-    let resultDeclare = await getMatchBattingByMatchId(matchId);
+    let matchBettingDetails = await getMatchBattingByMatchId(matchId);
     let matchOddBetting;
 
     if(betId){
-      matchOddBetting = resultDeclare?.find(
+      matchOddBetting = matchBettingDetails?.find(
         (item) => item.id == betId
       );
     }
     else{
-      matchOddBetting = resultDeclare?.find(
+      matchOddBetting = matchBettingDetails?.find(
         (item) => item.type == matchBettingType.quickbookmaker1
       );
     }
-    if (resultDeclare?.length > 0 && matchOddBetting?.activeStatus == betStatus.result) {
+    if (matchBettingDetails?.length > 0 && matchOddBetting?.activeStatus == betStatus.result) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -1084,7 +1084,7 @@ exports.declareOtherMatchResult = async (req, res) => {
     }
 
     if(!betId){
-      let isOtherMatchResultDeclared = resultDeclare?.filter((item) => !mainMatchMarketType.includes(item?.type) && item?.activeStatus != betStatus.result);
+      let isOtherMatchResultDeclared = matchBettingDetails?.filter((item) => !mainMatchMarketType.includes(item?.type) && item?.activeStatus != betStatus.result);
 
       if (isOtherMatchResultDeclared?.length > 0) {
         logger.error({
@@ -1136,7 +1136,7 @@ exports.declareOtherMatchResult = async (req, res) => {
       walletDomain + allApiRoutes.wallet.declareOtherMatchResult,
       {
         result: dbScore,
-        matchDetails: resultDeclare,
+        matchBettingDetails: matchBettingDetails,
         userId,
         matchId,
         matchOddId: matchOddBetting.id,
@@ -1263,7 +1263,7 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
       );
     }
 
-    if (betId && match?.stopAt) {
+    if (betId && match.stopAt) {
       return ErrorResponse(
         {
           statusCode: 400,
@@ -1274,7 +1274,7 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
       );
     }
 
-    if (!match?.stopAt && !betId) {
+    if (!match.stopAt && !betId) {
       return ErrorResponse(
         {
           statusCode: 403,

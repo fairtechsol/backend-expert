@@ -14,6 +14,7 @@ const {
   marketBettingTypeByBettingType,
   redisKeysMarketWise,
   scoreBasedMarket,
+  otherEventMatchBettingRedisKey,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { addResult, deleteResult, getResult } = require("../services/betService");
@@ -1384,7 +1385,10 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
         activeStatus: betStatusType.live,
         betId: matchOddBetting?.id,
         betType: matchOddBetting?.type,
-        profitLossData: response?.data?.profitLossWallet
+        profitLossData: response?.data?.profitLossWallet,
+        teamArateRedisKey: `${otherEventMatchBettingRedisKey[matchOddBetting?.type]?.a}${matchId}`,
+        teamBrateRedisKey: `${otherEventMatchBettingRedisKey[matchOddBetting?.type]?.b}${matchId}`,
+        teamCrateRedisKey: `${otherEventMatchBettingRedisKey[matchOddBetting?.type]?.c}${matchId}`,
       }
     );
     if (!betId) {

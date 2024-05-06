@@ -321,3 +321,74 @@ module.exports.thirdPartyMarketKey = {
 }
 
 module.exports.scoreBasedMarket = ["firstHalfGoal", "overUnder"];
+
+module.exports.otherEventMatchBettingRedisKey = {
+  [this.matchBettingType.matchOdd]: {
+    "a":this.redisKeys.userTeamARate,
+    "b":this.redisKeys.userTeamBRate,
+    "c":this.redisKeys.userTeamCRate,
+  },
+  [this.matchBettingType.bookmaker]:{
+    "a":this.redisKeys.userTeamARate,
+    "b":this.redisKeys.userTeamBRate,
+    "c":this.redisKeys.userTeamCRate,
+  },
+  [this.matchBettingType.quickbookmaker1]: {
+    "a":this.redisKeys.userTeamARate,
+    "b":this.redisKeys.userTeamBRate,
+    "c":this.redisKeys.userTeamCRate,
+  },
+  [this.matchBettingType.quickbookmaker2]: {
+    "a":this.redisKeys.userTeamARate,
+    "b":this.redisKeys.userTeamBRate,
+    "c":this.redisKeys.userTeamCRate,
+  },
+  [this.matchBettingType.quickbookmaker3]: {
+    "a":this.redisKeys.userTeamARate,
+    "b":this.redisKeys.userTeamBRate,
+    "c":this.redisKeys.userTeamCRate,
+  },
+  [this.matchBettingType.tiedMatch1]: {
+    "a":this.redisKeys.yesRateTie,
+    "b":this.redisKeys.noRateTie
+  },
+  [this.matchBettingType.tiedMatch2]: {
+    "a":this.redisKeys.yesRateTie,
+    "b":this.redisKeys.noRateTie
+  },
+  [this.matchBettingType.completeMatch]: {
+    "a":this.redisKeys.yesRateComplete,
+    "b":this.redisKeys.noRateComplete
+  },
+  [this.matchBettingType.completeManual]: {
+    "a":this.redisKeys.yesRateComplete,
+    "b":this.redisKeys.noRateComplete
+  },
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`overUnder${curr}.5`] = {
+      "a":this.redisKeys[`yesRateUnderOver${curr}.5`],
+      "b":this.redisKeys[`noRateUnderOver${curr}.5`]
+    }
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`firstHalfGoal${curr}.5`] = {
+      "a":this.redisKeys[`yesRateFirstHalfGoal${curr}.5`],
+      "b":this.redisKeys[`noRateFirstHalfGoal${curr}.5`]
+    }
+    return prev;
+  }, {})),
+  [this.matchBettingType.halfTime]: {
+    "a":this.redisKeys.userTeamARateHalfTime,
+    "b":this.redisKeys.userTeamBRateHalfTime,
+    "c":this.redisKeys.userTeamCRateHalfTime,
+  },
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = {
+      "a": this.redisKeys[`userTeamARateSetWinner${curr}`],
+      "b": this.redisKeys[`userTeamBRateSetWinner${curr}`],
+      "c": this.redisKeys[`userTeamCRateSetWinner${curr}`]
+    }
+    return prev;
+  }, {})),
+};

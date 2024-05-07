@@ -7,7 +7,7 @@ const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { walletDomain } = require("../config/contants");
+const { walletDomain, jwtSecret } = require("../config/contants");
 const { setExpertsRedisData, getExpertsRedisData } = require("../services/redis/commonfunction");
 
 // Function to validate a user by username and password
@@ -62,7 +62,7 @@ const setBetDataRedis = async () => {
 exports.login = async (req, res) => {
   try {
     const { password } = req.body;
-    const userName = req.body.userName.trim();
+    const userName = req.body.userName;
     const user = await validateUser(userName, password);
 
     if (!user) {
@@ -98,7 +98,7 @@ exports.login = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, userName: user.userName },
-      process.env.JWT_SECRET || "secret"
+      jwtSecret
     );
 
     // checking transition password

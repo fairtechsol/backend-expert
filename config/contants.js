@@ -3,6 +3,7 @@ module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost
 module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
 module.exports.noResult="No Result";
 module.exports.passwordRegex = /^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z])(?=.*\d.*\d.*\d.*\d).{8,}$/;
+module.exports.jwtSecret = process.env.JWT_SECRET || "secret";
 
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",

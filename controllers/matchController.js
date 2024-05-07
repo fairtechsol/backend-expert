@@ -106,7 +106,7 @@ exports.createMatch = async (req, res) => {
       matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, betFairSessionMaxBet: betFairSessionMaxBet, betFairSessionMinBet: minBet, createBy: loginId
     };
 
-    let maxBetValues = bookmakers.map(item => item.maxBet);
+    let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
     let minimumMaxBet = Math.min(...maxBetValues);
     if (minimumMaxBet < minBet) {
       return ErrorResponse({

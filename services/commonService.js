@@ -331,6 +331,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
         ? { "apiTideMatch": match.marketTiedMatch }
         : {}),
       manualTiedMatch: null,
+      manualCompleteMatch: null
     };
     // Iterate through matchBettings and categorize them
     (Object.values(betting) || []).forEach(
@@ -344,7 +345,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
             break;
           case matchBettingType.tiedMatch2:
             categorizedMatchBettings.manualTiedMatch = item;
-
+            break;
+          case matchBettingType.completeManual:
+            categorizedMatchBettings.manualCompleteMatch = item;
             break;
         }
       }
@@ -377,6 +380,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       quickBookmaker: [],
       apiTideMatch: null,
       manualTideMatch: null,
+      manualCompleteMatch: null
     };
 
     // Iterate through matchBettings and categorize them
@@ -401,6 +405,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           break;
         case matchBettingType.completeMatch:
           categorizedMatchBettings.marketCompleteMatch = item;
+          break;
+        case matchBettingType.completeManual:
+          categorizedMatchBettings.manualCompleteMatch = item;
           break;
       }
     });

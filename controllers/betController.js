@@ -1083,8 +1083,8 @@ exports.declareOtherMatchResult = async (req, res) => {
 
     let dbScore = result;
 
-    if(scoreBasedMarket.find((item)=>matchOddBetting?.type?.startsWith(item))){
-      const currScore=extractNumbersFromString(matchOddBetting?.type);
+    if (scoreBasedMarket.find((item) => matchOddBetting?.type?.startsWith(item)) && result != noResult) {
+      const currScore = extractNumbersFromString(matchOddBetting?.type);
       dbScore = parseFloat(result) < parseFloat(currScore) ? "UNDER" : "OVER";
     }
 

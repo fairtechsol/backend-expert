@@ -81,8 +81,7 @@ const handleConnection = async (client) => {
     client.join(userId);
 
     // Handle additional logic based on the user's role
-    // If the user is an expert, add their ID to the "expertLoginIds" set and join the room
-    // internalRedis.sadd("expertLoginIds", userId);
+   
     client.join(socketData.expertRoomSocket);
   } catch (err) {
     // Handle any errors by disconnecting the client
@@ -140,9 +139,6 @@ const handleDisconnect = async (client) => {
     // Leave the room with the user's ID
     client.leaveAll();
 
-    // Handle additional logic based on the user's role
-    // If the user is an expert, remove their ID from the "expertLoginIds" set
-    // internalRedis.srem("expertLoginIds", userId);
   } catch (err) {
     // Handle any errors by disconnecting the client
     logger.error({

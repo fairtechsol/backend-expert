@@ -83,10 +83,6 @@ exports.updateMatchInCache = async (matchId, data) => {
     if(data[item]){
       payload[item]=JSON.stringify(data[item]);
     }
-    else{
-      payload[item]=match[item];
-
-    }
   });
 
 

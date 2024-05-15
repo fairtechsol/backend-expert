@@ -307,6 +307,17 @@ exports.updateMatch = async (req, res) => {
       return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
     }
 
+    let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
+    let minimumMaxBet = Math.min(...maxBetValues);
+    if (minimumMaxBet < minBet) {
+      return ErrorResponse({
+        statusCode: 400,
+        message: {
+          msg: "match.maxMustBeGreater",
+        },
+      }, req, res);
+    }
+
     await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet });
 
     for (let item of marketData) {

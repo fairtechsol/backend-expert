@@ -108,7 +108,7 @@ exports.createMatch = async (req, res) => {
 
     let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
     let minimumMaxBet = Math.min(...maxBetValues);
-    if (minimumMaxBet < minBet) {
+    if (minimumMaxBet <= minBet) {
       return ErrorResponse({
         statusCode: 400,
         message: {
@@ -309,7 +309,7 @@ exports.updateMatch = async (req, res) => {
 
     let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
     let minimumMaxBet = Math.min(...maxBetValues);
-    if (minimumMaxBet < minBet) {
+    if (minimumMaxBet <= minBet) {
       return ErrorResponse({
         statusCode: 400,
         message: {

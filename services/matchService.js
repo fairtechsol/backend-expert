@@ -193,9 +193,12 @@ exports.getMatchDetails = async (id, select) => {
     );
   };
 
-  exports.getMatchByCompetitionIdAndDates = async (competitionId,date) => {
-    return await match.query(
-      `SELECT matchs.id, matchs.title, COUNT("matchOdds".id) > 0 AS "isTiedMatch" FROM matchs LEFT JOIN "matchBettings" "matchOdds" ON "matchOdds"."matchId"="matchs"."id" AND ( "matchOdds"."type" IN ('${matchBettingType.tiedMatch1}','${matchBettingType.tiedMatch2}') AND "matchOdds"."isActive"=true) WHERE matchs."competitionId" = $1 AND DATE_TRUNC(\'day\',matchs."startAt") = $2 AND matchs."stopAt" IS NULL Group by matchs.id`,
-      [competitionId, new Date(date)]
-    );
+exports.getMatchByCompetitionIdAndDates = async (competitionId, date) => {
+  return await match.createQueryBuilder()
+    .leftJoinAndMapMany('match.matchBetting', 'matchBetting', 'matchBetting', 'match.id = matchBetting.matchId AND matchBetting.isActive = true AND matchBetting.type not in (:...type)')
+    .select(["match.id", "match.title", "matchBetting.id", "matchBetting.name"])
+    .where({ competitionId: competitionId, stopAt: IsNull() })
+    .andWhere('DATE_TRUNC(\'day\',match."startAt") = :date')
+    .setParameters({ "date": new Date(date), type: manualMatchBettingType })
+    .getMany();
   };

@@ -196,9 +196,9 @@ exports.getMatchDetails = async (id, select) => {
 exports.getMatchByCompetitionIdAndDates = async (competitionId, date) => {
   return await match.createQueryBuilder()
     .leftJoinAndMapMany('match.matchBetting', 'matchBetting', 'matchBetting', 'match.id = matchBetting.matchId AND matchBetting.isActive = true AND matchBetting.type not in (:...type)')
-    .select(["match.id", "match.title", "matchBetting.id", "matchBetting.name"])
+    .select(["match.id", "match.title", "matchBetting.id", "matchBetting.name", "matchBetting.type"])
     .where({ competitionId: competitionId, stopAt: IsNull() })
     .andWhere('DATE_TRUNC(\'day\',match."startAt") = :date')
-    .setParameters({ "date": new Date(date), type: manualMatchBettingType })
+    .setParameters({ "date": new Date(date), type: [...manualMatchBettingType, ...[matchBettingType.bookmaker, matchBettingType.completeMatch]] })
     .getMany();
   };

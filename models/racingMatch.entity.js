@@ -14,6 +14,10 @@ const racingMatchSchema = new EntitySchema({
             type: "varchar",
             nullable: true,
         },
+        betPlaceStartBefore: {
+            type: "int",
+            nullable: true,
+        },
         title: {
             type: "varchar",
             nullable: false,

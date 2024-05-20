@@ -10,13 +10,9 @@ const racingMatchSchema = new EntitySchema({
             nullable: false,
             length: 50,
         },
-        competitionId: {
+        countryCode:{
             type: "varchar",
-            nullable: false,
-        },
-        competitionName: {
-            type: "varchar",
-            nullable: false,
+            nullable: true,
         },
         title: {
             type: "varchar",
@@ -29,6 +25,18 @@ const racingMatchSchema = new EntitySchema({
             unique: true
         },
         eventId: {
+            type: "varchar",
+            nullable: false,
+        },
+        eventName:{
+            type: "varchar",
+            nullable: true,
+        },
+        venue:{
+            type: "varchar",
+            nullable: true,
+        },
+        raceType:{
             type: "varchar",
             nullable: false,
         },

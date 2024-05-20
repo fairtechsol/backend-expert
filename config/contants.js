@@ -84,6 +84,11 @@ module.exports.matchBettingType = {
   }, {}))
 };
 
+module.exports.racingBettingType = {
+  matchOdd: "matchOdd",
+ 
+};
+
 module.exports.manualMatchBettingType = [
   "quickbookmaker1",
   "quickbookmaker2",

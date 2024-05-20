@@ -54,6 +54,46 @@ exports.addMatchInCache = async (matchId, data) => {
   return res;
 }
 
+exports.addRaceInCache = async (matchId, data) => {
+  // Log the update information
+  logger.info({
+    message: `adding match data in redis with match id  ${matchId}`,
+    data: data
+  });
+  let matchKey = `${matchId}_match`;
+  let payload = {
+    id: data.id,
+    matchType: data.matchType,
+    competitionId: data.competitionId,
+    competitionName: data.competitionName,
+    title: data.title,
+    createBy: data.createBy,
+    marketId: data.marketId,
+    eventId: data.eventId,
+    startAt: data.startAt,
+  }
+
+  Object.values(marketBettingTypeByBettingType)?.forEach((item)=>{
+    if(data[item]){
+      payload[item]=JSON.stringify(data[item]);
+    }
+  });
+
+
+  if (data.teamC) {
+    payload.teamC = data.teamC;
+  }
+  if (data.stopAt) {
+    payload.stopAt = data.stopAt;
+  }
+  let res = await internalRedis
+    .pipeline()
+    .hset(matchKey, payload)
+    .expire(matchKey, expiry)
+    .exec();
+  return res;
+}
+
 exports.updateMatchInCache = async (matchId, data) => {
   // Log the update information
   logger.info({

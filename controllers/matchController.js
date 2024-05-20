@@ -1,8 +1,11 @@
 const { ILike, IsNull } = require("typeorm");
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType,initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType,  walletDomain, marketMatchBettingType,teamStatus } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain, marketMatchBettingType, teamStatus } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
+const { insertRaceBettings } = require("../services/raceBettingService");
+const { getRaceByMarketId, raceAddMatch } = require("../services/raceServices");
+const { addRunner } = require("../services/runnerService");
 const {
   getMatchById,
   getMatchByMarketId,
@@ -15,7 +18,7 @@ const {
   getMatchWithBettingAndSession,
   getOneMatchByCondition,
 } = require("../services/matchService");
-const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
+const { addRaceInCache, addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
 
 
 
@@ -862,6 +865,162 @@ exports.matchListWithManualBetting = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+exports.racingCreateMatch = async (req, res) => {
+  try {
+    let {
+      matchType,
+      title,
+      marketId,
+      eventId,
+      competitionId,
+      competitionName,
+      runners,
+      startAt,
+      minBet,
+      venue,
+      raceType,
+      countryCode,
+      maxBet,
+      type
+    } = req.body;
+    // return res.send(req.body)
+
+    // Extract user ID from the request object
+    const { id: loginId } = req.user;
+
+    logger.info({ message: `Match added by user ${loginId} with market id: ${marketId}` });
+    let user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege"])
+    if (!user) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
+    }
+    if (!user.allPrivilege && !user.addMatchPrivilege) {
+      return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
+    }
+
+    // Check if market ID already exists
+    const isMatchPresent = await getRaceByMarketId(marketId);
+    if (isMatchPresent) {
+      logger.error({
+        error: `Match already exist for market id: ${marketId}`
+      });
+
+      return ErrorResponse({ statusCode: 400, message: { msg: "alreadyExist", keys: { name: "Match" } } }, req, res);
+    }
+
+    // Prepare match data for a new match
+    let matchData = {
+      matchType, title, marketId, eventId, startAt, createBy: loginId, competitionId, competitionName,
+    };
+
+    const match = await raceAddMatch(matchData);
+    if (!match) {
+      logger.error({
+        error: `Match add fail for market id: ${marketId}`
+      });
+
+      return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
+    }
+
+    let matchBetting = {
+      matchId: match.id,
+      minBet: minBet,
+      createBy: loginId
+    }
+
+    let matchBettings = {
+      ...matchBetting, createdAt: match.createdAt, matchId: match.id, type, name: title, minBet, maxBet, marketId
+    }
+
+    let insertedMatchBettings = await insertRaceBettings(matchBettings);
+    if (!insertedMatchBettings) {
+      logger.error({
+        error: ` Fail to insert match betting.`,
+        matchBettings: matchBettings
+      });
+
+      return ErrorResponse({ statusCode: 400, message: { msg: "match.matchBetAddFail" } }, req, res);
+    }
+
+    for (let runner of runners) {
+      let runnersData = {
+        matchId: match.id,
+        createBy: loginId,
+        bettingId: insertedMatchBettings.id,
+        metadata: JSON.stringify(runner.metadata), // Convert metadata to JSON string
+        runnerName: runner.runnerName,
+        selectionId: runner.selectionId,
+        sortPriority: runner.sortPriority
+      };
+
+      await addRunner(runnersData);
+    }
+
+    let payload = {
+      ...match
+    };
+
+    await addRaceInCache(match.id, payload)
+
+    await settingAllBettingMatchRedis(match.id);
+    broadcastEvent(socketData.addMatchEvent, { gameType: match?.matchType });
+
+    await apiCall(
+      apiMethod.post,
+      walletDomain + allApiRoutes.wallet.addRaceMatch,
+      {
+        matchType: match.matchType,
+        competitionId: match.competitionId,
+        competitionName: match.competitionName,
+        title: match.title,
+        marketId: match.marketId,
+        createBy: loginId,
+        eventId: match.eventId,
+        startAt: match.startAt,
+        id: match.id,
+        venue: venue,
+        raceType:raceType,
+        countryCode:countryCode,
+        createdAt: match.createdAt
+      }
+    )
+      .then((data) => {
+        return data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at add match.`,
+          stack: err.stack,
+          message: err.message,
+        });
+        throw err;
+      });
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "created",
+          keys: {
+            name: "Match",
+          },
+        },
+        data: { match , insertedMatchBettings},
+      },
+      req,
+      res
+    );
+
+  } catch (err) {
+    logger.error({
+      error: `Error at add match for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+}
 
 function addIncrement(number, increment) {
   // Convert the number to a string to manipulate the decimal part

@@ -57,7 +57,7 @@ let addMatchSchema = Joi.object({
     "number.greater": "Maximum bet amount for BetFair session must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for BetFair session is required",
   }),
-  
+
   bookmakers: Joi.array().items(bookmakerSchema).required().messages({
     "array.base": "Bookmakers must be an array",
     "any.required": "Bookmakers are required",
@@ -91,10 +91,10 @@ let addMatchSchema = Joi.object({
 // make some condition not required on some condition
 module.exports.addMatchValidate = addMatchSchema.when(Joi.object({ isManualMatch: Joi.exist() }).unknown(), {
   then: Joi.object({
-      // Define conditional validations when isManualMatch is true
-      competitionId: Joi.string().optional().allow(""),
-      marketId: Joi.string().optional().allow(""),
-      eventId: Joi.string().optional().allow(""),
+    // Define conditional validations when isManualMatch is true
+    competitionId: Joi.string().optional().allow(""),
+    marketId: Joi.string().optional().allow(""),
+    eventId: Joi.string().optional().allow(""),
   }),
   otherwise: Joi.object().unknown(true) // Ensures that other validations are preserved
 });
@@ -170,3 +170,103 @@ module.exports.getMatchSchema = Joi.object({
   }, {})),
   stopAt: Joi.date(),
 })
+
+
+module.exports.racingAddMatchValidate = Joi.object({
+  id: Joi.string().guid({ version: 'uuidv4' }),
+  matchType: Joi.string().required().messages({
+    "string.base": "Match type must be a string",
+    "any.required": "Match type is required",
+  }),
+  competitionId: Joi.string().required().messages({
+    "string.base": "Competition ID must be a string",
+    "any.required": "Competition ID is required",
+  }),
+  competitionName: Joi.string().required().messages({
+    "string.base": "Match name must be a string",
+    "any.required": "Match name is required",
+    'any.empty': 'Match name cannot be empty'
+  }),
+  venue: Joi.string().required().messages({
+    "string.base": "venue must be a string",
+    "any.required": "venue is required",
+  }),
+  countryCode: Joi.string().required().messages({
+    "string.base": "countryCode must be a string",
+    "any.required": "countryCode is required",
+  }),
+  raceType: Joi.string().required().messages({
+    "string.base": "raceType must be a string",
+    "any.required": "raceType is required",
+  }),
+  title: Joi.string().required().messages({
+    "string.base": "Title must be a string",
+    "any.required": "Title is required",
+  }),
+  type: Joi.string().required().messages({
+    "string.base": "type must be a string",
+    "any.required": "type is required",
+  }),
+  marketId: Joi.string().required().messages({
+    "string.base": "Market ID must be a string",
+    "any.required": "Market ID is required",
+  }),
+  eventId: Joi.string().required().messages({
+    "string.base": "Event ID must be a string",
+    "any.required": "Event ID is required",
+  }),
+  startAt: Joi.date().required().messages({
+    "date.base": "Start date must be a valid date",
+    "any.required": "Start date is required",
+  }),
+  minBet: Joi.number().required().messages({
+    "number.base": "Minimum bet amount must be a number",
+    "any.required": "Minimum bet amount is required",
+  }),
+  maxBet: Joi.number().required().messages({
+    "number.base": "Maximun bet amount must be a number",
+    "any.required": "Maximun bet amount is required",
+  }),
+  runners: Joi.array().min(1).items(Joi.object({
+    selectionId: Joi.number().integer().required(),
+    runnerName: Joi.string().required(),
+    handicap: Joi.number().required(),
+    sortPriority: Joi.number().integer().required(),
+    metadata: Joi.object({
+      SIRE_NAME: Joi.string().allow(null).optional(),
+      CLOTH_NUMBER_ALPHA: Joi.string().required(),
+      OFFICIAL_RATING: Joi.any().allow(null).optional(),
+      COLOURS_DESCRIPTION: Joi.string().required(),
+      COLOURS_FILENAME: Joi.string().required(),
+      FORECASTPRICE_DENOMINATOR: Joi.string().required(),
+      DAMSIRE_NAME: Joi.string().allow(null).optional(),
+      WEIGHT_VALUE: Joi.number().required(),
+      SEX_TYPE: Joi.string().required(),
+      DAYS_SINCE_LAST_RUN: Joi.number().integer().required(),
+      WEARING: Joi.any().allow(null).optional(),
+      OWNER_NAME: Joi.any().allow(null).optional(),
+      DAM_YEAR_BORN: Joi.any().allow(null).optional(),
+      SIRE_BRED: Joi.string().required(),
+      JOCKEY_NAME: Joi.string().required(),
+      DAM_BRED: Joi.string().required(),
+      ADJUSTED_RATING: Joi.any().allow(null).optional(),
+      runnerId: Joi.number().integer().required(),
+      CLOTH_NUMBER: Joi.string().required(),
+      SIRE_YEAR_BORN: Joi.any().allow(null).optional(),
+      TRAINER_NAME: Joi.string().required(),
+      COLOUR_TYPE: Joi.string().required(),
+      AGE: Joi.number().integer().required(),
+      DAMSIRE_BRED: Joi.string().required(),
+      JOCKEY_CLAIM: Joi.any().allow(null).optional(),
+      FORM: Joi.string().required(),
+      FORECASTPRICE_NUMERATOR: Joi.string().required(),
+      BRED: Joi.string().required(),
+      DAM_NAME: Joi.string().required(),
+      DAMSIRE_YEAR_BORN: Joi.any().allow(null).optional(),
+      STALL_DRAW: Joi.string().required(),
+      WEIGHT_UNITS: Joi.string().required()
+    }).required()
+  }))
+}).messages({
+  "object.base": "Invalid input. Please provide a valid object.",
+});

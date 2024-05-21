@@ -26,6 +26,7 @@ const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager"
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { commonGetMatchDetails, commonGetMatchDetailsForFootball } = require("../services/commonService");
+const { getRacingMatchCountryList, getRacingMatchDateList, getRacingMatch } = require("../services/racingMatchService");
 /**
  * Create or update a match.
  *
@@ -1010,34 +1011,126 @@ exports.racingCreateMatch = async (req, res) => {
   }
 }
 
+exports.racingMatchDateList = async (req, res) => {
+  try {
+    const { page, limit } = req.query;
+    const { id: loginId, allPrivilege, betFairMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege } = req.user;
+    const filters = allPrivilege || betFairMatchPrivilege || bookmakerMatchPrivilege || sessionMatchPrivilege ? {} : { createBy: loginId };
 
+    const match = await getRacingMatchDateList(filters, page, limit);
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
 
-
-function addIncrement(number, increment) {
-  // Convert the number to a string to manipulate the decimal part
-  const numberStr = number.toString();
-
-  // Find the position of the decimal point
-  const decimalPosition = numberStr.indexOf('.');
-
-  // If there is a decimal point
-  if (decimalPosition !== -1) {
-    // Extract the integer and decimal parts
-    const integerPart = numberStr.slice(0, decimalPosition);
-    const decimalPart = numberStr.slice(decimalPosition + 1);
-
-    // Convert the decimal part to an integer and add the increment
-    const newDecimalPart = parseInt(decimalPart) + increment;
-
-    // Combine the integer and updated decimal parts
-    const updatedNumberStr = `${integerPart}.${newDecimalPart.toString().padStart(5, '0')}`;
-
-    // Convert the updated string back to a float
-    const updatedNumber = parseFloat(updatedNumberStr);
-
-    return updatedNumber;
-  } else {
-    // If there is no decimal point, just return the original number
-    return number;
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match list" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at list racing match for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
   }
-}
+};
+
+exports.racingCountryCodeList = async (req, res) => {
+  try {
+    const { date } = req.query;
+    const { id: loginId, allPrivilege, betFairMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege } = req.user;
+    const filters = allPrivilege || betFairMatchPrivilege || bookmakerMatchPrivilege || sessionMatchPrivilege ? {} : { createBy: loginId };
+
+    const match = await getRacingMatchCountryList(filters, date);
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match list" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at list racing match for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.listRacingMatch = async (req, res) => {
+  try {
+    const { query } = req;
+    const { fields } = query;
+    const { id: loginId, allPrivilege, betFairMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege } = req.user;
+    const filters = allPrivilege || betFairMatchPrivilege || bookmakerMatchPrivilege || sessionMatchPrivilege ? {} : { createBy: loginId };
+
+    const match = await getRacingMatch(filters, fields?.split(",") || null, query);
+    if (!match) {
+      return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
+    }
+    
+    const matchData = match?.matches?.reduce((acc, item) => {
+      const venue = item?.venue;
+      acc[venue] = acc[venue] || [];
+      acc[venue].push(item);
+      return acc;
+    }, {});    
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match list" } },
+        data: matchData,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at list match for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};

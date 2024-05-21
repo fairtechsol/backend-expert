@@ -68,6 +68,27 @@ exports.calculateExpertRate = async (teamRates, data, partnership = 100) => {
   return newTeamRates;
 }
 
+exports.calculateRacingExpertRate = async (teamRates, data, partnership = 100) => {
+  let { runners, winAmount, lossAmount, bettingType, runnerId } = data;
+  let newTeamRates = { ...teamRates };
+
+  runners.forEach((item) => {
+    if (!newTeamRates[item?.id]) {
+      newTeamRates[item?.id] = 0;
+    }
+
+    if ((item?.id == runnerId && bettingType == betType.BACK) || (item?.id != runnerId && bettingType == betType.LAY)) {
+      newTeamRates[item?.id] -= ((winAmount * partnership) / 100);
+    }
+    else if ((item?.id != runnerId && bettingType == betType.BACK) || (item?.id == runnerId && bettingType == betType.LAY)) {
+      newTeamRates[item?.id] += ((lossAmount * partnership) / 100);
+    }
+
+    newTeamRates[item?.id] = this.parseRedisData(item?.id, newTeamRates);
+  });
+  return newTeamRates;
+}
+
 const calculateProfitLoss = (betData, odds, partnership) => {
   if (
     (betData?.betPlacedData?.betType === betType.NO &&
@@ -687,3 +708,7 @@ exports.extractNumbersFromString = (str) => {
   const matches = str.match(/\d+(\.\d+)?/);
   return matches ? parseFloat(matches[0]) : null;
 }
+
+exports.parseRedisData = (redisKey, userRedisData) => {
+  return parseFloat((Number(userRedisData[redisKey]) || 0.0).toFixed(2));
+};

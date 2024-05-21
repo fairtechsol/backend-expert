@@ -1,5 +1,5 @@
 const Queue = require('bee-queue');
-const { calculateExpertRate, calculateProfitLossSession, mergeProfitLoss } = require('../services/commonService');
+const { calculateExpertRate, calculateProfitLossSession, mergeProfitLoss, parseRedisData, calculateRacingExpertRate } = require('../services/commonService');
 const { logger } = require('../config/logger');
 const { redisKeys, socketData } = require('../config/contants');
 const { sendMessageToUser } = require('../sockets/socketManager');
@@ -14,6 +14,7 @@ const expertRedisOption = {
 
 const ExpertMatchBetQueue = new Queue('expertMatchBetQueue', expertRedisOption);
 const ExpertSessionBetQueue = new Queue('expertSessionBetQueue', expertRedisOption);
+const ExpertMatchRacingBetQueue = new Queue('expertMatchRacingBetQueue', expertRedisOption);
 const expertSessionBetDeleteQueue = new Queue('expertSessionBetDeleteQueue', expertRedisOption);
 const expertMatchBetDeleteQueue = new Queue('expertMatchBetDeleteQueue', expertRedisOption);
 
@@ -34,7 +35,6 @@ ExpertMatchBetQueue.process(async function (job, done) {
 
 let calculateRateAmount = async (jobData, userId) => {
   let partnership = JSON.parse(jobData.partnerships);
-  let teamRates = jobData.teamRates;
   let obj = {
     teamA: jobData.teamA,
     teamB: jobData.teamB,
@@ -60,6 +60,78 @@ let calculateRateAmount = async (jobData, userId) => {
         [jobData.teamArateRedisKey]: teamData.teamA,
         [jobData.teamBrateRedisKey]: teamData.teamB,
         ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {})
+      }
+      await setExpertsRedisData(userRedisObj);
+      logger.info({
+        context: "Update User Exposure",
+        process: `User ID : ${userId} expert`,
+      });
+      //send Data to socket
+      jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
+      sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData, userRedisObj });
+    }
+    catch (error) {
+      logger.error({
+        context: "error in super master exposure update",
+        process: `User ID : ${userId} and super master id ${mPartenerShipId}`,
+        error: error.message,
+        stake: error.stack
+      })
+    }
+  }
+}
+
+ExpertMatchRacingBetQueue.process(async function (job, done) {
+  let jobData = job.data;
+  let userId = jobData.userId;
+  try {
+    await calculateRacingRateAmount(jobData, userId);
+    return done(null, {});
+  } catch (error) {
+    logger.info({
+      file: `error in bet Queue for User id : ${userId}`,
+      error: error.message
+    })
+    return done(null, {});
+  }
+});
+
+let calculateRacingRateAmount = async (jobData, userId) => {
+  let partnership = JSON.parse(jobData.partnerships);
+  let obj = {
+    runners: jobData.runners,
+    winAmount: jobData.winAmount,
+    lossAmount: jobData.lossAmount,
+    bettingType: jobData.bettingType,
+    runnerId: jobData.runnerId
+  }
+
+  if (partnership['fwPartnershipId']) {
+    let mPartenerShipId = partnership['fwPartnershipId'];
+    let mPartenerShip = partnership['fwPartnership'];
+    try {
+      let masterRedisData = (await getExpertsRedisData()) || {};
+      let teamRates = masterRedisData?.[`${jobData?.matchId}_${jobData?.betId}`];
+
+      if (teamRates) {
+        teamRates = JSON.parse(teamRates);
+      }
+  
+      if(!teamRates){
+        teamRates = jobData?.runners?.reduce((acc, key) => {
+          acc[key?.id] = 0;
+          return acc;
+        }, {});
+      }
+  
+      teamRates = Object.keys(teamRates).reduce((acc, key) => {
+        acc[key] = parseRedisData(key, teamRates);
+        return acc;
+      }, {});
+
+      let teamData = await calculateRacingExpertRate(teamRates, obj, mPartenerShip);
+      let userRedisObj = {
+        [`${jobData?.matchId}_${jobData?.betId}`]: JSON.stringify(teamData)
       }
       await setExpertsRedisData(userRedisObj);
       logger.info({
@@ -330,4 +402,4 @@ expertMatchBetDeleteQueue.process(async function (job, done) {
   }
 });
 
-module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, expertSessionBetDeleteQueue, expertMatchBetDeleteQueue }
+module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, ExpertMatchRacingBetQueue, expertSessionBetDeleteQueue, expertMatchBetDeleteQueue }

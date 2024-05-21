@@ -220,7 +220,7 @@ module.exports.racingAddMatchValidate = Joi.object({
     "number.greater": "Maximum bet must be greater than minimum bet",
   }),
   runners: Joi.array().min(1).items(Joi.object({
-    selectionId: Joi.any().required(),
+    selectionId: Joi.number().required(),
     runnerName: Joi.string().required(),
     handicap: Joi.number().required(),
     sortPriority: Joi.number().required(),

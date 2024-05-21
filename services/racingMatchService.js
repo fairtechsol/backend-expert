@@ -1,10 +1,10 @@
 const { AppDataSource } = require("../config/postGresConnection");
 const racingMatchSchema = require("../models/racingMatch.entity");
 const ApiFeature = require("../utils/apiFeatures");
-const racingMatch = AppDataSource.getRepository(racingMatchSchema);
+const RacingMatch = AppDataSource.getRepository(racingMatchSchema);
 
 exports.getRacingMatchCountryList = async (where, date) => {
-    let matchQuery = racingMatch
+    let matchQuery = RacingMatch
         .createQueryBuilder()
         .where(where)
         .select([`racingMatch.countryCode as "countryCode"`])
@@ -19,7 +19,7 @@ exports.getRacingMatchCountryList = async (where, date) => {
 };
 
 exports.getRacingMatchDateList = async (where, page, limit) => {
-    let matchQuery = racingMatch
+    let matchQuery = RacingMatch
         .createQueryBuilder()
         .where(where)
         .select([`DATE_TRUNC('day', "racingMatch"."startAt") as date`])
@@ -33,21 +33,38 @@ exports.getRacingMatchDateList = async (where, page, limit) => {
 };
 
 exports.getRacingMatch = async (filters, select, query) => {
-      // Start building the query
-      let matchQuery = new ApiFeature(
-        racingMatch
-          .createQueryBuilder()
-          .where(filters)
-          .select(select),
+    // Start building the query
+    let matchQuery = new ApiFeature(
+        RacingMatch
+            .createQueryBuilder()
+            .where(filters)
+            .select(select),
         query
-      )
+    )
         .search()
         .filter()
         .sort()
         // .paginate()
         .getResult();
-      // Execute the query and get the result along with count
-      const [matches, count] = await matchQuery;
-  
-      return { matches, count };
-  };
+    // Execute the query and get the result along with count
+    const [matches, count] = await matchQuery;
+
+    return { matches, count };
+};
+
+exports.getRaceByMarketId = async (condition, select) => {
+    return await RacingMatch.findOne({
+        where: condition,
+        select: select,
+    });
+};
+
+exports.raceAddMatch = async (body) => {
+    let insertMatch = await RacingMatch.save(body);
+    return insertMatch;
+};
+
+exports.deleteRace = async (where) => {
+    await RacingMatch.delete(where);
+}
+

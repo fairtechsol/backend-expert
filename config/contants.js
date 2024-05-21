@@ -87,7 +87,6 @@ module.exports.matchBettingType = {
 
 module.exports.racingBettingType = {
   matchOdd: "matchOdd",
- 
 };
 
 module.exports.manualMatchBettingType = [
@@ -124,6 +123,10 @@ module.exports.marketBettingTypeByBettingType = {
     prev[`setWinner${curr}`] = `setWinner${curr}`
     return prev;
   }, {}))
+}
+
+module.exports.raceTypeByBettingType = {
+  [this.racingBettingType.matchOdd]: "matchOdd"
 }
 
 module.exports.marketMatchBettingType = {

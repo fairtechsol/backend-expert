@@ -933,7 +933,7 @@ exports.racingCreateMatch = async (req, res) => {
         details: error.message
       });
 
-      return ErrorResponse({ statusCode: 500, message: { msg: "race.internalServerError" } }, req, res);
+      return ErrorResponse(err, req, res);
     }
 
     let runnersData = [];

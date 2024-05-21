@@ -178,15 +178,6 @@ module.exports.racingAddMatchValidate = Joi.object({
     "string.base": "Match type must be a string",
     "any.required": "Match type is required",
   }),
-  competitionId: Joi.string().required().messages({
-    "string.base": "Competition ID must be a string",
-    "any.required": "Competition ID is required",
-  }),
-  competitionName: Joi.string().required().messages({
-    "string.base": "Competition name must be a string",
-    "any.required": "Competition name is required",
-    'any.empty': 'Competition name cannot be empty'
-  }),
   venue: Joi.string().required().messages({
     "string.base": "Venue must be a string",
     "any.required": "Venue is required",
@@ -228,7 +219,7 @@ module.exports.racingAddMatchValidate = Joi.object({
     "any.required": "Maximun bet amount is required",
   }),
   runners: Joi.array().min(1).items(Joi.object({
-    selectionId: Joi.number().integer().required(),
+    selectionId: Joi.string().required(),
     runnerName: Joi.string().required(),
     handicap: Joi.number().required(),
     sortPriority: Joi.number().integer().required(),

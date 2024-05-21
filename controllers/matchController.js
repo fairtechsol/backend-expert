@@ -872,8 +872,6 @@ exports.racingCreateMatch = async (req, res) => {
       title,
       marketId,
       eventId,
-      competitionId,
-      competitionName,
       runners,
       startAt,
       minBet,
@@ -886,6 +884,10 @@ exports.racingCreateMatch = async (req, res) => {
 
     // Extract user ID from the request object
     const { id: loginId } = req.user;
+
+    if (maxBet <= minBet) {
+      return ErrorResponse({ statusCode: 400, message: { msg: "Max bet should be greater than min bet." } }, req, res);
+    }
 
     logger.info({ message: `Race added by user ${loginId} with market id: ${marketId}` });
     let user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege"])
@@ -908,11 +910,11 @@ exports.racingCreateMatch = async (req, res) => {
 
     // Prepare race data for a new race
     let raceData = {
-      countryCode, matchType, title, marketId, eventId, startAt, createBy: loginId, competitionId, competitionName, eventName: competitionName, venue, raceType
+      countryCode, matchType, title, marketId, eventId, startAt, createBy: loginId, eventName: title, venue, raceType
     };
 
     const race = await raceAddMatch(raceData);
-    
+
     if (!race) {
       logger.error({
         error: `Match add fail for market id: ${marketId}`
@@ -925,15 +927,26 @@ exports.racingCreateMatch = async (req, res) => {
       matchId: race.id, minBet: minBet, createBy: loginId, createdAt: race.createdAt, matchId: race.id, type, name: title, minBet, maxBet, marketId
     }
 
-    let insertedRaceBettings = await insertRaceBettings(matchBettings);
-    if (!insertedRaceBettings) {
-      await deleteRace({id : race.id});
+    try {
+      var insertedRaceBettings = await insertRaceBettings(matchBettings);
+
+      if (!insertedRaceBettings) {
+        await deleteRace({ id: race.id });
+        logger.error({
+          error: `Fail to insert race betting.`,
+          matchBettings: matchBettings
+        });
+
+        return ErrorResponse({ statusCode: 400, message: { msg: "race.matchBetAddFail" } }, req, res);
+      }
+    } catch (error) {
       logger.error({
-        error: ` Fail to insert race betting.`,
-        matchBettings: matchBettings
+        error: `An error occurred while inserting race bettings.`,
+        matchBettings: matchBettings,
+        details: error.message
       });
 
-      return ErrorResponse({ statusCode: 400, message: { msg: "race.matchBetAddFail" } }, req, res);
+      return ErrorResponse({ statusCode: 500, message: { msg: "race.internalServerError" } }, req, res);
     }
 
     let runnersData = [];
@@ -942,14 +955,14 @@ exports.racingCreateMatch = async (req, res) => {
         matchId: race.id,
         createBy: loginId,
         bettingId: insertedRaceBettings.id,
-        metadata: JSON.stringify(runner.metadata), // Convert metadata to JSON string
+        metadata: runner.metadata,
         runnerName: runner.runnerName,
         selectionId: runner.selectionId,
         sortPriority: runner.sortPriority
       };
       runnersData.push(runnerData);
     }
-    
+
     await insertRunners(runnersData);
 
     let payload = {
@@ -964,8 +977,6 @@ exports.racingCreateMatch = async (req, res) => {
       walletDomain + allApiRoutes.wallet.addRaceMatch,
       {
         matchType: race.matchType,
-        competitionId: race.competitionId,
-        competitionName: race.competitionName,
         title: race.title,
         marketId: race.marketId,
         createBy: loginId,
@@ -973,8 +984,8 @@ exports.racingCreateMatch = async (req, res) => {
         startAt: race.startAt,
         id: race.id,
         venue: venue,
-        raceType:raceType,
-        countryCode:countryCode,
+        raceType: raceType,
+        countryCode: countryCode,
         createdAt: race.createdAt
       }
     )
@@ -999,7 +1010,7 @@ exports.racingCreateMatch = async (req, res) => {
             name: "race",
           },
         },
-        data: { race , insertedRaceBettings},
+        data: { race, insertedRaceBettings },
       },
       req,
       res

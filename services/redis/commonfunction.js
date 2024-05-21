@@ -64,8 +64,6 @@ exports.addRaceInCache = async (matchId, data) => {
   let payload = {
     id: data.id,
     matchType: data.matchType,
-    competitionId: data.competitionId,
-    competitionName: data.competitionName,
     title: data.title,
     createBy: data.createBy,
     marketId: data.marketId,

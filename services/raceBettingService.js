@@ -1,8 +1,9 @@
 const { AppDataSource } = require("../config/postGresConnection");
 const racingBettingSchema = require("../models/racingBetting.entity");
-const RunnerSchema = require("../models/matchRunner.entity");
+const runnerSchema = require("../models/matchRunner.entity");
 const RacingBetting = AppDataSource.getRepository(racingBettingSchema);
-const RacingRunner = AppDataSource.getRepository(RunnerSchema);
+const RacingRunner = AppDataSource.getRepository(runnerSchema);
+
 exports.addRunner = async (body) => {
   let runner = await RacingRunner.save(body);
   return runner;

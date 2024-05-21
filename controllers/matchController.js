@@ -929,17 +929,8 @@ exports.racingCreateMatch = async (req, res) => {
 
     try {
       var insertedRaceBettings = await insertRaceBettings(matchBettings);
-
-      if (!insertedRaceBettings) {
-        await deleteRace({ id: race.id });
-        logger.error({
-          error: `Fail to insert race betting.`,
-          matchBettings: matchBettings
-        });
-
-        return ErrorResponse({ statusCode: 400, message: { msg: "race.matchBetAddFail" } }, req, res);
-      }
     } catch (error) {
+      await deleteRace({ id: race.id });
       logger.error({
         error: `An error occurred while inserting race bettings.`,
         matchBettings: matchBettings,

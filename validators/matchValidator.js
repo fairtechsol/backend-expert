@@ -214,7 +214,7 @@ module.exports.racingAddMatchValidate = Joi.object({
     "number.base": "Minimum bet amount must be a number",
     "any.required": "Minimum bet amount is required",
   }),
-  maxBet: Joi.number().required().messages({
+  maxBet: Joi.number().greater(Joi.ref('minBet')).required().messages({
     "number.base": "Maximun bet amount must be a number",
     "any.required": "Maximun bet amount is required",
   }),

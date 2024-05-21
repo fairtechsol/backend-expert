@@ -39,6 +39,7 @@ exports.allApiRoutes = {
     bets: "/expert/bets",
     loginData: "/expert/login/bet/data",
     addMatch: "/match/add",
+    addRaceMatch: "/match/raceAdd"
   },
   thirdParty:{
     extraMarket:"/extraMarketList/"

@@ -1,8 +1,10 @@
 const { ILike, IsNull } = require("typeorm");
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType,initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType,  walletDomain, marketMatchBettingType,teamStatus } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain, marketMatchBettingType, teamStatus } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
+const { getRaceByMarketId, raceAddMatch, deleteRace } = require("../services/racingMatchService");
+const { insertRaceBettings, insertRunners } = require("../services/raceBettingService");
 const {
   getMatchById,
   getMatchByMarketId,
@@ -15,7 +17,7 @@ const {
   getMatchWithBettingAndSession,
   getOneMatchByCondition,
 } = require("../services/matchService");
-const { addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
+const { addRaceInCache, addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
 
 
 
@@ -862,6 +864,154 @@ exports.matchListWithManualBetting = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+exports.racingCreateMatch = async (req, res) => {
+  try {
+    let {
+      matchType,
+      title,
+      marketId,
+      eventId,
+      runners,
+      startAt,
+      minBet,
+      venue,
+      raceType,
+      countryCode,
+      maxBet,
+      type
+    } = req.body;
+
+    // Extract user ID from the request object
+    const { id: loginId } = req.user;
+
+    logger.info({ message: `Race added by user ${loginId} with market id: ${marketId}` });
+    let user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege"])
+    if (!user) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
+    }
+    if (!user.allPrivilege && !user.addMatchPrivilege) {
+      return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
+    }
+
+    // Check if market ID already exists
+    const isRacePresent = await getRaceByMarketId({marketId});
+    if (isRacePresent) {
+      logger.error({
+        error: `Race already exist for market id: ${marketId}`
+      });
+
+      return ErrorResponse({ statusCode: 400, message: { msg: "alreadyExist", keys: { name: "Race" } } }, req, res);
+    }
+
+    // Prepare race data for a new race
+    let raceData = {
+      countryCode, matchType, title, marketId, eventId, startAt, createBy: loginId, eventName: title, venue, raceType
+    };
+
+    const race = await raceAddMatch(raceData);
+
+    if (!race) {
+      logger.error({
+        error: `Match add fail for market id: ${marketId}`
+      });
+
+      return ErrorResponse({ statusCode: 400, message: { msg: "race.matchAddFail" } }, req, res);
+    }
+
+    let matchBettings = {
+      matchId: race.id, minBet: minBet, createBy: loginId, createdAt: race.createdAt, matchId: race.id, type, name: title, minBet, maxBet, marketId
+    }
+
+    try {
+      var insertedRaceBettings = await insertRaceBettings(matchBettings);
+    } catch (error) {
+      await deleteRace({ id: race.id });
+      logger.error({
+        error: `An error occurred while inserting race bettings.`,
+        matchBettings: matchBettings,
+        details: error.message
+      });
+
+      return ErrorResponse(err, req, res);
+    }
+
+    let runnersData = [];
+    for (let runner of runners) {
+      let runnerData = {
+        matchId: race.id,
+        createBy: loginId,
+        bettingId: insertedRaceBettings.id,
+        metadata: runner.metadata,
+        runnerName: runner.runnerName,
+        selectionId: runner.selectionId,
+        sortPriority: runner.sortPriority
+      };
+      runnersData.push(runnerData);
+    }
+
+    await insertRunners(runnersData);
+
+    await addRaceInCache(race.id, race)
+    broadcastEvent(socketData.addMatchEvent, { gameType: race?.raceType });
+
+    await apiCall(
+      apiMethod.post,
+      walletDomain + allApiRoutes.wallet.addRaceMatch,
+      {
+        matchType: race.matchType,
+        title: race.title,
+        marketId: race.marketId,
+        createBy: loginId,
+        eventId: race.eventId,
+        startAt: race.startAt,
+        id: race.id,
+        venue: venue,
+        raceType: raceType,
+        countryCode: countryCode,
+        createdAt: race.createdAt
+      }
+    )
+      .then((data) => {
+        return data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at add race.`,
+          stack: err.stack,
+          message: err.message,
+        });
+        throw err;
+      });
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "created",
+          keys: {
+            name: "race",
+          },
+        },
+        data: { race, insertedRaceBettings },
+      },
+      req,
+      res
+    );
+
+  } catch (err) {
+    logger.error({
+      error: `Error at add race for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+}
+
+
+
 
 function addIncrement(number, increment) {
   // Convert the number to a string to manipulate the decimal part

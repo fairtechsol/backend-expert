@@ -1,5 +1,5 @@
 
-const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatchWise, mainMatchMarketType } = require("../../config/contants");
+const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatchWise, mainMatchMarketType , raceTypeByBettingType} = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
@@ -43,6 +43,40 @@ exports.addMatchInCache = async (matchId, data) => {
   if (data.teamC) {
     payload.teamC = data.teamC;
   }
+  if (data.stopAt) {
+    payload.stopAt = data.stopAt;
+  }
+  let res = await internalRedis
+    .pipeline()
+    .hset(matchKey, payload)
+    .expire(matchKey, expiry)
+    .exec();
+  return res;
+}
+
+exports.addRaceInCache = async (matchId, data) => {
+  // Log the update information
+  logger.info({
+    message: `adding match data in redis with match id  ${matchId}`,
+    data: data
+  });
+  let matchKey = `${matchId}_match`;
+  let payload = {
+    id: data.id,
+    matchType: data.matchType,
+    title: data.title,
+    createBy: data.createBy,
+    marketId: data.marketId,
+    eventId: data.eventId,
+    startAt: data.startAt,
+  }
+
+  Object.values(raceTypeByBettingType)?.forEach((item)=>{
+    if(data[item]){
+      payload[item]=JSON.stringify(data[item]);
+    }
+  });
+
   if (data.stopAt) {
     payload.stopAt = data.stopAt;
   }

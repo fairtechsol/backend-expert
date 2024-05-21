@@ -1,20 +1,22 @@
 const { AppDataSource } = require("../config/postGresConnection");
-const ApiFeature = require("../utils/apiFeatures");
-const { IsNull } = require("typeorm");
-const matchSchema = require("../models/racingBetting.entity");
-// const { matchBettingType, betStatusType, manualMatchBettingType, gameType } = require("../config/contants");
-const raceBetting = AppDataSource.getRepository(matchSchema);
+const racingBettingSchema = require("../models/racingBetting.entity");
+const RunnerSchema = require("../models/matchRunner.entity");
+const RacingBetting = AppDataSource.getRepository(racingBettingSchema);
+const RacingRunner = AppDataSource.getRepository(RunnerSchema);
+exports.addRunner = async (body) => {
+  let runner = await RacingRunner.save(body);
+  return runner;
+};
 
+exports.insertRunners = async (body) => {
+  let runner = await RacingRunner.insert(body);
+  return runner;
+};
 
 exports.insertRaceBettings = async (data) => {
-    await raceBetting.save(data)
-    return data;
+  await RacingBetting.save(data)
+  return data;
 }
 
-exports.getRaceBattingByMatchId = async (id, select) => {
-    return await raceBetting.find({
-      where:  {matchId : id},
-      select: select,
-    });
-  };
+
   

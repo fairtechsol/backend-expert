@@ -35,6 +35,13 @@
     "blocked": "There is something wrong with your account. Please contact your administrator.",
     "cannotUpdate":"Cannot update same condition"
   },
+  "race":{
+    "betAlreadyExistForMatch":"Bet already exist for this race.",
+    "maxMustBeGreater":"Max bet must be greater than min bet.",
+    "atLeastOneBookmaker":"Please create at least one bookmaker.",
+    "matchAddFail" : "race add operation failed due to invalid data."
+  },
+
   "match":{
     "betAlreadyExistForMatch":"Bet already exist for this match.",
     "maxMustBeGreater":"Max bet must be greater than min bet.",

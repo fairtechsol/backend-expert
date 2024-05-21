@@ -3,9 +3,8 @@ const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBetti
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
-const { insertRaceBettings } = require("../services/raceBettingService");
-const { getRaceByMarketId, raceAddMatch } = require("../services/raceServices");
-const { addRunner } = require("../services/runnerService");
+const { getRaceByMarketId, raceAddMatch, deleteRace } = require("../services/racingMatchService");
+const { insertRaceBettings, insertRunners } = require("../services/raceBettingService");
 const {
   getMatchById,
   getMatchByMarketId,
@@ -884,12 +883,11 @@ exports.racingCreateMatch = async (req, res) => {
       maxBet,
       type
     } = req.body;
-    // return res.send(req.body)
 
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
-    logger.info({ message: `Match added by user ${loginId} with market id: ${marketId}` });
+    logger.info({ message: `Race added by user ${loginId} with market id: ${marketId}` });
     let user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege"])
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
@@ -899,89 +897,85 @@ exports.racingCreateMatch = async (req, res) => {
     }
 
     // Check if market ID already exists
-    const isMatchPresent = await getRaceByMarketId(marketId);
-    if (isMatchPresent) {
+    const isRacePresent = await getRaceByMarketId(marketId);
+    if (isRacePresent) {
       logger.error({
-        error: `Match already exist for market id: ${marketId}`
+        error: `Race already exist for market id: ${marketId}`
       });
 
-      return ErrorResponse({ statusCode: 400, message: { msg: "alreadyExist", keys: { name: "Match" } } }, req, res);
+      return ErrorResponse({ statusCode: 400, message: { msg: "alreadyExist", keys: { name: "Race" } } }, req, res);
     }
 
-    // Prepare match data for a new match
-    let matchData = {
-      matchType, title, marketId, eventId, startAt, createBy: loginId, competitionId, competitionName,
+    // Prepare race data for a new race
+    let raceData = {
+      countryCode, matchType, title, marketId, eventId, startAt, createBy: loginId, competitionId, competitionName, eventName: competitionName, venue, raceType
     };
 
-    const match = await raceAddMatch(matchData);
-    if (!match) {
+    const race = await raceAddMatch(raceData);
+    
+    if (!race) {
       logger.error({
         error: `Match add fail for market id: ${marketId}`
       });
 
-      return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
-    }
-
-    let matchBetting = {
-      matchId: match.id,
-      minBet: minBet,
-      createBy: loginId
+      return ErrorResponse({ statusCode: 400, message: { msg: "race.matchAddFail" } }, req, res);
     }
 
     let matchBettings = {
-      ...matchBetting, createdAt: match.createdAt, matchId: match.id, type, name: title, minBet, maxBet, marketId
+      matchId: race.id, minBet: minBet, createBy: loginId, createdAt: race.createdAt, matchId: race.id, type, name: title, minBet, maxBet, marketId
     }
 
-    let insertedMatchBettings = await insertRaceBettings(matchBettings);
-    if (!insertedMatchBettings) {
+    let insertedRaceBettings = await insertRaceBettings(matchBettings);
+    if (!insertedRaceBettings) {
+      await deleteRace({id : race.id});
       logger.error({
-        error: ` Fail to insert match betting.`,
+        error: ` Fail to insert race betting.`,
         matchBettings: matchBettings
       });
 
-      return ErrorResponse({ statusCode: 400, message: { msg: "match.matchBetAddFail" } }, req, res);
+      return ErrorResponse({ statusCode: 400, message: { msg: "race.matchBetAddFail" } }, req, res);
     }
 
+    let runnersData = [];
     for (let runner of runners) {
-      let runnersData = {
-        matchId: match.id,
+      let runnerData = {
+        matchId: race.id,
         createBy: loginId,
-        bettingId: insertedMatchBettings.id,
+        bettingId: insertedRaceBettings.id,
         metadata: JSON.stringify(runner.metadata), // Convert metadata to JSON string
         runnerName: runner.runnerName,
         selectionId: runner.selectionId,
         sortPriority: runner.sortPriority
       };
-
-      await addRunner(runnersData);
+      runnersData.push(runnerData);
     }
+    
+    await insertRunners(runnersData);
 
     let payload = {
-      ...match
+      ...race
     };
 
-    await addRaceInCache(match.id, payload)
-
-    await settingAllBettingMatchRedis(match.id);
-    broadcastEvent(socketData.addMatchEvent, { gameType: match?.matchType });
+    await addRaceInCache(race.id, payload)
+    broadcastEvent(socketData.addMatchEvent, { gameType: race?.raceType });
 
     await apiCall(
       apiMethod.post,
       walletDomain + allApiRoutes.wallet.addRaceMatch,
       {
-        matchType: match.matchType,
-        competitionId: match.competitionId,
-        competitionName: match.competitionName,
-        title: match.title,
-        marketId: match.marketId,
+        matchType: race.matchType,
+        competitionId: race.competitionId,
+        competitionName: race.competitionName,
+        title: race.title,
+        marketId: race.marketId,
         createBy: loginId,
-        eventId: match.eventId,
-        startAt: match.startAt,
-        id: match.id,
+        eventId: race.eventId,
+        startAt: race.startAt,
+        id: race.id,
         venue: venue,
         raceType:raceType,
         countryCode:countryCode,
-        createdAt: match.createdAt
+        createdAt: race.createdAt
       }
     )
       .then((data) => {
@@ -989,7 +983,7 @@ exports.racingCreateMatch = async (req, res) => {
       })
       .catch(async (err) => {
         logger.error({
-          error: `Error at add match.`,
+          error: `Error at add race.`,
           stack: err.stack,
           message: err.message,
         });
@@ -1002,10 +996,10 @@ exports.racingCreateMatch = async (req, res) => {
         message: {
           msg: "created",
           keys: {
-            name: "Match",
+            name: "race",
           },
         },
-        data: { match , insertedMatchBettings},
+        data: { race , insertedRaceBettings},
       },
       req,
       res
@@ -1013,7 +1007,7 @@ exports.racingCreateMatch = async (req, res) => {
 
   } catch (err) {
     logger.error({
-      error: `Error at add match for the expert.`,
+      error: `Error at add race for the expert.`,
       stack: err.stack,
       message: err.message
     });

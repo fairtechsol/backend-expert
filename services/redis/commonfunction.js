@@ -1,5 +1,5 @@
 
-const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatchWise, mainMatchMarketType , raceTypeByBettingType} = require("../../config/contants");
+const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatchWise, mainMatchMarketType, mainMatchRacingMarketType, raceTypeByBettingType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
@@ -654,7 +654,6 @@ exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
     status: status
   });
 
-
   const manualBettingData = await internalRedis.hgetall(`${matchId}_manualBetting`);
 
   let redisPipeline = internalRedis
@@ -677,6 +676,39 @@ exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
   if (matchDetails) {
     Object.keys(mainMatchMarketType)?.forEach((item) => {
       if (matchDetails[marketBettingTypeByBettingType[item]]) {
+        let data = JSON.parse(matchDetails[item]);
+        data.activeStatus = status;
+        matchDetails[item] = JSON.stringify(data);
+      }
+    });
+    redisPipeline = redisPipeline.hset(`${matchId}_match`, matchDetails).expire(`${matchId}_match`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
+  }
+
+  // Use a Redis pipeline for atomicity and efficiency
+  await redisPipeline.exec();
+}
+
+/**
+ * Updates betting data in Redis.
+ *
+ * @param {string} matchId - The ID of the match.
+ * @param {Object} data - The data to be updated in the session.
+ * @returns {Promise<void>} - A Promise that resolves when the update is complete.
+ */
+exports.settingAllBettingRacingMatchRedisStatus = async (matchId, status) => {
+  logger.info({
+    message: `updating data in redis for betting of racing match ${matchId}`,
+    status: status
+  });
+
+  let redisPipeline = internalRedis
+    .pipeline();
+
+  let matchDetails=await internalRedis.hgetall(`${matchId}_match`);
+
+  if (matchDetails) {
+    Object.keys(mainMatchRacingMarketType)?.forEach((item) => {
+      if (matchDetails[raceTypeByBettingType[item]]) {
         let data = JSON.parse(matchDetails[item]);
         data.activeStatus = status;
         matchDetails[item] = JSON.stringify(data);

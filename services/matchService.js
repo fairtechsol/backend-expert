@@ -5,7 +5,6 @@ const matchSchema = require("../models/match.entity");
 const { matchBettingType, betStatusType, manualMatchBettingType, gameType } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
 
-
 exports.getMatchById = async (id, select) => {
   return await match.findOne({
     where: { id },
@@ -33,7 +32,6 @@ exports.addMatch = async (body) => {
   let insertMatch = await match.save(body);
   return insertMatch;
 };
-
 
 exports.getMatch = async (filters, select, query) => {
   try {

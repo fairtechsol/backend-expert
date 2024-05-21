@@ -4,9 +4,9 @@ const ApiFeature = require("../utils/apiFeatures");
 const RacingMatch = AppDataSource.getRepository(racingMatchSchema);
 
 
-exports.getRaceByMarketId = async (marketId, select) => {
+exports.getRaceByMarketId = async (condition, select) => {
   return await RacingMatch.findOne({
-    where: { marketId },
+    where: condition,
     select: select,
   });
 };

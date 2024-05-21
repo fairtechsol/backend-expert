@@ -10,7 +10,7 @@ exports.addRunner = async (body) => {
 };
 
 exports.insertRunners = async (body) => {
-  let runner = await RacingRunner.insert(body);
+  let runner = await RacingRunner.save(body);
   return runner;
 };
 

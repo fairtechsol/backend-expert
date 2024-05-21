@@ -885,10 +885,6 @@ exports.racingCreateMatch = async (req, res) => {
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
-    if (maxBet <= minBet) {
-      return ErrorResponse({ statusCode: 400, message: { msg: "Max bet should be greater than min bet." } }, req, res);
-    }
-
     logger.info({ message: `Race added by user ${loginId} with market id: ${marketId}` });
     let user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege"])
     if (!user) {
@@ -899,7 +895,7 @@ exports.racingCreateMatch = async (req, res) => {
     }
 
     // Check if market ID already exists
-    const isRacePresent = await getRaceByMarketId(marketId);
+    const isRacePresent = await getRaceByMarketId({marketId});
     if (isRacePresent) {
       logger.error({
         error: `Race already exist for market id: ${marketId}`
@@ -956,11 +952,7 @@ exports.racingCreateMatch = async (req, res) => {
 
     await insertRunners(runnersData);
 
-    let payload = {
-      ...race
-    };
-
-    await addRaceInCache(race.id, payload)
+    await addRaceInCache(race.id, race)
     broadcastEvent(socketData.addMatchEvent, { gameType: race?.raceType });
 
     await apiCall(
@@ -1017,6 +1009,9 @@ exports.racingCreateMatch = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 }
+
+
+
 
 function addIncrement(number, increment) {
   // Convert the number to a string to manipulate the decimal part

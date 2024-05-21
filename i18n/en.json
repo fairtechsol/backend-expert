@@ -36,9 +36,6 @@
     "cannotUpdate":"Cannot update same condition"
   },
   "race":{
-    "betAlreadyExistForMatch":"Bet already exist for this race.",
-    "maxMustBeGreater":"Max bet must be greater than min bet.",
-    "atLeastOneBookmaker":"Please create at least one bookmaker.",
     "matchAddFail" : "Race add operation failed due to invalid data."
   },
 

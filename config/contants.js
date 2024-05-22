@@ -20,7 +20,8 @@ module.exports.userRoleConstant = {
 module.exports.gameType = {
   cricket: "cricket",
   football: "football",
-  tennis:"tennis"
+  tennis:"tennis",
+  horseRacing: "horseRacing"
 }
 
 module.exports.resultStatus = {

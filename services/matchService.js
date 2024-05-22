@@ -2,8 +2,10 @@ const { AppDataSource } = require("../config/postGresConnection");
 const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
+const RaceSchema = require("../models/racingMatch.entity");
 const { matchBettingType, betStatusType, manualMatchBettingType, gameType } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
+const race = AppDataSource.getRepository(RaceSchema);
 
 
 exports.getMatchById = async (id, select) => {
@@ -26,7 +28,7 @@ exports.getMatchByMarketId = async (marketId, select) => {
 };
 
 exports.getOneMatchByCondition = (where, select) => {
-  return match.findOne({where, select});
+  return match.findOne({ where, select });
 }
 
 exports.addMatch = async (body) => {
@@ -167,31 +169,46 @@ exports.getMatchWithBettingAndSession = async (
     throw error;
   }
 };
+
 exports.getMatchDetails = async (id, select) => {
-    return await match.findOne({
-      where: { id:id },
-      select: select,
-      relations: {
-        matchBettings: true,
-        sessionBettings: true
-      }
-    });
-  };
+  return await match.findOne({
+    where: { id: id },
+    select: select,
+    relations: {
+      matchBettings: true,
+      sessionBettings: true
+    }
+  });
+};
+
+exports.getRaceDetails = async (raceId) => {
+  try {
+    // Start building the query
+    let matchQuery =await race
+      .createQueryBuilder()
+      .leftJoinAndMapMany("racingMatch.racingBetting", "racingBetting","racingBetting","racingMatch.id = racingBetting.matchId")
+      .where("racingMatch.id = :raceId", { raceId }).getOne();
+    return { matchQuery };
+  } catch (error) {
+    throw error;
+  }
+};
 
 
-  exports.getMatchCompetitions = async (type) => {
-    return await match.query(
-      'SELECT DISTINCT "competitionId", "competitionName" FROM matchs WHERE "matchType" = $1 AND "stopAt" IS NULL order By "competitionName" ASC',
-      [type]
-    );
-  };
 
-  exports.getMatchDates = async (competitionId) => {
-    return await match.query(
-      'SELECT DISTINCT DATE_TRUNC(\'day\', "startAt") as startDate FROM matchs WHERE "competitionId" = $1 AND "stopAt" IS NULL order by startDate',
-      [competitionId]
-    );
-  };
+exports.getMatchCompetitions = async (type) => {
+  return await match.query(
+    'SELECT DISTINCT "competitionId", "competitionName" FROM matchs WHERE "matchType" = $1 AND "stopAt" IS NULL order By "competitionName" ASC',
+    [type]
+  );
+};
+
+exports.getMatchDates = async (competitionId) => {
+  return await match.query(
+    'SELECT DISTINCT DATE_TRUNC(\'day\', "startAt") as startDate FROM matchs WHERE "competitionId" = $1 AND "stopAt" IS NULL order by startDate',
+    [competitionId]
+  );
+};
 
 exports.getMatchByCompetitionIdAndDates = async (competitionId, date) => {
   return await match.createQueryBuilder()
@@ -201,4 +218,4 @@ exports.getMatchByCompetitionIdAndDates = async (competitionId, date) => {
     .andWhere('DATE_TRUNC(\'day\',match."startAt") = :date')
     .setParameters({ "date": new Date(date), type: [...manualMatchBettingType, ...[matchBettingType.bookmaker, matchBettingType.completeMatch]] })
     .getMany();
-  };
+};

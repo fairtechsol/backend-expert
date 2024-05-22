@@ -3,12 +3,11 @@ const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatch
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
-const { getMatchSchema } = require("../../validators/matchValidator");
+const { getMatchSchema, getRaceSchema } = require("../../validators/matchValidator");
 const { getMatchAllBettings } = require("../matchBettingService");
 const { getSessionBettings } = require("../sessionBettingService");
 const lodash = require('lodash')
 let expiry = 60*60*4;
-
 exports.addMatchInCache = async (matchId, data) => {
   // Log the update information
   logger.info({
@@ -60,7 +59,7 @@ exports.addRaceInCache = async (matchId, data) => {
     message: `adding match data in redis with match id  ${matchId}`,
     data: data
   });
-  let matchKey = `${matchId}_match`;
+  let matchKey = `${matchId}_race`;
   let payload = {
     id: data.id,
     matchType: data.matchType,
@@ -69,6 +68,36 @@ exports.addRaceInCache = async (matchId, data) => {
     marketId: data.marketId,
     eventId: data.eventId,
     startAt: data.startAt,
+  }
+
+  let res = await internalRedis
+    .pipeline()
+    .hset(matchKey, payload)
+    .expire(matchKey, expiry)
+    .exec();
+  return res;
+}
+
+exports.addRaceIBetttingInCache = async (BettingId, data) => {
+  // Log the update information
+  logger.info({
+    message: `adding match data in redis with match id  ${matchId}`,
+    data: data
+  });
+  let matchKey = `${matchId}_race`;
+  let payload = {
+    id: data.id,
+    createBy: data.createBy,
+    marketId: data.marketId,
+    createdAt: data.createdAt,
+    matchId: data.matchId,
+    type: data.type,
+    name: data.name,
+    minBet: data.minBet,
+    maxbet: data.maxBet,
+    activeStatus: data.activeStatus,
+    isActive: data.isActive,
+
   }
 
   Object.values(raceTypeByBettingType)?.forEach((item)=>{
@@ -355,6 +384,17 @@ exports.getMatchFromCache = async (matchId) => {
         validated[item] = JSON.parse(validated[item]);
       }
     });
+
+    return validated;
+  }
+  return null;
+}
+
+exports.getRaceFromCache = async (matchId) => {
+  let matchKey = `${matchId}_race`;
+  let MatchData = await internalRedis.hgetall(matchKey);
+  if (Object.keys(MatchData)?.length) {
+    let { validated } = await joiValidator.jsonValidator(getRaceSchema, MatchData);
 
     return validated;
   }

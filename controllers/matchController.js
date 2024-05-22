@@ -17,7 +17,7 @@ const {
   getMatchWithBettingAndSession,
   getOneMatchByCondition,
 } = require("../services/matchService");
-const { addRaceInCache, addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
+const { addRaceInCache, addRaceIBetttingInCache, addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
 
 
 
@@ -25,7 +25,7 @@ const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const { commonGetMatchDetails, commonGetMatchDetailsForFootball } = require("../services/commonService");
+const { commonGetMatchDetails, commonGetMatchDetailsForFootball, commonGetRaceDetails } = require("../services/commonService");
 /**
  * Create or update a match.
  *
@@ -953,6 +953,7 @@ exports.racingCreateMatch = async (req, res) => {
     await insertRunners(runnersData);
 
     await addRaceInCache(race.id, race)
+    await addRaceIBetttingInCache(insertedRaceBettings.id, insertedRaceBettings)
     broadcastEvent(socketData.addMatchEvent, { gameType: race?.raceType });
 
     await apiCall(
@@ -1010,6 +1011,41 @@ exports.racingCreateMatch = async (req, res) => {
   }
 }
 
+exports.raceDetails = async (req, res) => {
+  try {
+    const { id: raceId } = req.params;
+    const userId = req?.user?.id;
+    let race;
+
+    const raceIds = raceId?.split(",");
+    if (raceIds?.length > 1) {
+      race = [];
+      for (let i = 0; i < raceIds?.length; i++) {
+        race.push(await commonGetRaceDetails(raceIds[i], userId));
+      }
+    } else {
+      race = await commonGetRaceDetails(raceId, userId);
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Match Details" } },
+        data: race,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error while getting match detail for match: ${req.params.id}.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
 
 
 

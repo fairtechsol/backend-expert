@@ -1497,14 +1497,7 @@ exports.declareRacingMatchResult = async (req, res) => {
 
     if (resultValidate) {
       await updateRaceBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: { msg: "bet.resultApprove" },
-        },
-        req,
-        res
-      );
+      return SuccessResponse({ statusCode: 200, message: { msg: "bet.resultApprove" }, }, req, res);
     }
 
     let fwProfitLoss;
@@ -1569,23 +1562,7 @@ exports.declareRacingMatchResult = async (req, res) => {
 
     await raceAddMatch(match);
 
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        message: {
-          msg: "success",
-          keys: {
-            name: "Match Result declared",
-          },
-        },
-        data: {
-          result,
-          profitLoss: fwProfitLoss,
-        },
-      },
-      req,
-      res
-    );
+    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } }, data: { result, profitLoss: fwProfitLoss } }, req, res);
   } catch (err) {
     logger.error({
       error: `Error at result declare other match`,

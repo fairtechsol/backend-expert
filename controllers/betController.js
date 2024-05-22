@@ -1630,18 +1630,7 @@ exports.unDeclareRacingMatchResult = async (req, res) => {
       );
     }
 
-    if (betId && match.stopAt) {
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: { msg: "bet.matchAlreadyDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    if (!match.stopAt && !betId) {
+    if (!match.stopAt) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -1653,7 +1642,7 @@ exports.unDeclareRacingMatchResult = async (req, res) => {
     }
 
     // check result already declare
-    let bet = await getRaceBettingWithRunners(matchId);
+    let bet = await getRaceBettingWithRunners({ id: betId });
     let matchOddBetting;
 
     matchOddBetting = bet?.find((item) => item.id == betId);

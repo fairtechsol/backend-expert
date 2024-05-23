@@ -437,18 +437,18 @@ exports.hasMarketSessionIdsInCache = async (matchId) => {
 
 exports.getAllMarketSessionIdsRedis = async (matchId) => {
   // Retrieve all betting data for the match from Redis
-  const MarketSessionIds = await internalRedis.hgetall(`${matchId}_selectionId`);
+  const marketSessionIds = await internalRedis.hgetall(`${matchId}_selectionId`);
 
   // Return the betting data as an object or null if no data is found
-  return lodash.isEmpty(MarketSessionIds) ? null : MarketSessionIds;
+  return lodash.isEmpty(marketSessionIds) ? null : marketSessionIds;
 };
 
 exports.getMarketSessionIdFromRedis = async (matchId, selectionId) => {
   // Retrieve betting data from Redis
-  const MarketSessionId = await internalRedis.hget(`${matchId}_selectionId`, selectionId);
+  const marketSessionId = await internalRedis.hget(`${matchId}_selectionId`, selectionId);
 
   // Parse and return the betting data or null if it doesn't exist
-  return MarketSessionId ? MarketSessionId : null;
+  return marketSessionId ? marketSessionId : null;
 };
 
 exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {

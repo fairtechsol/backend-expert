@@ -522,12 +522,12 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 exports.commonGetRaceDetails = async (raceId, userId) => {
   let race = await getRaceFromCache(raceId);
   if(race){
-    const { runner, matchOdd, ...updatedRace } = race;
+    const { runners, matchOdd, ...updatedRace } = race;
     updatedRace.matchOdd = JSON.parse(matchOdd);
-    updatedRace.runner = JSON.parse(runner);
+    updatedRace.runners = JSON.parse(runners);
     race = updatedRace;
   }else {
-    race = await getRaceDetails({raceId});
+    race = await getRaceDetails({id: raceId});
     if (!race) {
       throw {
         statusCode: 400,
@@ -539,8 +539,8 @@ exports.commonGetRaceDetails = async (raceId, userId) => {
         },
       }
     }
-    let { runner, matchOdd, ...cacheData}= race
-    cacheData.runner = JSON.stringify(runner)
+    let { runners, matchOdd, ...cacheData}= race
+    cacheData.runners = JSON.stringify(runners)
     cacheData.matchOdd = JSON.stringify(matchOdd)
     await addRaceInCache(race.id, cacheData);
   }

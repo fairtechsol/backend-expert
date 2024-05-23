@@ -67,7 +67,7 @@ exports.addRaceInCache = async (matchId, data) => {
     title: data.title,
     createBy: data.createBy,
     marketId: data.marketId,
-    runner: data.runner,
+    runners: data.runners,
     eventId: data.eventId,
     startAt: data.startAt,
   }

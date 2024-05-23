@@ -171,7 +171,6 @@ module.exports.getMatchSchema = Joi.object({
   stopAt: Joi.date(),
 })
 
-
 module.exports.racingAddMatchValidate = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
   matchType: Joi.string().required().messages({
@@ -220,7 +219,7 @@ module.exports.racingAddMatchValidate = Joi.object({
     "number.greater": "Maximum bet must be greater than minimum bet",
   }),
   runners: Joi.array().min(1).items(Joi.object({
-    selectionId: Joi.string().required(),
+    selectionId: Joi.number().required(),
     runnerName: Joi.string().required(),
     handicap: Joi.number().required(),
     sortPriority: Joi.number().required(),

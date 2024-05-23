@@ -3,7 +3,7 @@ const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatch
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
-const { getMatchSchema, getRaceSchema } = require("../../validators/matchValidator");
+const { getMatchSchema } = require("../../validators/matchValidator");
 const { getMatchAllBettings } = require("../matchBettingService");
 const { getSessionBettings } = require("../sessionBettingService");
 const lodash = require('lodash')

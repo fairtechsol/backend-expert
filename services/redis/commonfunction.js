@@ -71,7 +71,9 @@ exports.addRaceInCache = async (matchId, data) => {
     eventId: data.eventId,
     startAt: data.startAt,
   }
-
+  if (data.stopAt) {
+    payload.stopAt = data.stopAt;
+  }
   let res = await internalRedis
     .pipeline()
     .hset(matchKey, payload)

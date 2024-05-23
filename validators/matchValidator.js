@@ -171,7 +171,6 @@ module.exports.getMatchSchema = Joi.object({
   stopAt: Joi.date(),
 })
 
-
 module.exports.racingAddMatchValidate = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
   matchType: Joi.string().required().messages({

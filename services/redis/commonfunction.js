@@ -8,7 +8,6 @@ const { getMatchAllBettings } = require("../matchBettingService");
 const { getSessionBettings } = require("../sessionBettingService");
 const lodash = require('lodash')
 let expiry = 60*60*4;
-
 exports.addMatchInCache = async (matchId, data) => {
   // Log the update information
   logger.info({
@@ -64,19 +63,14 @@ exports.addRaceInCache = async (matchId, data) => {
   let payload = {
     id: data.id,
     matchType: data.matchType,
+    matchOdd: data.matchOdd,
     title: data.title,
     createBy: data.createBy,
     marketId: data.marketId,
+    runners: data.runners,
     eventId: data.eventId,
     startAt: data.startAt,
   }
-
-  Object.values(raceTypeByBettingType)?.forEach((item)=>{
-    if(data[item]){
-      payload[item]=JSON.stringify(data[item]);
-    }
-  });
-
   if (data.stopAt) {
     payload.stopAt = data.stopAt;
   }
@@ -87,6 +81,7 @@ exports.addRaceInCache = async (matchId, data) => {
     .exec();
   return res;
 }
+
 
 exports.updateMatchInCache = async (matchId, data) => {
   // Log the update information
@@ -357,6 +352,15 @@ exports.getMatchFromCache = async (matchId) => {
     });
 
     return validated;
+  }
+  return null;
+}
+
+exports.getRaceFromCache = async (matchId) => {
+  let matchKey = `${matchId}_match`;
+  let MatchData = await internalRedis.hgetall(matchKey);
+  if (Object.keys(MatchData)?.length) {
+    return MatchData;
   }
   return null;
 }

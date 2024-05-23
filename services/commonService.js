@@ -1,11 +1,11 @@
-const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord,gameType, microServiceDomain, thirdPartyMarketKey } = require("../config/contants");
+const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord, gameType, microServiceDomain, thirdPartyMarketKey } = require("../config/contants");
 const { __mf } = require("i18n");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchBattingByMatchId, updateMatchBetting } = require("./matchBettingService");
-const { getMatchDetails, getMatch } = require("./matchService");
-const { getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis } = require("./redis/commonfunction");
+const { getMatchDetails, getMatch, getRaceDetails } = require("./matchService");
+const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 const { getExpertResult, getExpertResultBetWise } = require("./expertResultService");
 const { MoreThan } = require("typeorm");
@@ -518,6 +518,35 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
   }
   return match;
 }
+
+exports.commonGetRaceDetails = async (raceId, userId) => {
+  let race = await getRaceFromCache(raceId);
+  if(race){
+    const { runners, matchOdd, ...updatedRace } = race;
+    updatedRace.matchOdd = JSON.parse(matchOdd);
+    updatedRace.runners = JSON.parse(runners);
+    race = updatedRace;
+  }else {
+    race = await getRaceDetails({id: raceId});
+    if (!race) {
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "notFound",
+          keys: {
+            name: "Race",
+          },
+        },
+      }
+    }
+    let { runners, matchOdd, ...cacheData}= race
+    cacheData.runners = JSON.stringify(runners)
+    cacheData.matchOdd = JSON.stringify(matchOdd)
+    await addRaceInCache(race.id, cacheData);
+  }
+  return race
+}
+
 exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
   let match = await getMatchFromCache(matchId);
   let expertResults = await getExpertResultBetWise({ matchId: matchId });
@@ -698,7 +727,7 @@ exports.updateMatchMarketsByCron = async () => {
         });
       }
     }
-    if(isMarketIdChange){
+    if (isMarketIdChange) {
       await deleteAllMatchRedis(item.id);
     }
   }

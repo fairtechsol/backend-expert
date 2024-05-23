@@ -175,6 +175,8 @@ module.exports.getRaceSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
   matchType: Joi.string(),
   title: Joi.string().required(),
+  matchOdd: Joi.string(),
+  runner: Joi.string(),
   marketId: Joi.string(),
   eventId: Joi.string(),
   startAt: Joi.date(),

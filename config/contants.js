@@ -125,6 +125,9 @@ module.exports.marketBettingTypeByBettingType = {
   }, {}))
 }
 
+module.exports.raceTypeByBettingType = {
+  [this.racingBettingType.matchOdd]: "matchOdd"
+}
 
 module.exports.marketMatchBettingType = {
   [this.matchBettingType.matchOdd]: "matchOdd",

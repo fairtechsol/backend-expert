@@ -181,14 +181,15 @@ exports.getMatchDetails = async (id, select) => {
   });
 };
 
-exports.getRaceDetails = async (raceId) => {
+exports.getRaceDetails = async ({raceId}) => {
   try {
     // Start building the query
     let matchQuery =await race
-      .createQueryBuilder()
-      .leftJoinAndMapMany("racingMatch.racingBetting", "racingBetting","racingBetting","racingMatch.id = racingBetting.matchId")
-      .where("racingMatch.id = :raceId", { raceId }).getOne();
-    return { matchQuery };
+      .createQueryBuilder("race")
+      .leftJoinAndMapOne("race.matchOdd", "racingBetting","matchOdd","race.id = matchOdd.matchId")
+      .leftJoinAndMapMany("race.runner", "racingRunner", "runner", "race.id = runner.matchId")
+      .where({id: raceId} ).getOne();
+    return  matchQuery;
   } catch (error) {
     throw error;
   }

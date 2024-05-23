@@ -59,13 +59,15 @@ exports.addRaceInCache = async (matchId, data) => {
     message: `adding match data in redis with match id  ${matchId}`,
     data: data
   });
-  let matchKey = `${matchId}_race`;
+  let matchKey = `${matchId}_match`;
   let payload = {
     id: data.id,
     matchType: data.matchType,
+    matchOdd: data.matchOdd,
     title: data.title,
     createBy: data.createBy,
     marketId: data.marketId,
+    runner: data.runner,
     eventId: data.eventId,
     startAt: data.startAt,
   }
@@ -78,44 +80,6 @@ exports.addRaceInCache = async (matchId, data) => {
   return res;
 }
 
-exports.addRaceIBetttingInCache = async (BettingId, data) => {
-  // Log the update information
-  logger.info({
-    message: `adding match data in redis with match id  ${matchId}`,
-    data: data
-  });
-  let matchKey = `${matchId}_race`;
-  let payload = {
-    id: data.id,
-    createBy: data.createBy,
-    marketId: data.marketId,
-    createdAt: data.createdAt,
-    matchId: data.matchId,
-    type: data.type,
-    name: data.name,
-    minBet: data.minBet,
-    maxbet: data.maxBet,
-    activeStatus: data.activeStatus,
-    isActive: data.isActive,
-
-  }
-
-  Object.values(raceTypeByBettingType)?.forEach((item)=>{
-    if(data[item]){
-      payload[item]=JSON.stringify(data[item]);
-    }
-  });
-
-  if (data.stopAt) {
-    payload.stopAt = data.stopAt;
-  }
-  let res = await internalRedis
-    .pipeline()
-    .hset(matchKey, payload)
-    .expire(matchKey, expiry)
-    .exec();
-  return res;
-}
 
 exports.updateMatchInCache = async (matchId, data) => {
   // Log the update information
@@ -391,12 +355,10 @@ exports.getMatchFromCache = async (matchId) => {
 }
 
 exports.getRaceFromCache = async (matchId) => {
-  let matchKey = `${matchId}_race`;
+  let matchKey = `${matchId}_match`;
   let MatchData = await internalRedis.hgetall(matchKey);
   if (Object.keys(MatchData)?.length) {
-    let { validated } = await joiValidator.jsonValidator(getRaceSchema, MatchData);
-
-    return validated;
+    return MatchData;
   }
   return null;
 }

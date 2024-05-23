@@ -17,7 +17,7 @@ const {
   getMatchWithBettingAndSession,
   getOneMatchByCondition,
 } = require("../services/matchService");
-const { addRaceInCache, addRaceIBetttingInCache, addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
+const { addRaceInCache, addRaceBetttingInCache, addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
 
 
 
@@ -951,10 +951,19 @@ exports.racingCreateMatch = async (req, res) => {
       runnersData.push(runnerData);
     }
 
-    await insertRunners(runnersData);
+   let runnerData =  await insertRunners(runnersData);
 
-    await addRaceInCache(race.id, race)
-    await addRaceIBetttingInCache(insertedRaceBettings.id, insertedRaceBettings)
+   let stringRunnerData= JSON.stringify(runnerData)
+   let stringBettingData= JSON.stringify(insertedRaceBettings)
+
+
+   const runnerAndRaceData = {
+    ...race,
+    runners: stringRunnerData,
+    matchOdd: stringBettingData
+  };
+
+    await addRaceInCache(race.id, runnerAndRaceData)
     broadcastEvent(socketData.addMatchEvent, { gameType: race?.raceType });
 
     await apiCall(
@@ -992,7 +1001,7 @@ exports.racingCreateMatch = async (req, res) => {
         message: {
           msg: "created",
           keys: {
-            name: "race",
+            name: "Race",
           },
         },
         data: { race, insertedRaceBettings },
@@ -1016,23 +1025,19 @@ exports.raceDetails = async (req, res) => {
   try {
     const { id: raceId } = req.params;
     const userId = req?.user?.id;
-    let race;
+    let race = [];
 
     const raceIds = raceId?.split(",");
-    if (raceIds?.length > 1) {
-      race = [];
+
       for (let i = 0; i < raceIds?.length; i++) {
         race.push(await commonGetRaceDetails(raceIds[i], userId));
       }
-    } else {
-      race = await commonGetRaceDetails(raceId, userId);
-    }
 
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "fetched", keys: { name: "Match Details" } },
-        data: race,
+        data: raceIds.length==1 ? race[0] : race,
       },
       req,
       res
@@ -1047,6 +1052,7 @@ exports.raceDetails = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
 exports.racingMatchDateList = async (req, res) => {
   try {
     const { page, limit } = req.query;

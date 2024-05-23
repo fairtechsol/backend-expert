@@ -3,8 +3,7 @@ const router = express.Router();
 const validator = require('../middleware/joi.validator');
 const { isAuthenticate } = require('../middleware/auth');
 
-const { racingCreateMatch, createMatch, updateMatch, listMatch, matchDetails, matchActiveInActive, getMatchCompetitionsByType, getMatchDatesByCompetitionId, getMatchDatesByCompetitionIdAndDate, matchListWithManualBetting,matchDetailsForFootball, raceDetails } = require('../controllers/matchController');
-const { racingCreateMatch, createMatch, updateMatch, listMatch, matchDetails, matchActiveInActive, getMatchCompetitionsByType, getMatchDatesByCompetitionId, getMatchDatesByCompetitionIdAndDate, matchListWithManualBetting,matchDetailsForFootball,racingMatchDateList, racingCountryCodeList, listRacingMatch } = require('../controllers/matchController');
+const { racingCreateMatch, createMatch, updateMatch, listMatch, matchDetails, matchActiveInActive, getMatchCompetitionsByType, getMatchDatesByCompetitionId, getMatchDatesByCompetitionIdAndDate, matchListWithManualBetting,matchDetailsForFootball,racingMatchDateList, racingCountryCodeList, listRacingMatch, raceDetails } = require('../controllers/matchController');
 const { racingAddMatchValidate, updateMatchValidate, addMatchValidate, MatchActiveInactive } = require('../validators/matchValidator');
 
 

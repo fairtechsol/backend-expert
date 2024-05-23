@@ -68,3 +68,11 @@ exports.deleteRace = async (where) => {
     await RacingMatch.delete(where);
 }
 
+exports.getRacingMatchById = async (id, select) => {
+    return await RacingMatch.findOne({
+        where: { id },
+        select: select,
+    });
+};
+
+

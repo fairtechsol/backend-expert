@@ -104,6 +104,7 @@ module.exports.quickBookmakers = [
 ];
 
 module.exports.mainMatchMarketType = [this.matchBettingType.matchOdd, this.matchBettingType.quickbookmaker1, this.matchBettingType.quickbookmaker2, this.matchBettingType.quickbookmaker3, this.matchBettingType.bookmaker];
+module.exports.mainMatchRacingMarketType = [this.matchBettingType.matchOdd];
 
 module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.matchOdd]: "matchOdd",
@@ -230,6 +231,7 @@ module.exports.betType = {
 module.exports.bettingType = {
   session: "session",
   match: "match",
+  racing: "racing"
 };
 
 module.exports.socketData ={

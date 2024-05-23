@@ -14,5 +14,17 @@ exports.insertRaceBettings = async (data) => {
   return data;
 }
 
+exports.getRaceBettingWithRunners = async (where, select) => {
+  return await RacingBetting.createQueryBuilder()
+    .leftJoinAndMapMany("racingBetting.runners",
+      "racingRunner",
+      "racingRunner",
+      "racingRunner.bettingId = racingBetting.id",)
+    .where(where)
+    .select(select)
+    .getMany();
+};
 
-  
+exports.updateRaceBetting = async (where, data) => {
+  await RacingBetting.update(where, data);
+};

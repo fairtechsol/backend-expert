@@ -1,6 +1,6 @@
 const express = require('express');
 const { listMatchSuperAdmin, listRacingMatchSuperAdmin, racingCountryCodeListSuperAdmin } = require('../controllers/superAdminController');
-const { matchDetails,matchDetailsForFootball } = require('../controllers/matchController');
+const { raceDetails,matchDetails,matchDetailsForFootball } = require('../controllers/matchController');
 const { getSessions } = require('../controllers/sessionController');
 const { getMatchBettingDetails, getRaceBettingDetails} = require('../controllers/matchBettingController');
 const router = express.Router();
@@ -10,6 +10,7 @@ router.get('/match/list', listMatchSuperAdmin);
 // match racing
 router.get('/match/racing/countryCode', racingCountryCodeListSuperAdmin);
 router.get('/match/racing/list', listRacingMatchSuperAdmin);
+router.get('/match/racing/:id', raceDetails);
 
 router.get('/match/:id', matchDetails);
 router.get('/otherMatch/:id', matchDetailsForFootball);

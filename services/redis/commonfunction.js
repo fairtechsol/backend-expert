@@ -520,6 +520,12 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
 
 }
 
+exports.getExpertsRedisKeyData = async (key) => {
+  // Retrieve session data from Redis
+  const data = await internalRedis.hget(redisKeys.expertRedisData,key);
+  return data;
+}
+
 exports.getExpertsRedisSessionDataByKeys = async (keys) => {
   // Retrieve expert data from Redis
   const expertData = await internalRedis.hmget(redisKeys.expertRedisData, keys);

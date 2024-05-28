@@ -5,7 +5,7 @@ const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchBattingByMatchId, updateMatchBetting } = require("./matchBettingService");
 const { getMatchDetails, getMatch, getRaceDetails } = require("./matchService");
-const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis } = require("./redis/commonfunction");
+const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis, getExpertsRedisKeyData } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 const { getExpertResult, getExpertResultBetWise } = require("./expertResultService");
 const { MoreThan } = require("typeorm");
@@ -544,7 +544,15 @@ exports.commonGetRaceDetails = async (raceId, userId) => {
     cacheData.matchOdd = JSON.stringify(matchOdd)
     await addRaceInCache(race.id, cacheData);
   }
-  return race
+
+  if (userId && race?.matchOdd?.id) {
+    let matchProfitLoss = await getExpertsRedisKeyData(`${matchId}_${race?.matchOdd?.id}`)
+    if (matchProfitLoss) {
+      matchProfitLoss = JSON.parse(matchProfitLoss);
+    }
+    race.profitLossDataMatch = matchProfitLoss;
+  }
+    return race
 }
 
 exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {

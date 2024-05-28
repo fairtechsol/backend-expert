@@ -36,6 +36,18 @@ exports.getRacingBetting = async (where, select) => {
   });
 };
 
+exports.getRacingBettingById = async (id, select) => {
+  return await RacingBetting.findOne({
+    where: { id: id },
+    select: select,
+  });
+};
+
+exports.addRaceBetting= async (body)=>{
+  let addRaceBetting = await RacingBetting.save(body);
+  return addRaceBetting;
+};
+
 exports.getRunners = async (where, select) => {
   return await RacingRunner.find({
       where: where,

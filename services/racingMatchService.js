@@ -74,5 +74,3 @@ exports.getRacingMatchById = async (id, select) => {
         select: select,
     });
 };
-
-

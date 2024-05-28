@@ -21,7 +21,8 @@ module.exports.gameType = {
   cricket: "cricket",
   football: "football",
   tennis:"tennis",
-  horseRacing: "horseRacing"
+  horseRacing: "horseRacing",
+  greyHound: "greyHound"
 }
 
 module.exports.resultStatus = {

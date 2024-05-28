@@ -34,7 +34,7 @@ const racingBettingSchema = new EntitySchema({
       type: 'enum',
       enum: Object.values(betStatusType),
       nullable: false,
-      default: betStatusType.live
+      default: betStatusType.save
     },
     isActive: {
       type: "boolean",

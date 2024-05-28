@@ -919,7 +919,7 @@ exports.racingCreateMatch = async (req, res) => {
     }
 
     let matchBettings = {
-      matchId: race.id, minBet: minBet, createBy: loginId, createdAt: race.createdAt, matchId: race.id, type, name: title, minBet, maxBet, marketId
+      matchId: race.id, minBet: minBet, createBy: loginId, createdAt: race.createdAt, type, name: title, maxBet, marketId
     }
 
     try {

@@ -147,7 +147,6 @@ module.exports.MatchActiveInactive = Joi.object({
   "object.base": "Invalid input. Please provide a valid object.",
 });
 
-
 module.exports.getMatchSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
   matchType: Joi.string(),

@@ -70,6 +70,9 @@ exports.addRaceInCache = async (matchId, data) => {
     runners: data.runners,
     eventId: data.eventId,
     startAt: data.startAt,
+    countryCode: data?.countryCode,
+    venue: data?.venue,
+    raceType: data?.raceType
   }
   if (data.stopAt) {
     payload.stopAt = data.stopAt;

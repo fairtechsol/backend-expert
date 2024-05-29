@@ -1,7 +1,7 @@
 const { ILike, IsNull } = require("typeorm");
 const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain, marketMatchBettingType, teamStatus } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getAllProfitLossResults } = require("../services/betService");
+const { getAllProfitLossResults, getAllProfitLossResultsRace } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
 const { getRaceByMarketId, raceAddMatch, deleteRace } = require("../services/racingMatchService");
 const { insertRaceBettings, insertRunners } = require("../services/raceBettingService");
@@ -1146,6 +1146,10 @@ exports.listRacingMatch = async (req, res) => {
     const match = await getRacingMatch(filters, fields?.split(",") || null, query);
     if (!match) {
       return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
+    }
+
+    for (let i = 0; i < match?.matches?.length; i++) {
+      match.matches[i].pl = await getAllProfitLossResultsRace(match.matches[i].id);
     }
     
     const matchData = match?.matches?.reduce((acc, item) => {

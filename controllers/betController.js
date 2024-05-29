@@ -1558,7 +1558,7 @@ exports.declareRacingMatchResult = async (req, res) => {
 
       deleteAllMatchRedis(matchId);
       match.stopAt = new Date();
-    await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${matchId}_${betId}`);
+    await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${matchId}${redisKeys.profitLoss}`);
 
     await raceAddMatch(match);
 
@@ -1693,7 +1693,11 @@ exports.unDeclareRacingMatchResult = async (req, res) => {
     await deleteAllExpertResult(matchOddBetting.id);
 
     if (response?.data?.profitLossWallet) {
-      await setExpertsRedisData(response?.data?.profitLossWallet);
+      let expertPL=response?.data?.profitLossWallet;
+      Object.keys(expertPL)?.forEach((item)=>{
+        expertPL[item]=JSON.stringify(expertPL[item]);
+      });
+      await setExpertsRedisData(expertPL);
     }
     sendMessageToUser(
       socketData.expertRoomSocket,
@@ -1704,7 +1708,7 @@ exports.unDeclareRacingMatchResult = async (req, res) => {
         activeStatus: betStatusType.live,
         betId: matchOddBetting?.id,
         betType: matchOddBetting?.type,
-        profitLossData: response?.data?.profitLossWallet,
+        profitLossData: response?.data?.profitLossWallet?.[`${matchId}${redisKeys.profitLoss}`],
       }
     );
 

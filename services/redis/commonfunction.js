@@ -72,7 +72,8 @@ exports.addRaceInCache = async (matchId, data) => {
     startAt: data.startAt,
     countryCode: data?.countryCode,
     venue: data?.venue,
-    raceType: data?.raceType
+    raceType: data?.raceType,
+    betPlaceStartBefore: data?.betPlaceStartBefore
   }
   if (data.stopAt) {
     payload.stopAt = data.stopAt;
@@ -518,6 +519,12 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
   // Parse and return the session data or null if it doesn't exist
   return sessionData;
 
+}
+
+exports.getExpertsRedisKeyData = async (key) => {
+  // Retrieve session data from Redis
+  const data = await internalRedis.hget(redisKeys.expertRedisData,key);
+  return data;
 }
 
 exports.getExpertsRedisSessionDataByKeys = async (keys) => {

@@ -1695,7 +1695,7 @@ exports.unDeclareRacingMatchResult = async (req, res) => {
     if (response?.data?.profitLossWallet) {
       let expertPL=response?.data?.profitLossWallet;
       Object.keys(expertPL)?.forEach((item)=>{
-        expertPL[item]=JSON.stringify(expertPL);
+        expertPL[item]=JSON.stringify(expertPL[item]);
       });
       await setExpertsRedisData(expertPL);
     }

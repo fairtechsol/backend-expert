@@ -112,7 +112,7 @@ let calculateRacingRateAmount = async (jobData, userId) => {
     let mPartenerShip = partnership['fwPartnership'];
     try {
       let masterRedisData = (await getExpertsRedisData()) || {};
-      let teamRates = masterRedisData?.[`${jobData?.matchId}_${jobData?.betId}`];
+      let teamRates = masterRedisData?.[`${jobData?.matchId}${redisKeys.profitLoss}`];
 
       if (teamRates) {
         teamRates = JSON.parse(teamRates);
@@ -132,7 +132,7 @@ let calculateRacingRateAmount = async (jobData, userId) => {
 
       let teamData = await calculateRacingExpertRate(teamRates, obj, mPartenerShip);
       let userRedisObj = {
-        [`${jobData?.matchId}_${jobData?.betId}`]: JSON.stringify(teamData)
+        [`${jobData?.matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamData)
       }
       await setExpertsRedisData(userRedisObj);
       logger.info({
@@ -432,7 +432,7 @@ expertRaceMatchBetDeleteQueue.process(async function (job, done) {
         // Get user data from Redis or balance data by userId
         let expertRedisData = await getExpertsRedisData();
         
-        let masterTeamRates = JSON.parse(expertRedisData[`${matchId}_${betId}`]);
+        let masterTeamRates = JSON.parse(expertRedisData[`${matchId}${redisKeys.profitLoss}`]);
 
         masterTeamRates = Object.keys(expertRedisData).reduce((acc, key) => {
           acc[key] = parseFloat((parseRedisData(key, expertRedisData) + ((newTeamRate[key] * partnership) / 100)).toFixed(2));
@@ -440,7 +440,7 @@ expertRaceMatchBetDeleteQueue.process(async function (job, done) {
         }, {});
 
         let redisObj = {
-          [`${matchId}_${betId}`]: JSON.stringify(masterTeamRates)
+          [`${matchId}${redisKeys.profitLoss}`]: JSON.stringify(masterTeamRates)
         }
 
         await setExpertsRedisData(redisObj);

@@ -905,7 +905,7 @@ exports.racingCreateMatch = async (req, res) => {
 
     // Prepare race data for a new race
     let raceData = {
-      countryCode, matchType, title, marketId, eventId, startAt, createBy: loginId, eventName: title, venue, raceType
+      countryCode, matchType, title, marketId, eventId, startAt, createBy: loginId, eventName: title, venue, raceType, betPlaceStartBefore: 5
     };
 
     const race = await raceAddMatch(raceData);

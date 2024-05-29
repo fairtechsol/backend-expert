@@ -546,7 +546,7 @@ exports.commonGetRaceDetails = async (raceId, userId) => {
   }
 
   if (userId && race?.matchOdd?.id) {
-    let matchProfitLoss = await getExpertsRedisKeyData(`${matchId}_${race?.matchOdd?.id}`)
+    let matchProfitLoss = await getExpertsRedisKeyData(`${race?.id}_${race?.matchOdd?.id}`)
     if (matchProfitLoss) {
       matchProfitLoss = JSON.parse(matchProfitLoss);
     }

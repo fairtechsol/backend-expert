@@ -112,7 +112,7 @@ let calculateRacingRateAmount = async (jobData, userId) => {
     let mPartenerShip = partnership['fwPartnership'];
     try {
       let masterRedisData = (await getExpertsRedisData()) || {};
-      let teamRates = masterRedisData?.[`${jobData?.matchId}_${jobData?.betId}`];
+      let teamRates = JSON.parse(masterRedisData?.[`${jobData?.matchId}_${jobData?.betId}`]);
 
       if (teamRates) {
         teamRates = JSON.parse(teamRates);

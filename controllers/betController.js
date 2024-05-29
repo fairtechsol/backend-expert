@@ -1708,7 +1708,7 @@ exports.unDeclareRacingMatchResult = async (req, res) => {
         activeStatus: betStatusType.live,
         betId: matchOddBetting?.id,
         betType: matchOddBetting?.type,
-        profitLossData: response?.data?.profitLossWallet,
+        profitLossData: response?.data?.profitLossWallet?.[`${matchId}_${matchOddBetting?.id}`],
       }
     );
 

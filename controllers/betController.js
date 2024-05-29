@@ -1693,7 +1693,11 @@ exports.unDeclareRacingMatchResult = async (req, res) => {
     await deleteAllExpertResult(matchOddBetting.id);
 
     if (response?.data?.profitLossWallet) {
-      await setExpertsRedisData(response?.data?.profitLossWallet);
+      let expertPL=response?.data?.profitLossWallet;
+      Object.keys(expertPL)?.forEach((item)=>{
+        expertPL[item]=JSON.stringify(expertPL);
+      });
+      await setExpertsRedisData(expertPL);
     }
     sendMessageToUser(
       socketData.expertRoomSocket,

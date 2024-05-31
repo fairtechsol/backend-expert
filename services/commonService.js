@@ -521,6 +521,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 
 exports.commonGetRaceDetails = async (raceId, userId) => {
   let race = await getRaceFromCache(raceId);
+  let expertResults = await getExpertResult({ matchId: matchId });
   if(race){
     const { runners, matchOdd, ...updatedRace } = race;
     updatedRace.matchOdd = JSON.parse(matchOdd);
@@ -551,6 +552,17 @@ exports.commonGetRaceDetails = async (raceId, userId) => {
       matchProfitLoss = JSON.parse(matchProfitLoss);
     }
     race.profitLossDataMatch = matchProfitLoss;
+
+    if (!(race.stopAt)) {
+      let matchResult = expertResults.filter((result) => result.betId == matchOdd?.id);
+      if (matchResult?.length != 0) {
+        if (matchResult?.length == 1) {
+          race.resultStatus = resultStatus.pending;
+        } else {
+          race.resultStatus = resultStatus.missMatched;
+        }
+      }
+    }
   }
     return race
 }

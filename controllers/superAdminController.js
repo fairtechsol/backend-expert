@@ -57,8 +57,9 @@ exports.listMatchSuperAdmin = async (req, res) => {
 
 exports.racingCountryCodeListSuperAdmin = async (req, res) => {
   try {
+    const { matchType } = req.query;
    
-    const match = await getRacingMatchCountryList({ stopAt: IsNull() });
+    const match = await getRacingMatchCountryList({ stopAt: IsNull(), ...(matchType ? { matchType: matchType } : {}) });
     if (!match) {
       return ErrorResponse(
         {

@@ -554,7 +554,7 @@ exports.commonGetRaceDetails = async (raceId, userId) => {
     race.profitLossDataMatch = matchProfitLoss;
 
     if (!(race.stopAt)) {
-      let raceResult = expertResults.filter((result) => result.betId == matchOdd?.id);
+      let raceResult = expertResults.filter((result) => result.betId == race?.matchOdd?.id);
       if (raceResult?.length != 0) {
         if (raceResult?.length == 1) {
           race.resultStatus = resultStatus.pending;

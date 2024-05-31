@@ -1053,10 +1053,12 @@ exports.raceDetails = async (req, res) => {
 
 exports.racingMatchDateList = async (req, res) => {
   try {
-    const { page, limit } = req.query;
+    const { page, limit, matchType } = req.query;
     const { id: loginId, allPrivilege, betFairMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege } = req.user;
     const filters = allPrivilege || betFairMatchPrivilege || bookmakerMatchPrivilege || sessionMatchPrivilege ? {} : { createBy: loginId };
-
+    if (matchType) {
+      filters.matchType = matchType
+    }
     const match = await getRacingMatchDateList(filters, page, limit);
     if (!match) {
       return ErrorResponse(
@@ -1096,10 +1098,12 @@ exports.racingMatchDateList = async (req, res) => {
 
 exports.racingCountryCodeList = async (req, res) => {
   try {
-    const { date } = req.query;
+    const { date, matchType } = req.query;
     const { id: loginId, allPrivilege, betFairMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege } = req.user;
     const filters = allPrivilege || betFairMatchPrivilege || bookmakerMatchPrivilege || sessionMatchPrivilege ? {} : { createBy: loginId };
-
+    if (matchType) {
+      filters.matchType = matchType
+    }
     const match = await getRacingMatchCountryList(filters, date);
     if (!match) {
       return ErrorResponse(

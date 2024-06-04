@@ -1069,7 +1069,7 @@ exports.racingUpdateMatch = async (req, res) => {
         message: {
           msg: "updated",
           keys: {
-            name: "Match",
+            name: "Race",
           },
         },
         data: race

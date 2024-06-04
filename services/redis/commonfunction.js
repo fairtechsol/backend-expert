@@ -132,6 +132,36 @@ exports.updateMatchInCache = async (matchId, data) => {
     .exec();
 }
 
+exports.updateRaceInCache = async (matchId, data) => {
+  // Log the update information
+  logger.info({
+    message: `updating  match data in redis with match id  ${matchId}`,
+    data: data
+  });
+  let matchKey = `${matchId}_match`;
+  let match = await internalRedis.hgetall(matchKey);
+  let payload = {
+    id: match.id || data.id,
+    matchType: data.matchType || match.matchType,
+    title: data.title || match.title,
+    marketId: data.marketId || match.marketId,
+    eventId: data.eventId || match.eventId,
+    startAt: data.startAt || match.startAt,
+    eventName: data.eventName || match.eventName,
+    venue: data.venue || match.venue,
+    betPlaceStartBefore: data.betPlaceStartBefore || match.betPlaceStartBefore
+  }
+
+  if (data.stopAt || match.stopAt) {
+    payload.stopAt = data.stopAt || match.stopAt;
+  }
+  return await internalRedis
+    .pipeline()
+    .hset(matchKey, payload)
+    .expire(matchKey, expiry)
+    .exec();
+}
+
 exports.updateMatchKeyInCache = async (matchId, key, data) => {
   let matchKey = `${matchId}_match`;
   // Log the update information

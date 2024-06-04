@@ -3,8 +3,8 @@ const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBetti
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults, getAllProfitLossResultsRace } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
-const { getRaceByMarketId, raceAddMatch, deleteRace } = require("../services/racingMatchService");
-const { insertRaceBettings, insertRunners } = require("../services/raceBettingService");
+const { getRaceByMarketId, raceAddMatch, deleteRace, getRacingMatchById } = require("../services/racingMatchService");
+const { insertRaceBettings, insertRunners, getRacingBetting, updateRaceBetting } = require("../services/raceBettingService");
 const {
   getMatchById,
   getMatchByMarketId,
@@ -17,7 +17,7 @@ const {
   getMatchWithBettingAndSession,
   getOneMatchByCondition,
 } = require("../services/matchService");
-const { addRaceInCache, addRaceBetttingInCache, addMatchInCache, updateMatchInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
+const { addRaceInCache, addRaceBetttingInCache, addMatchInCache, updateMatchInCache,updateRaceInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
 
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
@@ -1017,6 +1017,80 @@ exports.racingCreateMatch = async (req, res) => {
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
+}
+
+exports.racingUpdateMatch = async (req, res) => {
+  try {
+    // Extract relevant information from the request body
+    const { id, minBet, maxBet } = req.body;
+    //get user data to check privilages
+    const { id: loginId } = req.user;
+
+
+    const user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege", "betFairMatchPrivilege", "bookmakerMatchPrivilege", "sessionMatchPrivilege"]);
+    if (!user) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
+    }
+
+    // Check if the race exists
+    let race = await getRacingMatchById(id, ["id", "createBy"]);
+
+    if (!race) {
+      logger.error({
+        error: `Match not found for id ${id}`
+      });
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
+    }
+
+    let matchBatting = await getRacingBetting({matchId:id}, ["id", "minBet", "maxBet", "type"]);
+    if (!matchBatting ) {
+      logger.error({
+        error: `Match betting not found for race id ${id}`
+      });
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match batting" } } }, req, res);
+    }
+
+    if (loginId != race.createBy && !user.allPrivilege) {
+      logger.error({
+        error: `User ${loginId} don't have privilege for accessing this race ${id}`
+      });
+      return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
+    }
+
+     await updateRaceBetting({matchId:id}, {minBet, maxBet});
+
+    updateRaceDataAndBettingInRedis(id);
+
+    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent, race);
+    // Send success response with the updated race data
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "updated",
+          keys: {
+            name: "Match",
+          },
+        },
+        data: race
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at update race for the expert.`,
+      stack: err.stack,
+      message: err.message
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+const updateRaceDataAndBettingInRedis = async (id) => {
+  const race = await getRacingMatchById(id);
+  updateRaceInCache(race.id, race);
 }
 
 exports.raceDetails = async (req, res) => {

@@ -27,7 +27,7 @@ module.exports.gameType = {
 
 module.exports.resultStatus = {
   pending: "PENDING",
-  missMatched: "MISSMATCHED"
+  missMatched: "MISMATCHED"
 }
 
 module.exports.betStatus = {

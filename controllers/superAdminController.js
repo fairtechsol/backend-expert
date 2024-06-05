@@ -60,21 +60,7 @@ exports.racingCountryCodeListSuperAdmin = async (req, res) => {
     const { matchType } = req.query;
    
     const match = await getRacingMatchCountryList({ stopAt: IsNull(), ...(matchType ? { matchType: matchType } : {}) });
-    if (!match) {
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "notFound",
-            keys: {
-              name: "Match",
-            },
-          },
-        },
-        req,
-        res
-      );
-    }
+
     return SuccessResponse(
       {
         statusCode: 200,

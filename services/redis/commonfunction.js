@@ -142,14 +142,15 @@ exports.updateRaceInCache = async (matchId, data) => {
   let match = await internalRedis.hgetall(matchKey);
   let payload = {
     id: match.id || data.id,
-    matchType: data.matchType || match.matchType,
-    title: data.title || match.title,
+    activeStatus: match.activeStatus || data.activeStatus,
+    createBy: match.createBy || data.createBy,
+    createdAt: match.createdAt || data.createdAt,
+    isActive: match.isActive || data.isActive,
     marketId: data.marketId || match.marketId,
-    eventId: data.eventId || match.eventId,
-    startAt: data.startAt || match.startAt,
-    eventName: data.eventName || match.eventName,
-    venue: data.venue || match.venue,
-    betPlaceStartBefore: data.betPlaceStartBefore || match.betPlaceStartBefore
+    matchId: data.matchId || match.matchId,
+    maxBet: data.maxBet || match.maxBet,
+    minBet: data.minBet || match.minBet,
+    type: data.type || match.type
   }
 
   if (data.stopAt || match.stopAt) {

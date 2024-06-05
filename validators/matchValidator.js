@@ -260,3 +260,18 @@ module.exports.racingAddMatchValidate = Joi.object({
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });
+
+module.exports.racingUpdateMatchValidate = Joi.object({
+  id: Joi.string().guid({ version: 'uuidv4' }),
+  minBet: Joi.number().required().messages({
+    "number.base": "Minimum bet amount must be a number",
+    "any.required": "Minimum bet amount is required",
+  }),
+  maxBet: Joi.number().greater(Joi.ref('minBet')).required().messages({
+    "number.base": "Maximun bet amount must be a number",
+    "any.required": "Maximun bet amount is required",
+    "number.greater": "Maximum bet must be greater than minimum bet",
+  })
+}).messages({
+  "object.base": "Invalid input. Please provide a valid object.",
+});

@@ -3,8 +3,8 @@ const router = express.Router();
 const validator = require('../middleware/joi.validator');
 const { isAuthenticate } = require('../middleware/auth');
 
-const { racingCreateMatch, createMatch, updateMatch, listMatch, matchDetails, matchActiveInActive, getMatchCompetitionsByType, getMatchDatesByCompetitionId, getMatchDatesByCompetitionIdAndDate, matchListWithManualBetting,matchDetailsForFootball,racingMatchDateList, racingCountryCodeList, listRacingMatch, raceDetails } = require('../controllers/matchController');
-const { racingAddMatchValidate, updateMatchValidate, addMatchValidate, MatchActiveInactive } = require('../validators/matchValidator');
+const { racingCreateMatch, createMatch, updateMatch, listMatch, matchDetails, matchActiveInActive, getMatchCompetitionsByType, getMatchDatesByCompetitionId, getMatchDatesByCompetitionIdAndDate, matchListWithManualBetting,matchDetailsForFootball,racingMatchDateList, racingCountryCodeList, listRacingMatch, raceDetails , racingUpdateMatch} = require('../controllers/matchController');
+const {racingUpdateMatchValidate, racingAddMatchValidate, updateMatchValidate, addMatchValidate, MatchActiveInactive } = require('../validators/matchValidator');
 
 
 router.post('/add', isAuthenticate, validator(addMatchValidate), createMatch);
@@ -24,6 +24,7 @@ router.get('/racing/list', isAuthenticate, listRacingMatch);
 router.get('/:id', isAuthenticate, matchDetails);
 router.get('/otherMatch/:id', isAuthenticate, matchDetailsForFootball);
 router.post('/racingAdd', isAuthenticate, validator(racingAddMatchValidate), racingCreateMatch);
+router.post('/racingUpdate', isAuthenticate, validator(racingUpdateMatchValidate), racingUpdateMatch);
 router.get('/racing/:id', isAuthenticate, raceDetails);
 
 

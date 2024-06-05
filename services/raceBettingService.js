@@ -43,6 +43,13 @@ exports.getRacingBettingById = async (id, select) => {
   });
 };
 
+exports.getRacingBettingBymatchId = async (id, select) => {
+  return await RacingBetting.findOne({
+    where: { matchId: id },
+    select: select,
+  });
+};
+
 exports.addRaceBetting= async (body)=>{
   let addRaceBetting = await RacingBetting.save(body);
   return addRaceBetting;

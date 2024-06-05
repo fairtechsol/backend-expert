@@ -4,7 +4,7 @@ const { logger } = require("../config/logger");
 const { getAllProfitLossResults, getAllProfitLossResultsRace } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
 const { getRaceByMarketId, raceAddMatch, deleteRace, getRacingMatchById } = require("../services/racingMatchService");
-const { insertRaceBettings, insertRunners, getRacingBetting, updateRaceBetting } = require("../services/raceBettingService");
+const { insertRaceBettings, insertRunners, getRacingBetting, updateRaceBetting, getRacingBettingBymatchId } = require("../services/raceBettingService");
 const {
   getMatchById,
   getMatchByMarketId,
@@ -1089,7 +1089,7 @@ exports.racingUpdateMatch = async (req, res) => {
 };
 
 const updateRaceDataAndBettingInRedis = async (id) => {
-  const race = await getRacingMatchById(id);
+  const race = await getRacingBettingBymatchId(id);
   updateRaceInCache(race.id, race);
 }
 

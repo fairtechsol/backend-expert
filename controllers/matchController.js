@@ -1042,12 +1042,12 @@ exports.racingUpdateMatch = async (req, res) => {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
     }
 
-    let matchBatting = await getRacingBetting({ matchId: id });
-    if (!matchBatting) {
+    let raceBatting = await getRacingBetting({ matchId: id });
+    if (!raceBatting) {
       logger.error({
-        error: `Match betting not found for race id ${id}`
+        error: `Race betting not found for race id ${id}`
       });
-      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match batting" } } }, req, res);
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Race batting" } } }, req, res);
     }
 
     if (loginId != race.createBy && !user.allPrivilege) {
@@ -1058,13 +1058,13 @@ exports.racingUpdateMatch = async (req, res) => {
     }
 
 
-     await updateRaceBetting({ matchId: id }, { minBet, maxBet });
-    matchBatting.minBet = minBet;
-    matchBatting.maxBet = maxBet;
+    await updateRaceBetting({ matchId: id }, { minBet, maxBet });
+    raceBatting.minBet = minBet;
+    raceBatting.maxBet = maxBet;
 
-    updateRaceDataAndBettingInRedis(matchBatting);
+    updateRaceInCache(raceBatting.matchId, raceBatting);
 
-    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent, matchBatting);
+    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent,raceBatting);
     // Send success response with the updated race data
     return SuccessResponse(
       {
@@ -1091,9 +1091,6 @@ exports.racingUpdateMatch = async (req, res) => {
   }
 };
 
-const updateRaceDataAndBettingInRedis = async (matchBatting) => {
-  updateRaceInCache(matchBatting.matchId, matchBatting);
-}
 
 exports.raceDetails = async (req, res) => {
   try {

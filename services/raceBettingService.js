@@ -27,7 +27,6 @@ exports.getRaceBettingWithRunners = async (where, select) => {
 
 exports.updateRaceBetting = async (where, data) => {
   await RacingBetting.update(where, data);
-  return data;
 };
 
 exports.getRacingBetting = async (where, select) => {

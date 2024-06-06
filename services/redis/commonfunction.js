@@ -135,7 +135,7 @@ exports.updateMatchInCache = async (matchId, data) => {
 exports.updateRaceInCache = async (matchId, data) => {
   // Log the update information
   logger.info({
-    message: `updating  match data in redis with match id  ${matchId}`,
+    message: `updating  race data in redis with match id  ${matchId}`,
     data: data
   });
   let matchKey = `${matchId}_match`;
@@ -152,8 +152,8 @@ exports.updateRaceInCache = async (matchId, data) => {
     type: data.type || match.type
   };  
 
-  if (data.stopAt ?? match.stopAt) {
-    payload.stopAt = data.stopAt ?? match.stopAt;
+  if (data.stopAt || match.stopAt) {
+    payload.stopAt = data.stopAt || match.stopAt;
   }
   return await internalRedis
     .pipeline()

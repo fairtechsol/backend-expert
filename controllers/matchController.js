@@ -1075,7 +1075,7 @@ exports.racingUpdateMatch = async (req, res) => {
             name: "Race",
           },
         },
-        data: race
+        data: raceBatting
       },
       req,
       res

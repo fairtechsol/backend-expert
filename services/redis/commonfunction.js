@@ -7,7 +7,7 @@ const { getMatchSchema } = require("../../validators/matchValidator");
 const { getMatchAllBettings } = require("../matchBettingService");
 const { getSessionBettings } = require("../sessionBettingService");
 const lodash = require('lodash')
-let expiry = 60*60*4;
+let expiry = 60 * 60 * 4;
 exports.addMatchInCache = async (matchId, data) => {
   // Log the update information
   logger.info({
@@ -32,9 +32,9 @@ exports.addMatchInCache = async (matchId, data) => {
     manualSessionActive: data.manualSessionActive
   }
 
-  Object.values(marketBettingTypeByBettingType)?.forEach((item)=>{
-    if(data[item]){
-      payload[item]=JSON.stringify(data[item]);
+  Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+    if (data[item]) {
+      payload[item] = JSON.stringify(data[item]);
     }
   });
 
@@ -112,9 +112,9 @@ exports.updateMatchInCache = async (matchId, data) => {
     manualSessionActive: data.manualSessionActive ?? match.manualSessionActive
   }
 
-  Object.values(marketBettingTypeByBettingType)?.forEach((item)=>{
-    if(data[item]){
-      payload[item]=JSON.stringify(data[item]);
+  Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+    if (data[item]) {
+      payload[item] = JSON.stringify(data[item]);
     }
   });
 
@@ -140,17 +140,20 @@ exports.updateRaceInCache = async (matchId, data) => {
   });
   let matchKey = `${matchId}_match`;
   let match = await internalRedis.hgetall(matchKey);
+  let matchOdd = JSON.parse(match.matchOdd)
+  matchOdd.maxBet = data.maxBet
+  matchOdd.minBet = data.minBet
+  match.matchOdd = JSON.stringify(matchOdd);
   let payload = {
     activeStatus: data.activeStatus || match.activeStatus,
+    matchOdd: match.matchOdd,
     createBy: data.createBy || match.createBy,
     createdAt: data.createdAt || match.createdAt,
     isActive: data.isActive,
     marketId: data.marketId || match.marketId,
     matchId: data.matchId || match.matchId,
-    maxBet: data.maxBet ?? match.maxBet,
-    minBet: data.minBet ?? match.minBet,
     type: data.type || match.type
-  };  
+  };
 
   if (data.stopAt || match.stopAt) {
     payload.stopAt = data.stopAt || match.stopAt;
@@ -553,7 +556,7 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
 
 exports.getExpertsRedisKeyData = async (key) => {
   // Retrieve session data from Redis
-  const data = await internalRedis.hget(redisKeys.expertRedisData,key);
+  const data = await internalRedis.hget(redisKeys.expertRedisData, key);
   return data;
 }
 
@@ -668,7 +671,7 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
     redisPipeline = redisPipeline.hset(`${matchId}_manualBetting`, manualBettingData).expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
   }
 
-  let matchDetails=await internalRedis.hgetall(`${matchId}_match`);
+  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
 
   if (matchDetails) {
     Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
@@ -715,7 +718,7 @@ exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
     redisPipeline = redisPipeline.hset(`${matchId}_manualBetting`, manualBettingData).expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
   }
 
-  let matchDetails=await internalRedis.hgetall(`${matchId}_match`);
+  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
 
   if (matchDetails) {
     Object.keys(mainMatchMarketType)?.forEach((item) => {
@@ -748,7 +751,7 @@ exports.settingAllBettingRacingMatchRedisStatus = async (matchId, status) => {
   let redisPipeline = internalRedis
     .pipeline();
 
-  let matchDetails=await internalRedis.hgetall(`${matchId}_match`);
+  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
 
   if (matchDetails) {
     Object.keys(mainMatchRacingMarketType)?.forEach((item) => {

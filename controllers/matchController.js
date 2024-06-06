@@ -1058,9 +1058,9 @@ exports.racingUpdateMatch = async (req, res) => {
     }
 
 
-    let betValueData = await updateRaceBetting({ matchId: id }, { minBet, maxBet });
-    matchBatting.minBet = betValueData.minBet;
-    matchBatting.maxBet = betValueData.maxBet;
+     await updateRaceBetting({ matchId: id }, { minBet, maxBet });
+    matchBatting.minBet = minBet;
+    matchBatting.maxBet = maxBet;
 
     updateRaceDataAndBettingInRedis(matchBatting);
 

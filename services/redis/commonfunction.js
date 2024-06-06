@@ -140,7 +140,7 @@ exports.updateRaceInCache = async (matchId, data) => {
   });
   let matchKey = `${matchId}_match`;
   let match = await internalRedis.hgetall(matchKey);
-  let matchOdd =JSON.parse(match.matchOdd)
+  let matchOdd = JSON.parse(match.matchOdd)
   matchOdd.maxBet = data.maxBet
   matchOdd.minBet = data.minBet
   match.matchOdd = JSON.stringify(matchOdd);

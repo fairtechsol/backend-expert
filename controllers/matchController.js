@@ -17,7 +17,7 @@ const {
   getMatchWithBettingAndSession,
   getOneMatchByCondition,
 } = require("../services/matchService");
-const { addRaceInCache, addRaceBetttingInCache, addMatchInCache, updateMatchInCache,updateRaceInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
+const { addRaceInCache, addRaceBetttingInCache, addMatchInCache, updateMatchInCache, updateRaceInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
 
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
@@ -894,7 +894,7 @@ exports.racingCreateMatch = async (req, res) => {
     }
 
     // Check if market ID already exists
-    const isRacePresent = await getRaceByMarketId({marketId});
+    const isRacePresent = await getRaceByMarketId({ marketId });
     if (isRacePresent) {
       logger.error({
         error: `Race already exist for market id: ${marketId}`
@@ -949,17 +949,17 @@ exports.racingCreateMatch = async (req, res) => {
       runnersData.push(runnerData);
     }
 
-   let runnerData =  await insertRunners(runnersData);
+    let runnerData = await insertRunners(runnersData);
 
-   let stringRunnerData= JSON.stringify(runnerData)
-   let stringBettingData= JSON.stringify(insertedRaceBettings)
+    let stringRunnerData = JSON.stringify(runnerData)
+    let stringBettingData = JSON.stringify(insertedRaceBettings)
 
 
-   const runnerAndRaceData = {
-    ...race,
-    runners: stringRunnerData,
-    matchOdd: stringBettingData
-  };
+    const runnerAndRaceData = {
+      ...race,
+      runners: stringRunnerData,
+      matchOdd: stringBettingData
+    };
 
     await addRaceInCache(race.id, runnerAndRaceData)
     broadcastEvent(socketData.addMatchEvent, { gameType: race?.matchType });
@@ -1042,12 +1042,12 @@ exports.racingUpdateMatch = async (req, res) => {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
     }
 
-    let matchBatting = await getRacingBetting({matchId:id}, ["id", "minBet", "maxBet", "type"]);
-    if (!matchBatting ) {
+    let raceBatting = await getRacingBetting({ matchId: id });
+    if (!raceBatting) {
       logger.error({
-        error: `Match betting not found for race id ${id}`
+        error: `Race betting not found for race id ${id}`
       });
-      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match batting" } } }, req, res);
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Race batting" } } }, req, res);
     }
 
     if (loginId != race.createBy && !user.allPrivilege) {
@@ -1057,11 +1057,14 @@ exports.racingUpdateMatch = async (req, res) => {
       return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
     }
 
-     await updateRaceBetting({matchId:id}, {minBet, maxBet});
 
-    updateRaceDataAndBettingInRedis(id);
+    await updateRaceBetting({ matchId: id }, { minBet, maxBet });
+    raceBatting.minBet = minBet;
+    raceBatting.maxBet = maxBet;
 
-    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent, race);
+    updateRaceInCache(raceBatting.matchId, raceBatting);
+
+    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent,raceBatting);
     // Send success response with the updated race data
     return SuccessResponse(
       {
@@ -1072,7 +1075,7 @@ exports.racingUpdateMatch = async (req, res) => {
             name: "Race",
           },
         },
-        data: race
+        data: raceBatting
       },
       req,
       res
@@ -1088,10 +1091,6 @@ exports.racingUpdateMatch = async (req, res) => {
   }
 };
 
-const updateRaceDataAndBettingInRedis = async (id) => {
-  const race = await getRacingMatchById(id);
-  updateRaceInCache(race.id, race);
-}
 
 exports.raceDetails = async (req, res) => {
   try {
@@ -1101,15 +1100,15 @@ exports.raceDetails = async (req, res) => {
 
     const raceIds = raceId?.split(",");
 
-      for (let i = 0; i < raceIds?.length; i++) {
-        race.push(await commonGetRaceDetails(raceIds[i], userId));
-      }
+    for (let i = 0; i < raceIds?.length; i++) {
+      race.push(await commonGetRaceDetails(raceIds[i], userId));
+    }
 
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "fetched", keys: { name: "Match Details" } },
-        data: raceIds.length==1 ? race[0] : race,
+        data: raceIds.length == 1 ? race[0] : race,
       },
       req,
       res
@@ -1229,13 +1228,13 @@ exports.listRacingMatch = async (req, res) => {
     for (let i = 0; i < match?.matches?.length; i++) {
       match.matches[i].pl = await getAllProfitLossResultsRace(match.matches[i].id);
     }
-    
+
     const matchData = match?.matches?.reduce((acc, item) => {
       const venue = item?.venue;
       acc[venue] = acc[venue] || [];
       acc[venue].push(item);
       return acc;
-    }, {});    
+    }, {});
 
     return SuccessResponse(
       {

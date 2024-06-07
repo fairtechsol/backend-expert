@@ -236,6 +236,7 @@ module.exports.bettingType = {
 };
 
 module.exports.socketData = {
+  CardBetPlaced: "userCardBetPlaced",
   expertRoomSocket: "expertRoom",
   updateMatchEvent: "updateMatch",
   sessionAddedEvent: "sessionAdded",
@@ -268,6 +269,7 @@ module.exports.redisKeys = {
   noRateTie: "noRateTie_",
   yesRateComplete: "yesRateComplete_",
   noRateComplete: "noRateComplete_",
+  card: "_card",
 
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`yesRateUnderOver${curr}.5`] = `yesRateUnderOver${curr}.5_`;

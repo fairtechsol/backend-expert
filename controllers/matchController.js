@@ -25,6 +25,7 @@ const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { commonGetMatchDetails, commonGetMatchDetailsForFootball, commonGetRaceDetails } = require("../services/commonService");
 const { getRacingMatchCountryList, getRacingMatchDateList, getRacingMatch } = require("../services/racingMatchService");
+const { getCardMatch } = require("../services/cardMatchService");
 /**
  * Create or update a match.
  *
@@ -1123,6 +1124,33 @@ exports.raceDetails = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+exports.cardDetails = async (req, res) => {
+  try {
+    const { type } = req.params;
+
+    let casinoDetails = await getCardMatch({ type: type });
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { name: "Card Details" } },
+        data: casinoDetails,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error while getting card detail for match: ${req.params.id}.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
 
 exports.racingMatchDateList = async (req, res) => {
   try {

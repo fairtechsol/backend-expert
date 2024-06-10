@@ -179,12 +179,12 @@ let calculateRacingRateAmount = async (jobData, userId) => {
 //     let mPartenerShip = partnership['fwPartnership'];
 //     try {
 //       let masterRedisData = (await getExpertsRedisData()) || {};
-//       let teamRates = masterRedisData?.[`${jobData?.mid}_${jobData?.selectionId}_${redisKeys.card}`];
+//       let teamRates = masterRedisData?.[`${jobData?.mid}_${jobData?.selectionId}${redisKeys.card}`];
 
 //       let cardProfitLossAndExposure = new CardProfitLoss(jobData?.matchType, teamRates, { bettingType: jobData?.bettingType, winAmount: jobData?.winAmount, lossAmount: jobData?.lossAmount, playerName: jobData?.betOnTeam, partnership: partnership }, userOldExposure).getCardGameProfitLoss()
      
 //       let userRedisObj = {
-//         [`${jobData?.mid}_${jobData?.selectionId}_${redisKeys.card}`]: cardProfitLossAndExposure.profitLoss
+//         [`${jobData?.mid}_${jobData?.selectionId}${redisKeys.card}`]: cardProfitLossAndExposure.profitLoss
 //       }
 //       await setExpertsRedisData(userRedisObj);
 //       logger.info({

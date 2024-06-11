@@ -13,7 +13,7 @@ router.get('/match/racing/list', listRacingMatchSuperAdmin);
 router.get('/match/racing/:id', raceDetails);
 
 router.get('/match/:id', matchDetails);
-router.get('/match/card/:id', cardDetails);
+router.get('/match/card/:type', cardDetails);
 router.get('/otherMatch/:id', matchDetailsForFootball);
 router.get('/session/:matchId', getSessions);
 //api for get match and match betting details for all super admin backend

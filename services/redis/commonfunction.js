@@ -574,3 +574,15 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
   // Use a Redis pipeline for atomicity and efficiency
   await redisPipeline.exec();
 }
+
+exports.getRedisKey = async (key) => {
+  return await internalRedis.get(key);
+}
+
+exports.setRedisKey = async (key, val) => {
+  await internalRedis.set(key, val);
+}
+
+exports.deleteRedisKey = async (key, val) => {
+  await internalRedis.del(key);
+}

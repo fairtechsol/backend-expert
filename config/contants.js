@@ -291,7 +291,7 @@ module.exports.redisKeys = {
     prev[`userTeamCRateSetWinner${curr}`] = `userTeamCRateSetWinner${curr}_`;
     return prev;
   }, {})),
-
+  declare: "_declare",
   profitLoss: "_profitLoss"
 }
 

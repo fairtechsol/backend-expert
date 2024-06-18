@@ -157,6 +157,7 @@ module.exports.redisKeys = {
   noRateTie: "noRateTie_",
   yesRateComplete: "yesRateComplete_",
   noRateComplete: "noRateComplete_",
+  declare: "_declare",
 }
 
 module.exports.thirdPartyMarketKey = {

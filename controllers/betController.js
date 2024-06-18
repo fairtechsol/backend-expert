@@ -33,6 +33,9 @@ const {
   deleteAllMatchRedis,
   deleteKeyFromMatchRedisData,
   settingAllBettingMatchRedisStatus,
+  getRedisKey,
+  setRedisKey,
+  deleteRedisKey,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -90,6 +93,20 @@ exports.declareSessionResult = async (req, res) => {
   const { id: userId } = req.user;
   try {
 
+    const isRedisSessionResultDeclare= await getRedisKey(`${betId}${redisKeys.declare}`);
+
+    if (isRedisSessionResultDeclare) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.sessionDeclare" },
+        },
+        req,
+        res
+      );
+    }
+    await setRedisKey(`${betId}${redisKeys.declare}`, true);
+
     const match = await getMatchById(matchId);
     logger.info({
       message: "Result declare",
@@ -97,6 +114,7 @@ exports.declareSessionResult = async (req, res) => {
     });
 
     if (match?.stopAt) {
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
         {
           statusCode: 403,
@@ -113,6 +131,7 @@ exports.declareSessionResult = async (req, res) => {
     }, ["id"]);
 
     if (isSessionDeclared) {
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
         {
           statusCode: 403,
@@ -125,6 +144,7 @@ exports.declareSessionResult = async (req, res) => {
     // check result already declare
     let resultDeclare = await getSessionBettingById(betId);
     if (resultDeclare && resultDeclare.activeStatus == betStatus.result) {
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
         {
           statusCode: 403,
@@ -151,6 +171,7 @@ exports.declareSessionResult = async (req, res) => {
     })
 
     if (resultValidate) {
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       updateSessionBetting({ id: betId },
         { activeStatus: betStatus.save, result: null }
       );
@@ -187,6 +208,7 @@ exports.declareSessionResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
+        await deleteRedisKey(`${betId}${redisKeys.declare}`);
         let bet = await getSessionBettingById(betId);
         bet.activeStatus = betStatusType.save;
         bet.result = null;
@@ -224,6 +246,7 @@ exports.declareSessionResult = async (req, res) => {
 
     await deleteKeyFromManualSessionId(matchId, betId);
     await deleteKeyFromExpertRedisData(betId + redisKeys.profitLoss);
+    await deleteRedisKey(`${betId}${redisKeys.declare}`);
 
     return SuccessResponse(
       {
@@ -250,6 +273,7 @@ exports.declareSessionResult = async (req, res) => {
     });
 
     if(isResultChange){
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       updateSessionBetting({ id: betId },
         { activeStatus: betStatus.save, result: null }
       );
@@ -264,6 +288,20 @@ exports.declareSessionNoResult = async (req, res) => {
   const { betId, matchId } = req.body;
   const { id: userId } = req.user;
   try {
+    const isRedisSessionResultDeclare= await getRedisKey(`${betId}${redisKeys.declare}`);
+
+    if (isRedisSessionResultDeclare) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.sessionDeclare" },
+        },
+        req,
+        res
+      );
+    }
+    await setRedisKey(`${betId}${redisKeys.declare}`, true);
+
     const match = await getMatchById(matchId);
     logger.info({
       message: "Result declare",
@@ -271,6 +309,7 @@ exports.declareSessionNoResult = async (req, res) => {
     });
 
     if (match?.stopAt) {
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
         {
           statusCode: 403,
@@ -287,6 +326,7 @@ exports.declareSessionNoResult = async (req, res) => {
     }, ["id"]);
 
     if (isSessionDeclared) {
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
         {
           statusCode: 403,
@@ -300,6 +340,7 @@ exports.declareSessionNoResult = async (req, res) => {
     // check result already declare
     let resultDeclare = await getSessionBettingById(betId);
     if (resultDeclare && resultDeclare.activeStatus == betStatus.result) {
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
         {
           statusCode: 403,
@@ -310,7 +351,9 @@ exports.declareSessionNoResult = async (req, res) => {
       );
     }
     await updateSessionBetting({ id: betId }, { activeStatus: betStatus.result, result: noResult });
+
     isResultChange = true;
+    
     const resultValidate = await checkResult({
       betId: resultDeclare.id,
       matchId: resultDeclare.matchId,
@@ -321,9 +364,11 @@ exports.declareSessionNoResult = async (req, res) => {
     })
 
     if (resultValidate) {
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       updateSessionBetting({ id: betId },
         { activeStatus: betStatus.save, result: null }
       );
+
       return SuccessResponse(
         {
           statusCode: 200,
@@ -355,11 +400,13 @@ exports.declareSessionNoResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
+        await deleteRedisKey(`${betId}${redisKeys.declare}`);
         let bet = await getSessionBettingById(betId);
         bet.activeStatus = betStatusType.save;
         bet.result = null;
         await addSessionBetting(bet);
         await deleteExpertResult(betId, userId);
+
         throw err;
       });
 
@@ -388,6 +435,7 @@ exports.declareSessionNoResult = async (req, res) => {
 
     await deleteKeyFromExpertRedisData(`${betId}${redisKeys.profitLoss}`);
     await deleteKeyFromManualSessionId(matchId, betId);
+    await deleteRedisKey(`${betId}${redisKeys.declare}`);
 
     return SuccessResponse(
       {
@@ -414,6 +462,7 @@ exports.declareSessionNoResult = async (req, res) => {
       message: err.message,
     });
     if (isResultChange) {
+      await deleteRedisKey(`${betId}${redisKeys.declare}`);
       updateSessionBetting({ id: betId },
         { activeStatus: betStatus.save, result: null }
       );
@@ -694,6 +743,20 @@ exports.declareMatchResult = async (req, res) => {
   const { matchId, result } = req.body;
   const { id: userId } = req.user;
   try {
+    const isRedisSessionResultDeclare= await getRedisKey(`${matchId}${redisKeys.declare}`);
+
+    if (isRedisSessionResultDeclare) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.matchDeclare" },
+        },
+        req,
+        res
+      );
+    }
+    await setRedisKey(`${matchId}${redisKeys.declare}`, true);
+
     const match = await getMatchById(matchId);
     logger.info({
       message: "Result declare",
@@ -701,6 +764,7 @@ exports.declareMatchResult = async (req, res) => {
     });
 
     if (!match) {
+      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       return ErrorResponse({
         statusCode: 403,
         message: { msg: "notFound", keys: { name: "Match" } },
@@ -709,6 +773,7 @@ exports.declareMatchResult = async (req, res) => {
     }
 
     if (match?.stopAt) {
+      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       return ErrorResponse({
         statusCode: 403,
         message: { msg: "bet.matchDeclare" },
@@ -722,6 +787,7 @@ exports.declareMatchResult = async (req, res) => {
       (item) => item.type == matchBettingType.quickbookmaker1
     );
     if (resultDeclare?.length > 0 && matchOddBetting.activeStatus == betStatus.result) {
+      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       return ErrorResponse(
         {
           statusCode: 403,
@@ -734,12 +800,14 @@ exports.declareMatchResult = async (req, res) => {
 
     const isMatchDeclared = await getResult({ betId: matchOddBetting.id, matchId: matchId }, ["id"]);
     if (isMatchDeclared) {
+      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       return ErrorResponse({
         statusCode: 403,
         message: { msg: "bet.matchDeclare" },
       }, req, res);
     }
     await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
+
     isResultChange = true;
 
     const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
@@ -747,7 +815,9 @@ exports.declareMatchResult = async (req, res) => {
       logger.error({
         error: `Sessions is not declared yet.`,
       });
+      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+      
       return ErrorResponse(
         { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
         req,
@@ -765,6 +835,7 @@ exports.declareMatchResult = async (req, res) => {
     })
 
     if (resultValidate) {
+      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
       return SuccessResponse(
         {
@@ -799,6 +870,7 @@ exports.declareMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
+        await deleteRedisKey(`${matchId}${redisKeys.declare}`);
         await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
         await deleteExpertResult(matchOddBetting.id, userId);
         throw err;
@@ -837,6 +909,7 @@ exports.declareMatchResult = async (req, res) => {
     match.stopAt = new Date();
 
     addMatch(match);
+    await deleteRedisKey(`${matchId}${redisKeys.declare}`);
 
     return SuccessResponse(
       {
@@ -862,6 +935,7 @@ exports.declareMatchResult = async (req, res) => {
       message: err.message,
     });
     if (isResultChange) {
+      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
     }
     // Handle any errors and return an error response

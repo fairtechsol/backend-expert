@@ -1626,12 +1626,13 @@ exports.declareRacingMatchResult = async (req, res) => {
         stopAt: match.stopAt,
         activeStatus: betStatusType.result,
         betId: matchOddBetting?.id,
-        betType: matchOddBetting?.type
+        betType: matchOddBetting?.type,
+        type: match?.matchType
       }
     );
 
-      deleteAllMatchRedis(matchId);
-      match.stopAt = new Date();
+    deleteAllMatchRedis(matchId);
+    match.stopAt = new Date();
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${matchId}${redisKeys.profitLoss}`);
 
     await raceAddMatch(match);

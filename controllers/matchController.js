@@ -963,7 +963,7 @@ exports.racingCreateMatch = async (req, res) => {
     };
 
     await addRaceInCache(race.id, runnerAndRaceData)
-    broadcastEvent(socketData.addMatchEvent, { gameType: race?.matchType });
+    broadcastEvent(socketData.addMatchEvent, { gameType: race?.matchType, startAt: startAt, countryCode: countryCode });
 
     await apiCall(
       apiMethod.post,

@@ -6,7 +6,7 @@ module.exports = class CardData1720654837580 {
 
     async up(queryRunner) {
         for (let game of cardGames) {
-            await queryRunner.query(`INSERT INTO "cardMatchs" (name, type, "minBet", "maxBet", id) SELECT $1, $2, $3, $4, $5 FROM (VALUES (1)) AS dummy WHERE NOT EXISTS (SELECT * FROM "cardMatchs" WHERE type = $2);`,
+            await queryRunner.query(`INSERT INTO "cardMatchs" (name, type, "minBet", "maxBet", id) SELECT $1, $2, $3, $4, $5 FROM (VALUES (1)) AS dummy WHERE NOT EXISTS (SELECT 1 FROM "cardMatchs" WHERE type = $2);`,
                 [game.name, game.type, 0, 1, game.id]);
         }
 

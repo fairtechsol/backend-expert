@@ -11,7 +11,6 @@ const bcrypt = require("bcryptjs");
 const lodash = require("lodash");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
-const { verifyToken } = require("../utils/authUtils");
 const { logger } = require("../config/logger");
 const { ILike } = require("typeorm");
 const { loginCount, addDataInRedis } = require('../services/redis/commonfunction')

@@ -46,7 +46,7 @@ app.use(express.json());
  */
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// configureing i18 for message control
+// configuring i18 for message control
 app.use(i18n.init);
 app.use(setI18Language);
 

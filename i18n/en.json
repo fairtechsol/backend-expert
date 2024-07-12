@@ -12,6 +12,7 @@
   "fetched" : "{name} fetch successfully.",
   "required" : "{name} is required.",
   "notAuthorized" : "{name} not authorize to take this action.",
+  "notCreated":"{name} can't Create for football",
   
   "auth": {
     "loginSuccess": "Login successfully.",
@@ -34,6 +35,10 @@
     "blocked": "There is something wrong with your account. Please contact your administrator.",
     "cannotUpdate":"Cannot update same condition"
   },
+  "race":{
+    "matchAddFail" : "Race add operation failed due to invalid data."
+  },
+
   "match":{
     "betAlreadyExistForMatch":"Bet already exist for this match.",
     "maxMustBeGreater":"Max bet must be greater than min bet.",
@@ -48,7 +53,9 @@
     "resultApprove": "Your result has been saved but need to be approve by other expert.",
     "notDeclared": "Result is not declared yet.",
     "sessionAllResult": "Please declare all session result first.",
-    "resultDeclareOrProgress": "Result is alredy declare or inprogress."
-
+    "resultDeclareOrProgress": "Result is already declare or inprogress.",
+    "declareOtherMarket":"Please declare all other market results.",
+    "matchAlreadyDeclared":"You can not undeclare this market as match result is already declared."
   }
+  
 }

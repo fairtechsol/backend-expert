@@ -33,10 +33,15 @@ exports.allApiRoutes = {
     declareSessionNoResult: "/expert/declare/noResult/session",
     unDeclareSessionResult: "/expert/unDeclare/result/session",
     declareMatchResult: "/expert/declare/result/match",
+    declareOtherMatchResult: "/expert/declare/result/other/match",
+    declareRacingMatchResult: "/expert/declare/result/race/match",
     unDeclareMatchResult: "/expert/unDeclare/result/match",
+    unDeclareOtherMatchResult: "/expert/unDeclare/result/other/match",
+    unDeclareRacingMatchResult: "/expert/unDeclare/result/race/match",
     bets: "/expert/bets",
     loginData: "/expert/login/bet/data",
     addMatch: "/match/add",
+    addRaceMatch: "/match/raceAdd"
   },
   thirdParty:{
     extraMarket:"/extraMarketList/"

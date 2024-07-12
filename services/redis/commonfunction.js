@@ -1,5 +1,5 @@
 
-const { redisKeys, betStatusType, marketBettingTypeByBettingType } = require("../../config/contants");
+const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatchWise, mainMatchMarketType, mainMatchRacingMarketType, raceTypeByBettingType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
@@ -7,8 +7,7 @@ const { getMatchSchema } = require("../../validators/matchValidator");
 const { getMatchAllBettings } = require("../matchBettingService");
 const { getSessionBettings } = require("../sessionBettingService");
 const lodash = require('lodash')
-let expiry = 60*60*4;
-
+let expiry = 60 * 60 * 4;
 exports.addMatchInCache = async (matchId, data) => {
   // Log the update information
   logger.info({
@@ -30,12 +29,16 @@ exports.addMatchInCache = async (matchId, data) => {
     betFairSessionMinBet: data.betFairSessionMinBet,
     startAt: data.startAt,
     apiSessionActive: data.apiSessionActive,
-    manualSessionActive: data.manualSessionActive,
-    ...(data.matchOdd ? { matchOdd: JSON.stringify(data.matchOdd) } : {}),
-    ...(data.marketBookmaker ? { marketBookmaker: JSON.stringify(data.marketBookmaker) } : {}),
-    ...(data.marketTiedMatch ? { marketTiedMatch: JSON.stringify(data.marketTiedMatch) } : {}),
-    ...(data.marketCompleteMatch ? { marketCompleteMatch: JSON.stringify(data.marketCompleteMatch) } : {}),
+    manualSessionActive: data.manualSessionActive
   }
+
+  Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+    if (data[item]) {
+      payload[item] = JSON.stringify(data[item]);
+    }
+  });
+
+
   if (data.teamC) {
     payload.teamC = data.teamC;
   }
@@ -49,6 +52,40 @@ exports.addMatchInCache = async (matchId, data) => {
     .exec();
   return res;
 }
+
+exports.addRaceInCache = async (matchId, data) => {
+  // Log the update information
+  logger.info({
+    message: `adding match data in redis with match id  ${matchId}`,
+    data: data
+  });
+  let matchKey = `${matchId}_match`;
+  let payload = {
+    id: data.id,
+    matchType: data.matchType,
+    matchOdd: data.matchOdd,
+    title: data.title,
+    createBy: data.createBy,
+    marketId: data.marketId,
+    runners: data.runners,
+    eventId: data.eventId,
+    startAt: data.startAt,
+    countryCode: data?.countryCode,
+    venue: data?.venue,
+    raceType: data?.raceType,
+    betPlaceStartBefore: data?.betPlaceStartBefore
+  }
+  if (data.stopAt) {
+    payload.stopAt = data.stopAt;
+  }
+  let res = await internalRedis
+    .pipeline()
+    .hset(matchKey, payload)
+    .expire(matchKey, expiry)
+    .exec();
+  return res;
+}
+
 
 exports.updateMatchInCache = async (matchId, data) => {
   // Log the update information
@@ -72,15 +109,52 @@ exports.updateMatchInCache = async (matchId, data) => {
     betFairSessionMinBet: data.betFairSessionMinBet || match.betFairSessionMinBet,
     startAt: data.startAt || match.startAt,
     apiSessionActive: data.apiSessionActive ?? match.apiSessionActive,
-    manualSessionActive: data.manualSessionActive ?? match.manualSessionActive,
-    matchOdd: JSON.stringify(data.matchOdd) || match.matchOdd,
-    marketBookmaker: JSON.stringify(data.marketBookmaker) || match.marketBookmaker,
-    marketTiedMatch: JSON.stringify(data.marketTiedMatch) || match.marketTiedMatch,
-    marketCompleteMatch: JSON.stringify(data.marketCompleteMatch) || match.marketCompleteMatch
+    manualSessionActive: data.manualSessionActive ?? match.manualSessionActive
   }
+
+  Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+    if (data[item]) {
+      payload[item] = JSON.stringify(data[item]);
+    }
+  });
+
+
   if (data.teamC || match.teamC) {
     payload.teamC = data.teamC || match.teamC;
   }
+  if (data.stopAt || match.stopAt) {
+    payload.stopAt = data.stopAt || match.stopAt;
+  }
+  return await internalRedis
+    .pipeline()
+    .hset(matchKey, payload)
+    .expire(matchKey, expiry)
+    .exec();
+}
+
+exports.updateRaceInCache = async (matchId, data) => {
+  // Log the update information
+  logger.info({
+    message: `updating  race data in redis with match id  ${matchId}`,
+    data: data
+  });
+  let matchKey = `${matchId}_match`;
+  let match = await internalRedis.hgetall(matchKey);
+  let matchOdd = JSON.parse(match.matchOdd)
+  matchOdd.maxBet = data.maxBet
+  matchOdd.minBet = data.minBet
+  match.matchOdd = JSON.stringify(matchOdd);
+  let payload = {
+    activeStatus: data.activeStatus || match.activeStatus,
+    matchOdd: match.matchOdd,
+    createBy: data.createBy || match.createBy,
+    createdAt: data.createdAt || match.createdAt,
+    isActive: data.isActive,
+    marketId: data.marketId || match.marketId,
+    matchId: data.matchId || match.matchId,
+    type: data.type || match.type
+  };
+
   if (data.stopAt || match.stopAt) {
     payload.stopAt = data.stopAt || match.stopAt;
   }
@@ -307,15 +381,23 @@ exports.getMatchFromCache = async (matchId) => {
   let MatchData = await internalRedis.hgetall(matchKey);
   if (Object.keys(MatchData)?.length) {
     let { validated } = await joiValidator.jsonValidator(getMatchSchema, MatchData);
-    if (validated?.matchOdd)
-      validated.matchOdd = JSON.parse(validated.matchOdd);
-    if (validated?.marketBookmaker)
-      validated.marketBookmaker = JSON.parse(validated?.marketBookmaker);
-    if (validated?.marketTiedMatch)
-      validated.marketTiedMatch = JSON.parse(validated.marketTiedMatch);
-    if (validated?.marketCompleteMatch)
-      validated.marketCompleteMatch = JSON.parse(validated.marketCompleteMatch);
+
+    Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+      if (validated?.[item]) {
+        validated[item] = JSON.parse(validated[item]);
+      }
+    });
+
     return validated;
+  }
+  return null;
+}
+
+exports.getRaceFromCache = async (matchId) => {
+  let matchKey = `${matchId}_match`;
+  let MatchData = await internalRedis.hgetall(matchKey);
+  if (Object.keys(MatchData)?.length) {
+    return MatchData;
   }
   return null;
 }
@@ -396,18 +478,18 @@ exports.hasMarketSessionIdsInCache = async (matchId) => {
 
 exports.getAllMarketSessionIdsRedis = async (matchId) => {
   // Retrieve all betting data for the match from Redis
-  const MarketSessionIds = await internalRedis.hgetall(`${matchId}_selectionId`);
+  const marketSessionIds = await internalRedis.hgetall(`${matchId}_selectionId`);
 
   // Return the betting data as an object or null if no data is found
-  return lodash.isEmpty(MarketSessionIds) ? null : MarketSessionIds;
+  return lodash.isEmpty(marketSessionIds) ? null : marketSessionIds;
 };
 
 exports.getMarketSessionIdFromRedis = async (matchId, selectionId) => {
   // Retrieve betting data from Redis
-  const MarketSessionId = await internalRedis.hget(`${matchId}_selectionId`, selectionId);
+  const marketSessionId = await internalRedis.hget(`${matchId}_selectionId`, selectionId);
 
   // Parse and return the betting data or null if it doesn't exist
-  return MarketSessionId ? MarketSessionId : null;
+  return marketSessionId ? marketSessionId : null;
 };
 
 exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
@@ -472,6 +554,12 @@ exports.getExpertsRedisSessionData = async (sessionId) => {
 
 }
 
+exports.getExpertsRedisKeyData = async (key) => {
+  // Retrieve session data from Redis
+  const data = await internalRedis.hget(redisKeys.expertRedisData, key);
+  return data;
+}
+
 exports.getExpertsRedisSessionDataByKeys = async (keys) => {
   // Retrieve expert data from Redis
   const expertData = await internalRedis.hmget(redisKeys.expertRedisData, keys);
@@ -495,6 +583,27 @@ exports.getExpertsRedisSessionDataByKeys = async (keys) => {
 exports.getExpertsRedisMatchData = async (matchId) => {
   // Retrieve match data from Redis
   let redisIds = [`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`];
+
+  const matchData = await internalRedis.hmget(redisKeys.expertRedisData, ...redisIds);
+  let teamRates = {};
+  matchData?.forEach((item, index) => {
+    if (item) {
+      teamRates[redisIds?.[index]?.split("_")[0]] = item;
+    }
+  });
+  // Parse and return the match data or null if it doesn't exist
+  return teamRates;
+
+}
+
+exports.getExpertsRedisOtherMatchData = async (matchId, gameType) => {
+  // Retrieve match data from Redis
+  const redisIds = [];
+  redisIds.push(
+    ...redisKeysMatchWise[gameType].map(
+      (key) => key + matchId
+    )
+  );
 
   const matchData = await internalRedis.hmget(redisKeys.expertRedisData, ...redisIds);
   let teamRates = {};
@@ -552,21 +661,105 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
 
   if (manualBettingData) {
     Object.keys(manualBettingData)?.forEach((item) => {
-      let data = JSON.parse(manualBettingData[item]);
-      data.activeStatus = status;
-      manualBettingData[item] = JSON.stringify(data);
+      if (manualBettingData[item]) {
+        let data = JSON.parse(manualBettingData[item]);
+        data.activeStatus = status;
+        manualBettingData[item] = JSON.stringify(data);
+      }
     });
 
     redisPipeline = redisPipeline.hset(`${matchId}_manualBetting`, manualBettingData).expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
   }
 
-  let matchDetails=await internalRedis.hgetall(`${matchId}_match`);
+  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
 
-  if(matchDetails){
+  if (matchDetails) {
     Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
-      let data = JSON.parse(matchDetails[item]);
-      data.activeStatus = status;
-      matchDetails[item] = JSON.stringify(data);
+      if (matchDetails[item]) {
+        let data = JSON.parse(matchDetails[item]);
+        data.activeStatus = status;
+        matchDetails[item] = JSON.stringify(data);
+      }
+    });
+    redisPipeline = redisPipeline.hset(`${matchId}_match`, matchDetails).expire(`${matchId}_match`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
+  }
+
+  // Use a Redis pipeline for atomicity and efficiency
+  await redisPipeline.exec();
+}
+
+/**
+ * Updates betting data in Redis.
+ *
+ * @param {string} matchId - The ID of the match.
+ * @param {Object} data - The data to be updated in the session.
+ * @returns {Promise<void>} - A Promise that resolves when the update is complete.
+ */
+exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
+  logger.info({
+    message: `updating data in redis for betting of other match ${matchId}`,
+    status: status
+  });
+
+  const manualBettingData = await internalRedis.hgetall(`${matchId}_manualBetting`);
+
+  let redisPipeline = internalRedis
+    .pipeline();
+
+  if (manualBettingData) {
+    Object.keys(manualBettingData)?.forEach((item) => {
+      if (manualBettingData[item]) {
+        let data = JSON.parse(manualBettingData[item]);
+        data.activeStatus = status;
+        manualBettingData[item] = JSON.stringify(data);
+      }
+    });
+
+    redisPipeline = redisPipeline.hset(`${matchId}_manualBetting`, manualBettingData).expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
+  }
+
+  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
+
+  if (matchDetails) {
+    Object.keys(mainMatchMarketType)?.forEach((item) => {
+      if (matchDetails[marketBettingTypeByBettingType[item]]) {
+        let data = JSON.parse(matchDetails[item]);
+        data.activeStatus = status;
+        matchDetails[item] = JSON.stringify(data);
+      }
+    });
+    redisPipeline = redisPipeline.hset(`${matchId}_match`, matchDetails).expire(`${matchId}_match`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
+  }
+
+  // Use a Redis pipeline for atomicity and efficiency
+  await redisPipeline.exec();
+}
+
+/**
+ * Updates betting data in Redis.
+ *
+ * @param {string} matchId - The ID of the match.
+ * @param {Object} data - The data to be updated in the session.
+ * @returns {Promise<void>} - A Promise that resolves when the update is complete.
+ */
+exports.settingAllBettingRacingMatchRedisStatus = async (matchId, status) => {
+  logger.info({
+    message: `updating data in redis for betting of racing match ${matchId}`,
+    status: status
+  });
+
+  let redisPipeline = internalRedis
+    .pipeline();
+
+  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
+
+  if (matchDetails) {
+    Object.keys(mainMatchRacingMarketType)?.forEach((item) => {
+      if (matchDetails[raceTypeByBettingType[item]]) {
+        let data = JSON.parse(matchDetails[item]);
+        data.activeStatus = status;
+        matchDetails[item] = JSON.stringify(data);
+      }
     });
     redisPipeline = redisPipeline.hset(`${matchId}_match`, matchDetails).expire(`${matchId}_match`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
   }

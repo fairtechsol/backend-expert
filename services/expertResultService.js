@@ -1,16 +1,24 @@
+const { resultStatus } = require("../config/contants");
 const { AppDataSource } = require("../config/postGresConnection");
 const expertResultSchema = require("../models/expertResult.entity");
 const expertResultRepo = AppDataSource.getRepository(expertResultSchema);
-
-
 
 exports.getExpertResult=async (where,select)=>{
     return await expertResultRepo.find({
         where:  where,
         select: select,
-      })
+      });
 }
 
+exports.getExpertResultBetWise = async (where, select) => {
+    return await expertResultRepo.createQueryBuilder().innerJoinAndMapOne("expertResult.betId", "matchBetting", "matchBetting", "matchBetting.id = expertResult.betId")
+    .where(where)
+    .select(['expertResult.betId as "betId"','matchBetting.type as "type"','Count(expertResult.betId) as "totalResult"'])
+    .addSelect(`CASE WHEN COUNT(expertResult.betId) = 1 THEN '${resultStatus.pending}' ELSE '${resultStatus.missMatched}' END`, "status")
+    .groupBy("expertResult.betId")
+    .addGroupBy("matchBetting.type")
+    .getRawMany();
+}
 
 exports.addExpertResult = async (body)=>{
     let expertResult = await expertResultRepo.save(body);

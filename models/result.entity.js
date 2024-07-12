@@ -37,16 +37,6 @@ const resultSchema = new EntitySchema({
       transformer: new ColumnNumericTransformer()
     }
   },
-  relations: {
-    match: {
-      type: "many-to-one",
-      target: "match",
-      joinColumn: {
-        name: "matchId",
-        referencedColumnName: "id",
-      },
-    },
-  },
   indices: [
     {
       name: "result_id", // index name should be start with the table name

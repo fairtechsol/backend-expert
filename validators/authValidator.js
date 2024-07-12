@@ -1,6 +1,6 @@
 const Joi = require('joi')
 
 module.exports.Login = Joi.object({
-    userName : Joi.string().required(),
+    userName : Joi.string().trim().required(),
     password : Joi.string().required()
 })

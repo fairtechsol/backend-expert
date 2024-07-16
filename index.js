@@ -19,7 +19,7 @@ const cron = require('node-cron');
 
 const allowSubdomainsAndLocalhost = (origin, callback) => {
   // Check if the request comes from the specified domain or localhost
-  if (!origin || origin.includes("fairgame7.com")) {
+  if (!origin || origin.includes("fairgame7.com") || origin.includes("maxbet07.com")) {
     callback(null, true); // Allow the request
   } else {
     callback(new Error("Not allowed by CORS")); // Deny the request

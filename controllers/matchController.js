@@ -274,7 +274,7 @@ exports.createMatch = async (req, res) => {
 exports.updateMatch = async (req, res) => {
   try {
     // Extract relevant information from the request body
-    const { id, minBet, marketData, betFairSessionMaxBet, bookmakers } = req.body;
+    const { id, minBet, marketData, betFairSessionMaxBet, bookmakers, startAt } = req.body;
     //get user data to check privilages
     const { id: loginId } = req.user;
 
@@ -320,7 +320,8 @@ exports.updateMatch = async (req, res) => {
       }, req, res);
     }
 
-    await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet });
+    await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet, ...(startAt ? { startAt } : {}) });
+
 
     for (let item of marketData) {
       await updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item?.maxBet, minBet: minBet });

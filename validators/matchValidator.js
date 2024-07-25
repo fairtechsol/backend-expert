@@ -109,7 +109,9 @@ module.exports.updateMatchValidate = Joi.object({
   minBet: Joi.number().messages({
     "number.base": "Minimum bet amount must be a number"
   }),
-
+  startAt: Joi.date().allow(null).messages({
+    "date.base": "Start date must be a valid date",
+  }),
   betFairSessionMaxBet: Joi.number()
     .greater(Joi.ref("minBet"))
     .messages({

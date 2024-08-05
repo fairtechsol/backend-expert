@@ -1359,7 +1359,7 @@ exports.multipleMatchActiveInActive = async (req, res) => {
 
     if (cacheMatch) {
       for (let item of matchBetting) {
-        await updateMatchKeyInCache(matchBetting?.matchId, marketBettingTypeByBettingType[item?.type],
+        await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[item?.type],
           JSON.stringify(item)
         )
       }

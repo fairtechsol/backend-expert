@@ -1,8 +1,8 @@
-const { ILike, IsNull } = require("typeorm");
+const { ILike, IsNull, Like } = require("typeorm");
 const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain, marketMatchBettingType, teamStatus } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults, getAllProfitLossResultsRace } = require("../services/betService");
-const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting } = require("../services/matchBettingService");
+const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
 const { getRaceByMarketId, raceAddMatch, deleteRace, getRacingMatchById } = require("../services/racingMatchService");
 const { insertRaceBettings, insertRunners, getRacingBetting, updateRaceBetting } = require("../services/raceBettingService");
 const {
@@ -1279,6 +1279,110 @@ exports.listRacingMatch = async (req, res) => {
       error: `Error at list match for the expert.`,
       stack: err.stack,
       message: err.message
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+// Controller method for updating the active status of betting
+exports.multipleMatchActiveInActive = async (req, res) => {
+  try {
+    // Destructuring properties from the request body
+    const { matchId, type, isActive } = req.body;
+
+    const { allPrivilege, addMatchPrivilege } = req.user;
+
+    if (!allPrivilege && !addMatchPrivilege) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notAuthorized",
+            keys: {
+              name: "Expert",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    let cacheMatch = await getMatchFromCache(matchId);
+    let match = cacheMatch;
+    if (!match) {
+      match = await getMatchById(matchId);
+    }
+
+    if (!match) {
+      // If match is not found, return a 400 Bad Request response
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: {
+              name: "Match",
+            },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+ 
+      // If it's not a session betting type, update the active status for the specific betting ID
+    await updateMatchBetting({ name: Like(`${type}%`), matchId: matchId }, {
+        isActive: isActive
+      });
+
+      const matchBetting = await getMatchAllBettings({  name: Like(`${type}%`), matchId: matchId });
+
+      if (!matchBetting?.length) {
+        // If match betting is not found, return a 400 Bad Request response
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "notFound",
+              keys: {
+                name: "Match Betting",
+              },
+            },
+          },
+          req,
+          res
+      );
+    }
+
+    if (cacheMatch) {
+      for (let item of matchBetting) {
+        await updateMatchKeyInCache(matchBetting?.matchId, marketBettingTypeByBettingType[item?.type],
+          JSON.stringify(item)
+        )
+      }
+    }
+
+    sendMessageToUser(matchId, socketData.matchActiveInActiveEvent);
+
+    // Return a success response with the updated match information
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "updated", keys: { name: "Match" } },
+        data: match,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    // Log any errors that occur during the process
+    logger.error({
+      error: `Error at updating active status of multiple betting table for match ${req.body.matchId}.`,
+      stack: err.stack,
+      message: err.message,
     });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);

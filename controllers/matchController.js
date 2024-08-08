@@ -53,7 +53,8 @@ exports.createMatch = async (req, res) => {
       betFairSessionMaxBet,
       marketData,
       bookmakers,
-      isManualMatch = false
+      isManualMatch = false,
+      rateThan100
     } = req.body;
 
 
@@ -105,7 +106,7 @@ exports.createMatch = async (req, res) => {
 
     // Prepare match data for a new match
     let matchData = {
-      matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, betFairSessionMaxBet: betFairSessionMaxBet, betFairSessionMinBet: minBet, createBy: loginId
+      matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, betFairSessionMaxBet: betFairSessionMaxBet, betFairSessionMinBet: minBet, createBy: loginId, rateThan100
     };
 
     let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
@@ -274,7 +275,7 @@ exports.createMatch = async (req, res) => {
 exports.updateMatch = async (req, res) => {
   try {
     // Extract relevant information from the request body
-    const { id, minBet, marketData, betFairSessionMaxBet, bookmakers, startAt } = req.body;
+    const { id, minBet, marketData, betFairSessionMaxBet, bookmakers, startAt, rateThan100 } = req.body;
     //get user data to check privilages
     const { id: loginId } = req.user;
 
@@ -285,7 +286,7 @@ exports.updateMatch = async (req, res) => {
     }
 
     // Check if the match exists
-    let match = await getMatchById(id, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet"]);
+    let match = await getMatchById(id, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "rateThan100"]);
 
     if (!match) {
       logger.error({
@@ -320,7 +321,7 @@ exports.updateMatch = async (req, res) => {
       }, req, res);
     }
 
-    await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet, ...(startAt ? { startAt } : {}) });
+    await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet, rateThan100: rateThan100, ...(startAt ? { startAt } : {}) });
 
 
     for (let item of marketData) {

@@ -16,6 +16,12 @@ exports.getMatchBetting = async (req, res) => {
     const { id: matchBetId, type } = req.query;
     let matchBetting;
 
+    let matchDetails=await getMatchFromCache(matchId);
+
+    if(!matchDetails){
+      matchDetails = await getMatchById(matchId, ["id", "rateThan100"]);
+    }
+
     if (!matchBetId && !type) {
       const redisMatchData = await getAllBettingRedis(matchId);
 
@@ -61,6 +67,7 @@ exports.getMatchBetting = async (req, res) => {
 
       let teamRates = await getExpertsRedisMatchData(matchId);
       matchBetting.matchRates = teamRates;
+      matchBetting.rateThan100 = matchDetails?.rateThan100;
     }
     if (matchBetting.activeStatus != betStatus.result) {
       let qBookId = await getMatchAllBettings({ type: matchBettingType.quickbookmaker1, matchId }, ['id']);

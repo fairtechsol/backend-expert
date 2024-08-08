@@ -57,7 +57,7 @@ let addMatchSchema = Joi.object({
     "number.greater": "Maximum bet amount for BetFair session must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for BetFair session is required",
   }),
-
+  rateThan100: Joi.boolean().allow(null),
   bookmakers: Joi.array().items(bookmakerSchema).required().messages({
     "array.base": "Bookmakers must be an array",
     "any.required": "Bookmakers are required",
@@ -112,6 +112,7 @@ module.exports.updateMatchValidate = Joi.object({
   startAt: Joi.date().allow(null).messages({
     "date.base": "Start date must be a valid date",
   }),
+  rateThan100: Joi.boolean().allow(null),
   betFairSessionMaxBet: Joi.number()
     .greater(Joi.ref("minBet"))
     .messages({
@@ -119,7 +120,6 @@ module.exports.updateMatchValidate = Joi.object({
       "number.greater":
         "Maximum bet amount for BetFair session must be greater than minimum bet amount"
     }),
-
   bookmakers: Joi.array().items(updatebookmakerSchema).messages({
     "array.base": "Bookmakers must be an array",
   }),
@@ -168,6 +168,7 @@ module.exports.getMatchSchema = Joi.object({
   competitionId: Joi.string(),
   competitionName: Joi.string(),
   title: Joi.string().required(),
+  rateThan100: Joi.boolean(),
   marketId: Joi.string(),
   eventId: Joi.string(),
   teamA: Joi.string(),

@@ -29,7 +29,8 @@ exports.addMatchInCache = async (matchId, data) => {
     betFairSessionMinBet: data.betFairSessionMinBet,
     startAt: data.startAt,
     apiSessionActive: data.apiSessionActive,
-    manualSessionActive: data.manualSessionActive
+    manualSessionActive: data.manualSessionActive,
+    rateThan100: data.rateThan100
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
@@ -109,7 +110,8 @@ exports.updateMatchInCache = async (matchId, data) => {
     betFairSessionMinBet: data.betFairSessionMinBet || match.betFairSessionMinBet,
     startAt: data.startAt || match.startAt,
     apiSessionActive: data.apiSessionActive ?? match.apiSessionActive,
-    manualSessionActive: data.manualSessionActive ?? match.manualSessionActive
+    manualSessionActive: data.manualSessionActive ?? match.manualSessionActive,
+    rateThan100: data.rateThan100 ?? match?.rateThan100
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {

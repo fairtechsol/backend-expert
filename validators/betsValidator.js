@@ -135,3 +135,16 @@ exports.matchDeclareValidator = Joi.object({
       "string.guid": `Bet id must be a valid GUID`,
     }),
   });
+
+  
+exports.updateDeleteReason = Joi.object({
+  deleteReason: Joi.string().required().messages({
+    'any.required': 'Delete reason is required',
+  }),
+  betIds: Joi.array().items(
+    Joi.string().guid({ version: 'uuidv4' })
+  ).min(1),
+  matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+    'any.required': 'Match id is required',
+  })
+});

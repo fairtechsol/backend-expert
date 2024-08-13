@@ -253,7 +253,9 @@ module.exports.socketData = {
   sessionDeleteBet: "sessionDeleteBet",
   updateSessionRateClient: "updateSessionRateClient",
   matchDeleteBet: "matchDeleteBet",
-  updateInResultDeclare: "updateInResultDeclare"
+  updateInResultDeclare: "updateInResultDeclare",
+  updateDeleteReason: "updateDeleteReason"
+
 };
 
 module.exports.redisKeys = {

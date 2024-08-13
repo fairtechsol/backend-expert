@@ -1807,3 +1807,37 @@ exports.unDeclareRacingMatchResult = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+exports.sendUpdateDeleteReason = async (req, res, next) => {
+  try {
+    const { betIds, matchId, deleteReason } = req.body;
+
+    sendMessageToUser(socketData.expertRoomSocket,
+      socketData.updateDeleteReason, {
+      betIds: betIds,
+      deleteReason: deleteReason,
+      matchId: matchId
+    });
+    return SuccessResponse(
+      {
+        statusCode: 200,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at sending update delete reason.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}

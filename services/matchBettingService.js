@@ -48,7 +48,6 @@ exports.updateMatchBettingById = async (id, body) => {
 };
 
 exports.getMatchBettingWithMatchDetails = async (where) => {
-  console.log(where);
   return await MatchBetting.findOne({
     where:  where,
     relations: ["match"]

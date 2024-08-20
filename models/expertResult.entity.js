@@ -31,14 +31,6 @@ const expertResultSchema = new EntitySchema({
   },
   },
   relations: {
-    match: {
-      type: "many-to-one",
-      target: "match",
-      joinColumn: {
-        name: "matchId",
-        referencedColumnName: "id",
-      },
-    },
     user:{
       type: "many-to-one",
       target: "user",

@@ -80,6 +80,11 @@ const matchSchema = new EntitySchema({
       default: false,
       nullable: false,
     },
+    rateThan100: {
+      type: "boolean",
+      default: false,
+      nullable: false,
+    }
   },
   orderBy: {
     startAt: "DESC",

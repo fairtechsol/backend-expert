@@ -19,7 +19,7 @@ const cron = require('node-cron');
 
 const allowSubdomainsAndLocalhost = (origin, callback) => {
   // Check if the request comes from the specified domain or localhost
-  if (!origin || origin.includes("fairgame7.com")) {
+  if (!origin || origin.includes("fairgame7.com") || origin.includes("maxbet07.com")) {
     callback(null, true); // Allow the request
   } else {
     callback(new Error("Not allowed by CORS")); // Deny the request
@@ -46,7 +46,7 @@ app.use(express.json());
  */
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// configureing i18 for message control
+// configuring i18 for message control
 app.use(i18n.init);
 app.use(setI18Language);
 
@@ -55,7 +55,7 @@ app.use((req, res, next) => {
   const body = JSON.stringify(req.body);
   const query = JSON.stringify(req.query);
   const params = JSON.stringify(req.params);
-  logger.debug(`Request [From:${ip}] ${req.path} ||  ${req.method} || query : ${query} || params : ${params} || body : ${body}`);
+  logger.debug(`Request [From:${ip}] ${req.path} ||  ${req.method} || query : ${query} || params : ${params} || body : ${body} || token : ${req.headers?.authorization}`);
   next();
 });
 // Routes

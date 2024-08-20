@@ -11,13 +11,30 @@ const generalRoute = require("./generalRoute");
 const matchBettingRoute = require('./matchBettingRoutes');
 const betRoutes = require('./betRoutes');
 
-router.use("/auth", authRoutes);
-router.use("/user", userRoutes);
-router.use("/match", matchRoutes);
-router.use("/superAdmin", superAdminRoutes);
-router.use('/session',sessionRoute);
-router.use('/general', generalRoute);
-router.use('/matchBeting', matchBettingRoute);
-router.use('/bet', betRoutes);
+router.use("/auth", authRoutes
+// #swagger.tags = ['auth']
+);
+router.use("/user", userRoutes
+// #swagger.tags = ['user']
+);
+router.use("/match", matchRoutes
+// #swagger.tags = ['match']
+);
+router.use("/superAdmin", superAdminRoutes
+// #swagger.tags = ['superAdmin']
+);
+router.use('/session',sessionRoute
+// #swagger.tags = ['session']
+);
+router.use('/general', generalRoute
+// #swagger.tags = ['general']
+);
+router.use('/matchBeting', matchBettingRoute
+// #swagger.tags = ['Match betting']
+);
+router.use('/bet', betRoutes
+// #swagger.tags = ['bet']
+
+);
 
 module.exports = router;

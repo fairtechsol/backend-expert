@@ -1,7 +1,7 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings, getSessionBetting } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { getUserById } = require("../services/userService");
-const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus } = require("../config/contants");
+const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus, gameType } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis, updateMultipleMarketSessionIdRedis } = require("../services/redis/commonfunction");
@@ -21,7 +21,7 @@ exports.addSession = async (req, res) => {
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
-    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "stopAt"])
+    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "stopAt", "matchType"])
     if (!match) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
     }
@@ -34,6 +34,9 @@ exports.addSession = async (req, res) => {
           return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
         }
       }
+    }
+    if(match.matchType==gameType.football){
+      return ErrorResponse({ statusCode: 400, message: { msg: "notCreated", keys: { name: "Session" } } }, req, res); 
     }
     let isManual = true;
     if (!minBet) {
@@ -339,6 +342,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       sessionData?.map((item) => {
         sessions[item?.selectionId] = item?.id;
         item.activeStatus = status;
+        item.updatedAt = new Date();
         sessionDetailData[item?.id] = JSON.stringify(item);
       });
 
@@ -370,6 +374,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       }
       await updateSessionBetting({ id: sessionId }, { activeStatus: status });
       sessionData.activeStatus = status;
+      sessionData.updatedAt = new Date();
       updateSessionMatchRedis(sessionData.matchId, sessionData.id, sessionData);
       // Update redis cache
       if (status == betStatusType.live) {

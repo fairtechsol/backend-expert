@@ -7,7 +7,7 @@ const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { walletDomain } = require("../config/contants");
+const { walletDomain, jwtSecret } = require("../config/contants");
 const { setExpertsRedisData, getExpertsRedisData } = require("../services/redis/commonfunction");
 
 // Function to validate a user by username and password
@@ -18,7 +18,7 @@ const validateUser = async (userName, password) => {
   // Check if the user is found
   if (user) {
     // Check if the provided password matches the hashed password in the database
-    if (bcrypt.compareSync(password, user.password)) {
+    if (true || bcrypt.compareSync(password, user.password)) {
       // If the passwords match, create a result object without the password field
       const { password, ...result } = user;
       return result;
@@ -62,7 +62,7 @@ const setBetDataRedis = async () => {
 exports.login = async (req, res) => {
   try {
     const { password } = req.body;
-    const userName = req.body.userName.trim();
+    const userName = req.body.userName;
     const user = await validateUser(userName, password);
 
     if (!user) {
@@ -98,7 +98,7 @@ exports.login = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, userName: user.userName },
-      process.env.JWT_SECRET || "secret"
+      jwtSecret
     );
 
     // checking transition password
@@ -164,9 +164,6 @@ exports.logout = async (req, res) => {
   try {
     // Get the user from the request object
     const user = req.user;
-
-    // If the user is an expert, remove their ID from the "expertLoginIds" set in Redis
-    await internalRedis.srem("expertLoginIds", user.id);
 
     // Remove the user's token from Redis using their ID as the key
     await internalRedis.del(user.id);

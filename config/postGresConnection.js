@@ -25,6 +25,7 @@ const dataSourceOption = {
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DATABASE,
   synchronize: false,
+  logging: true,
   entities: [__dirname + "/../**/*.entity.{js,ts}"],
   migrations: [__dirname + "/../**/migrations/*{.js,.ts}"],
   migrationsTableName: "migrations",

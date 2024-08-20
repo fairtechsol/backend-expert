@@ -68,6 +68,16 @@ exports.UpdateMatchBettingRateInSocket = Joi.object({
         'string.guid': `Bet id must be a valid GUID`,
         'any.required': `Bet id is a required field`
     }),
-    isStop: Joi.boolean().required()
+    isStop: Joi.boolean().required(),
+    isManual: Joi.boolean().required()
   });
   
+  exports.raceBetStatusChangeValidator = Joi.object({
+    betId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `Bet id should be a type of 'text'`,
+        'string.empty': `Bet id cannot be an empty field`,
+        'string.guid': `Bet id must be a valid GUID`,
+        'any.required': `Bet id is a required field`
+    }),
+    isStop: Joi.boolean().required(),
+  });

@@ -1,9 +1,10 @@
+const { In } = require("typeorm");
 const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, redisKeys, matchBettingType, betStatus, resultStatus, raceTypeByBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getExpertResult } = require("../services/expertResultService");
-const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting } = require("../services/matchBettingService");
+const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting, updateMatchBetting } = require("../services/matchBettingService");
 const { getMatchById } = require("../services/matchService");
-const { getRacingBetting, getRunners, getRacingBettingById, addRaceBetting } = require("../services/raceBettingService");
+const { getRacingBetting, getRunners, getRacingBettingById, addRaceBetting, updateRaceBetting, getRacingBettings } = require("../services/raceBettingService");
 const { getRaceByMarketId, getRacingMatchById } = require("../services/racingMatchService");
 const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData, updateBettingMatchRedis, getRaceFromCache } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
@@ -344,6 +345,102 @@ exports.raceBettingStatusChange = async (req, res) => {
   } catch (error) {
     logger.error({
       error: `Error at change match betting status.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
+  }
+};
+
+exports.matchBettingApiChange = async (req, res) => {
+  try {
+    const { apiType, betIds, matchId } = req.body;
+
+    await updateMatchBetting({ id: In(betIds) }, { apiType: apiType });
+
+    const matchBettings=await getMatchAllBettings({id:In(betIds)});
+   
+
+    const hasMatchDetailsInCache = await hasMatchInCache(
+      matchId
+    );
+
+    if (hasMatchDetailsInCache) {
+      await settingMatchKeyInCache(matchId,
+        matchBettings?.reduce((prev, curr) => {
+          return { ...prev, [marketBettingTypeByBettingType[curr?.type]]: JSON.stringify(curr) }
+        }, {})
+      );
+    }
+    
+
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchBettingApiChange,
+      {
+        apiType, betIds, matchId
+      }
+    );
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "updated", keys: { name: "Api type" } }, 
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at change match betting api type.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
+  }
+};
+
+exports.raceBettingApiChange = async (req, res) => {
+  try {
+    const { apiType,betIds,matchId } = req.body;
+
+    await updateRaceBetting({ id: In(betIds) }, { apiType: apiType });
+
+    const raceBettings = await getRacingBettings({ id: In(betIds) });
+   
+
+    const hasRaceDetailsInCache = await hasMatchInCache(
+      matchId
+    );
+
+    if (hasRaceDetailsInCache) {
+      await settingMatchKeyInCache(matchId,
+        raceBettings?.reduce((prev, curr) => {
+          return { ...prev, [marketBettingTypeByBettingType[curr?.type]]: JSON.stringify(curr) }
+        }, {})
+      );
+    }
+    
+
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchBettingApiChange,
+      {
+        apiType, betIds, matchId
+      }
+    );
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "updated", keys: { name: "Api type" } }, 
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at change match betting api type.`,
       stack: error.stack,
       message: error.message,
     });

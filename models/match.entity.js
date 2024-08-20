@@ -84,6 +84,11 @@ const matchSchema = new EntitySchema({
       type: "boolean",
       default: false,
       nullable: false,
+    },
+    apiType:{
+      type: "int",
+      nullable: false,
+      default: 0
     }
   },
   orderBy: {

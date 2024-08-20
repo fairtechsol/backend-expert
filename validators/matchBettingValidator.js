@@ -81,3 +81,46 @@ exports.UpdateMatchBettingRateInSocket = Joi.object({
     }),
     isStop: Joi.boolean().required(),
   });
+
+exports.matchBetApiChangeValidator = Joi.object({
+    betIds: Joi.array().min(1).items(Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `Bet id should be a type of 'text'`,
+        'string.empty': `Bet id cannot be an empty field`,
+        'string.guid': `Bet id must be a valid GUID`,
+        'any.required': `Bet id is a required field`
+    })).required().messages({
+        'any.required': `Bet id is required`,
+        'any.min': `Send atleast one bet id.`,
+    }),
+    apiType: Joi.number().required().messages({
+        'any.required': `Api type is required`,
+    }),
+    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `Bet id should be a type of 'text'`,
+        'string.empty': `Bet id cannot be an empty field`,
+        'string.guid': `Bet id must be a valid GUID`,
+        'any.required': `Bet id is a required field`
+    })
+});
+
+
+exports.racingBetApiChangeValidator = Joi.object({
+    betIds: Joi.array().min(1).items(Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `Bet id should be a type of 'text'`,
+        'string.empty': `Bet id cannot be an empty field`,
+        'string.guid': `Bet id must be a valid GUID`,
+        'any.required': `Bet id is a required field`
+    })).required().messages({
+        'any.required': `Bet id is required`,
+        'any.min': `Send atleast one bet id.`,
+    }),
+    apiType: Joi.number().required().messages({
+        'any.required': `Api type is required`,
+    }),
+    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `Bet id should be a type of 'text'`,
+        'string.empty': `Bet id cannot be an empty field`,
+        'string.guid': `Bet id must be a valid GUID`,
+        'any.required': `Bet id is a required field`
+    })
+});

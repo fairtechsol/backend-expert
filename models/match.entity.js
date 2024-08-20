@@ -85,7 +85,7 @@ const matchSchema = new EntitySchema({
       default: false,
       nullable: false,
     },
-    apiType:{
+    sessionApiType:{
       type: "int",
       nullable: false,
       default: 0

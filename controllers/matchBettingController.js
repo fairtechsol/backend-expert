@@ -352,7 +352,7 @@ exports.raceBettingStatusChange = async (req, res) => {
   }
 };
 
-exports.matchBettingApiChange = async (req, res) => {
+exports.matchBettingRateApiProviderChange = async (req, res) => {
   try {
     const { apiType, betIds, matchId } = req.body;
 
@@ -372,16 +372,7 @@ exports.matchBettingApiChange = async (req, res) => {
         }, {})
       );
     }
-    
-
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchBettingApiChange,
-      {
-        apiType, betIds, matchId
-      }
-    );
-
+ 
     return SuccessResponse(
       {
         statusCode: 200,
@@ -400,7 +391,7 @@ exports.matchBettingApiChange = async (req, res) => {
   }
 };
 
-exports.raceBettingApiChange = async (req, res) => {
+exports.raceBettingRateApiProviderChange = async (req, res) => {
   try {
     const { apiType,betIds,matchId } = req.body;
 
@@ -420,15 +411,7 @@ exports.raceBettingApiChange = async (req, res) => {
         }, {})
       );
     }
-    
-
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchBettingApiChange,
-      {
-        apiType, betIds, matchId
-      }
-    );
+  
 
     return SuccessResponse(
       {

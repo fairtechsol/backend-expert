@@ -1,8 +1,8 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 const { cardGames } = require("../config/contants");
 
-module.exports = class CardData1720654837580 {
-    name = 'InsertCard1720654099131'
+module.exports = class CardData1724393655669 {
+    name = 'InsertCard1724393655669'
 
     async up(queryRunner) {
         for (let game of cardGames) {

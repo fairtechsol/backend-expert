@@ -30,7 +30,10 @@ exports.addMatchInCache = async (matchId, data) => {
     startAt: data.startAt,
     apiSessionActive: data.apiSessionActive,
     manualSessionActive: data.manualSessionActive,
-    rateThan100: data.rateThan100
+    rateThan100: data.rateThan100,
+    isTv: data?.isTv,
+    isFancy: data?.isFancy,
+    isBookmaker: data?.isBookmaker
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {

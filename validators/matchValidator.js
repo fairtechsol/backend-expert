@@ -12,14 +12,11 @@ let addMatchSchema = Joi.object({
     "string.base": "Match type must be a string",
     "any.required": "Match type is required",
   }),
-  competitionId: Joi.string().required().messages({
+  competitionId: Joi.string().allow(null).messages({
     "string.base": "Competition ID must be a string",
-    "any.required": "Competition ID is required",
   }),
-  competitionName: Joi.string().required().messages({
-    "string.base": "Match name must be a string",
-    "any.required": "Match name is required",
-    'any.empty': 'Match name cannot be empty'
+  competitionName: Joi.string().allow(null).messages({
+    "string.base": "Competition name must be a string",
   }),
   title: Joi.string().required().messages({
     "string.base": "Title must be a string",
@@ -57,6 +54,9 @@ let addMatchSchema = Joi.object({
     "number.greater": "Maximum bet amount for BetFair session must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for BetFair session is required",
   }),
+  isTv: Joi.boolean().allow(null),
+  isFancy: Joi.boolean().allow(null),
+  isBookmaker: Joi.boolean().allow(null),
   rateThan100: Joi.boolean().allow(null),
   bookmakers: Joi.array().items(bookmakerSchema).required().messages({
     "array.base": "Bookmakers must be an array",

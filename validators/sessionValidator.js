@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { sessionBettingType, teamStatus, betStatusType } = require("../config/contants");
+const { sessionBettingType, teamStatus, betStatusType, gameTypeMatchBetting } = require("../config/contants");
 
 exports.addsessionBettingValidator = Joi.object({
     matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
@@ -47,7 +47,9 @@ exports.addsessionBettingValidator = Joi.object({
     selectionId: Joi.string().messages({
         "string.base": "Selection ID must be a string",
     }),
-   
+    gtype : Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
+        "any.required": "Game type is required",
+    })
 });
 
 exports.updateSessionBettingValidator = Joi.object({

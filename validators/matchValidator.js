@@ -73,15 +73,15 @@ let addMatchSchema = Joi.object({
   })).when(Joi.ref('isManualMatch'), {
     is: false,
     then: Joi.array().min(1).custom((value, helpers) => {
-      const hasMatchOdd = value.some(obj => obj.type === matchBettingType.matchOdd);
+      const hasMatchOdd = value.some(obj => obj.type === matchBettingType.quickbookmaker1);
       if (!hasMatchOdd) {
-        return helpers.error('any.custom', { message: 'Match must have a matchOdd.' });
+        return helpers.error('any.custom', { message: 'Match must have a quick bookmaker.' });
       }
       return value;
     })
   }).required().messages({
     "array.base": "Market data must be an array",
-    "any.custom": "Match must have a matchOdd."
+    "any.custom": "Match must have a quick bookmaker."
   }),
   isManualMatch: Joi.boolean()
 }).messages({

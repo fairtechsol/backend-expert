@@ -87,6 +87,15 @@ module.exports.matchBettingType = {
   }, {}))
 };
 
+module.exports.gameTypeMatchBetting = {
+  match: "match",
+  match1: "match1",
+  fancy: "fancy",
+  fancy1: "fancy1",
+  oddeven: "oddeven",
+  cricketcasino: "cricketcasino",
+};
+
 module.exports.racingBettingType = {
   matchOdd: "matchOdd",
 };
@@ -208,6 +217,7 @@ module.exports.multiMatchBettingRecord = {
 
 module.exports.sessionBettingType = {
   session: "session",
+  fancy1: "fancy1",
   overByOver: "overByover",
   ballByBall: "ballByBall",
   oddEven: "oddEven",

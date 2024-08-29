@@ -434,18 +434,27 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
 exports.addAndUpdateMatchBetting = async (req, res) => {
   try {
     const { matchId, type, name, maxBet, marketId, id, gtype } = req.body;
+    const match = await getMatchById(matchId, ["id", "betFairSessionMinBet"]);
+
+    if (match.betFairSessionMinBet > maxBet) {
+      return ErrorResponse({
+        statusCode: 400,
+        message: {
+          msg: "match.maxMustBeGreater",
+        },
+      }, req, res);
+    }
     if(id){
       await updateMatchBetting({ id: id }, { maxBet: maxBet });
       const isMatchExist = await hasMatchInCache(matchId);
       if (isMatchExist) {
-        const bettingData = await getSingleMatchKey(marketId, marketBettingTypeByBettingType[type], "json");
+        const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
         bettingData.maxBet = maxBet;
         await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
       }
   
     }
     else{
-      const match = await getMatchById(matchId, ["id", "betFairSessionMinBet"]);
       const matchBettingData = {
         matchId: match.id,
         minBet: match.betFairSessionMinBet,

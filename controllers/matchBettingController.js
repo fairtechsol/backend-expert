@@ -438,7 +438,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
       await updateMatchBetting({ id: id }, { maxBet: maxBet });
       const isMatchExist = await hasMatchInCache(matchId);
       if (isMatchExist) {
-        const bettingData = await getSingleMatchKey(marketId, type, "json");
+        const bettingData = await getSingleMatchKey(marketId, marketBettingTypeByBettingType[type], "json");
         bettingData.maxBet = maxBet;
         await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
       }

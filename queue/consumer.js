@@ -301,6 +301,7 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
     let domainUrl = jobData.domainUrl;
     let betPlacedId = jobData.betPlacedId;
     let redisName = `${betId}_profitLoss`;
+    let sessionType = jobData.sessionType;
 
     // Iterate through partnerships based on role and update exposure
     if (partnershipObj['fwPartnershipId']) {
@@ -312,7 +313,7 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
 
         let oldProfitLossParent = JSON.parse(expertRedisData[redisName]);
         let parentPLbetPlaced = oldProfitLossParent?.betPlaced || [];
-        await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
+        await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced, sessionType);
         let newMaxLossParent = 0;
         userDeleteProfitLoss.betData.map((ob, index) => {
           let partnershipData = (ob.profitLoss * partnership) / 100;

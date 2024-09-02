@@ -857,7 +857,7 @@ exports.declareMatchResult = async (req, res) => {
       userId: userId,
       result: result,
       match: match
-    })
+    });
 
     if (resultValidate) {
       await deleteRedisKey(`${matchId}${redisKeys.declare}`);

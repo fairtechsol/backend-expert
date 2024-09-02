@@ -354,6 +354,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       ...(match.matchOdd
         ? { [matchBettingType.matchOdd]: match.matchOdd }
         : {}),
+        ...(match.bookmaker2
+          ? { [matchBettingType.bookmaker2]: match.bookmaker2 }
+          : {}),
       ...(match.marketBookmaker
         ? { [matchBettingType.bookmaker]: match.marketBookmaker }
         : {}),
@@ -410,6 +413,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     const categorizedMatchBettings = {
       [matchBettingType.matchOdd]: null,
       [matchBettingType.bookmaker]: null,
+      [matchBettingType.bookmaker2]: null,
       marketCompleteMatch: null,
       quickBookmaker: [],
       apiTideMatch: null,
@@ -425,6 +429,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           break;
         case matchBettingType.bookmaker:
           categorizedMatchBettings[matchBettingType.bookmaker] = item;
+          break;
+        case matchBettingType.bookmaker2:
+          categorizedMatchBettings[matchBettingType.bookmaker2] = item;
           break;
         case matchBettingType.quickbookmaker1:
         case matchBettingType.quickbookmaker2:
@@ -450,6 +457,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       ...match,
       matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
       marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
+      marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
       marketTiedMatch: categorizedMatchBettings.apiTideMatch,
       marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
     };

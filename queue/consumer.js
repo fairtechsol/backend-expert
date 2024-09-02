@@ -1,5 +1,5 @@
 const Queue = require('bee-queue');
-const { calculateExpertRate, calculateProfitLossSession, mergeProfitLoss, parseRedisData, calculateRacingExpertRate } = require('../services/commonService');
+const { calculateExpertRate, calculateProfitLossSession, mergeProfitLoss, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1 } = require('../services/commonService');
 const { logger } = require('../config/logger');
 const { redisKeys, socketData } = require('../config/contants');
 const { sendMessageToUser } = require('../sockets/socketManager');
@@ -243,12 +243,33 @@ const calculateSessionRateAmount = async (jobData, userId) => {
       const redisBetData = expertRedisData[`${placedBetObject?.betPlacedData?.betId}_profitLoss`]
         ? JSON.parse(expertRedisData[`${placedBetObject?.betPlacedData?.betId}_profitLoss`])
         : null;
+        let redisData;
 
-      let redisData = await calculateProfitLossSession(
-        redisBetData,
-        placedBetObject,
-        partnership
-      );
+        switch (jobData?.placedBet?.marketType) {
+          case sessionBettingType.session:
+          case sessionBettingType.overByOver:
+          case sessionBettingType.ballByBall:
+            redisData = await calculateProfitLossSession(
+              redisBetData,
+              placedBetObject,
+              partnership
+            );
+            break;
+          case sessionBettingType.oddEven:
+            redisData = await calculateProfitLossSessionOddEven(redisBetData,
+              placedBetObject, partnership);
+            break;
+          case sessionBettingType.cricketCasino:
+            redisData = await calculateProfitLossSessionCasinoCricket(redisBetData,
+              placedBetObject, partnership);
+            break;
+          case sessionBettingType.fancy1:
+            redisData = await calculateProfitLossSessionFancy1(redisBetData,
+              placedBetObject, partnership);
+            break;
+          default:
+            break;
+        }
 
       await setExpertsRedisData({
         [`${placedBetObject?.betPlacedData?.betId}_profitLoss`]: JSON.stringify(redisData),

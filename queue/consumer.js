@@ -257,15 +257,15 @@ const calculateSessionRateAmount = async (jobData, userId) => {
             break;
           case sessionBettingType.oddEven:
             redisData = await calculateProfitLossSessionOddEven(redisBetData,
-              placedBetObject, -partnership);
+              { ...placedBetObject, winAmount: -placedBetObject?.winAmount, lossAmount: -placedBetObject?.lossAmount }, partnership);
             break;
           case sessionBettingType.cricketCasino:
             redisData = await calculateProfitLossSessionCasinoCricket(redisBetData,
-              placedBetObject, -partnership);
+              { ...placedBetObject, winAmount: -placedBetObject?.winAmount, lossAmount: -placedBetObject?.lossAmount }, partnership);
             break;
           case sessionBettingType.fancy1:
             redisData = await calculateProfitLossSessionFancy1(redisBetData,
-              placedBetObject, -partnership);
+              { ...placedBetObject, winAmount: -placedBetObject?.winAmount, lossAmount: -placedBetObject?.lossAmount }, partnership);
             break;
           default:
             break;

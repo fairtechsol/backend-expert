@@ -573,7 +573,7 @@ exports.getExpertsRedisSessionDataByKeys = async (keys) => {
     if (item) {
 
       expertRedisData[keys?.[index]?.split("_")[0]] = {
-
+        profitLoss: JSON.parse(item)?.betPlaced,
         maxLoss: JSON.parse(item)?.maxLoss,
         totalBet: JSON.parse(item)?.totalBet
 

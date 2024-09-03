@@ -109,9 +109,9 @@ const calculateProfitLoss = (betData, odds, partnership) => {
   ) {
     return partnership != null || partnership != undefined
       ? +parseFloat(
-        (parseFloat(betData?.loseAmount) * partnership) / 100
+        (parseFloat(betData?.lossAmount) * partnership) / 100
       ).toFixed(2)
-      : -parseFloat(betData.loseAmount);
+      : -parseFloat(betData.lossAmount);
   }
   return 0;
 };

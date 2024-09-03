@@ -304,7 +304,7 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
   let betProfitloss = redisProfitLoss?.betPlaced ?? {};
 
   Array.from({ length: 10 }, (_, index) => index)?.forEach((item)=>{
-    if (betData?.betPlacedData?.teamName?.split(" ")?.[1] == item) {
+    if (betData?.betPlacedData?.teamName?.split(" ")?.[0] == item) {
       betProfitloss[item] = ((betProfitloss[item] || 0) + betData?.winAmount) * partnership / 100;
     }
     else{

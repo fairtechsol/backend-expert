@@ -1,7 +1,7 @@
 const Queue = require('bee-queue');
 const { calculateExpertRate, calculateProfitLossSession, mergeProfitLoss, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1 } = require('../services/commonService');
 const { logger } = require('../config/logger');
-const { redisKeys, socketData } = require('../config/contants');
+const { redisKeys, socketData, sessionBettingType } = require('../config/contants');
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { setExpertsRedisData, getExpertsRedisData } = require('../services/redis/commonfunction');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');

@@ -465,7 +465,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         marketId: marketId,
         activeStatus: betStatusType.save,
         isManual: false,
-        gtype: gtype
+        gtype: gtype,
+        isActive: true
       }
   
       const matchBetting = await addMatchBetting(matchBettingData);

@@ -321,11 +321,8 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
   };
 };
 
-exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced, type = sessionBettingType.session) => {
-  switch (type) {
-    case sessionBettingType.ballByBall:
-    case sessionBettingType.overByOver:
-    case sessionBettingType.session:
+exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
+  
       if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
         while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
           const newEntry = {
@@ -363,16 +360,7 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced, type = sessionBettingType
           newbetPlaced.push(newEntry);
         }
       }
-    case sessionBettingType.oddEven:
-    case sessionBettingType.cricketCasino:
-    case sessionBettingType.fancy1:
-      Object.keys(newbetPlaced)?.forEach((item) => {
-        newbetPlaced[item].profitLoss = oldbetPlaced[item]?.profitLoss - newbetPlaced[item]?.profitLoss;
-      });
-      return;
-    default:
-      return;
-  }
+    
 };
 
 exports.commonGetMatchDetails = async (matchId, userId) => {

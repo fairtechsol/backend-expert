@@ -22,7 +22,8 @@ module.exports.gameType = {
   football: "football",
   tennis: "tennis",
   horseRacing: "horseRacing",
-  greyHound: "greyHound"
+  greyHound: "greyHound",
+  politics: "politics",
 }
 
 module.exports.resultStatus = {
@@ -64,6 +65,7 @@ module.exports.baseColumnsSchemaPart = {
 module.exports.matchBettingType = {
   matchOdd: "matchOdd",
   bookmaker: "bookmaker",
+  tournament: "tournament",
   bookmaker2: "bookmaker2",
   quickbookmaker1: "quickbookmaker1",
   quickbookmaker2: "quickbookmaker2",
@@ -121,6 +123,7 @@ module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.matchOdd]: "matchOdd",
   [this.matchBettingType.bookmaker]: "marketBookmaker",
   [this.matchBettingType.bookmaker2]: "marketBookmaker2",
+  [this.matchBettingType.tournament]: "tournament",
   [this.matchBettingType.tiedMatch1]: "marketTiedMatch",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
@@ -146,6 +149,7 @@ module.exports.marketMatchBettingType = {
   [this.matchBettingType.matchOdd]: "matchOdd",
   [this.matchBettingType.bookmaker]: "bookmaker",
   [this.matchBettingType.bookmaker2]: "bookmaker2",
+  [this.matchBettingType.tournament]: "tournament",
   [this.matchBettingType.tiedMatch1]: "tiedMatch1",
   [this.matchBettingType.completeMatch]: "completeMatch",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
@@ -167,6 +171,7 @@ module.exports.intialMatchBettingsName = {
   [this.matchBettingType.bookmaker]: "Bookmaker Market",
   [this.matchBettingType.bookmaker2]: "Bookmaker Market",
   [this.matchBettingType.matchOdd]: "Match Odd",
+  [this.matchBettingType.tournament]: "Bookamker",
   [this.matchBettingType.tiedMatch1]: "tied_match",
   [this.matchBettingType.tiedMatch2]: "tied_manual",
   [this.matchBettingType.completeMatch]: "complete_match",
@@ -191,6 +196,7 @@ module.exports.matchBettingKeysForMatchDetails = {
   [this.matchBettingType.tiedMatch2]: "manualTideMatch",
   [this.matchBettingType.matchOdd]: "matchOdd",
   [this.matchBettingType.bookmaker]: "bookmaker",
+  [this.matchBettingType.tournament]: "tournament",
   [this.matchBettingType.bookmaker2]: "bookmaker2",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
   [this.matchBettingType.completeManual]: "completeManual",

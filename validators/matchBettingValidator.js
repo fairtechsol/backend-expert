@@ -160,5 +160,6 @@ exports.addMatchBettingDataValidator = Joi.object({
     }),
     gtype : Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
         "any.required": "Game type is required",
-    })
+    }),
+    metaData: Joi.object().allow(null)
 });

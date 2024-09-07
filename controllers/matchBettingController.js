@@ -433,7 +433,7 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
 
 exports.addAndUpdateMatchBetting = async (req, res) => {
   try {
-    const { matchId, type, name, maxBet, marketId, id, gtype } = req.body;
+    const { matchId, type, name, maxBet, marketId, id, gtype, metaData } = req.body;
     const match = await getMatchById(matchId, ["id", "betFairSessionMinBet"]);
 
     if (match.betFairSessionMinBet > maxBet) {
@@ -468,7 +468,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
           activeStatus: betStatusType.save,
           isManual: false,
           gtype: gtype,
-          isActive: true
+          isActive: true,
+          metaData: metaData
         }
 
         const matchBetting = await addMatchBetting(matchBettingData);
@@ -506,7 +507,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
           activeStatus: betStatusType.save,
           isManual: false,
           gtype: gtype,
-          isActive: true
+          isActive: true,
+          metaData: metaData
         }
 
         const matchBetting = await addMatchBetting(matchBettingData);

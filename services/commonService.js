@@ -450,7 +450,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       manualTiedMatch: null,
       manualCompleteMatch: null,
       ...(match.other
-        ? { "otherMarket": match.otherMarket }
+        ? { "other": match.other }
         : {})
     };
     // Iterate through matchBettings and categorize them
@@ -551,7 +551,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
       marketTiedMatch: categorizedMatchBettings.apiTideMatch,
       marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
-      otherMarket: categorizedMatchBettings[matchBettingType.other],
+      other: categorizedMatchBettings[matchBettingType.other],
     };
     await addMatchInCache(match.id, payload);
 

@@ -125,7 +125,7 @@ module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.bookmaker2]: "marketBookmaker2",
   [this.matchBettingType.tiedMatch1]: "marketTiedMatch",
   [this.matchBettingType.tiedMatch3]: "marketTiedMatch2",
-  [this.matchBettingType.other]: "otherMarket",
+  [this.matchBettingType.other]: "other",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`

@@ -783,9 +783,9 @@ exports.getMatchCompetitionsByType = async (req, res) => {
 
 exports.getMatchDatesByCompetitionId = async (req, res) => {
   try {
-    const { competitionId } = req.params;
+    const { type } = req.params;
 
-    const dates = await getMatchDates(competitionId);
+    const dates = await getMatchDates(type);
 
     return SuccessResponse(
       {
@@ -808,9 +808,9 @@ exports.getMatchDatesByCompetitionId = async (req, res) => {
 
 exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
   try {
-    const { competitionId, date } = req.params;
+    const { date, type } = req.params;
 
-    const matches = await getMatchByCompetitionIdAndDates(competitionId, date);
+    const matches = await getMatchByCompetitionIdAndDates(type, date);
 
     return SuccessResponse(
       {

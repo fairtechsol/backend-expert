@@ -205,18 +205,18 @@ exports.getMatchCompetitions = async (type) => {
   );
 };
 
-exports.getMatchDates = async (competitionId) => {
+exports.getMatchDates = async (type) => {
   return await match.query(
-    'SELECT DISTINCT DATE_TRUNC(\'day\', "startAt") as startDate FROM matchs WHERE "competitionId" = $1 AND "stopAt" IS NULL order by startDate',
-    [competitionId]
+    'SELECT DISTINCT DATE_TRUNC(\'day\', "startAt") as startDate FROM matchs where "matchType" = $1 AND "stopAt" IS NULL order by startDate',
+    [type]
   );
 };
 
-exports.getMatchByCompetitionIdAndDates = async (competitionId, date) => {
+exports.getMatchByCompetitionIdAndDates = async (type,date) => {
   return await match.createQueryBuilder()
     .leftJoinAndMapMany('match.matchBetting', 'matchBetting', 'matchBetting', 'match.id = matchBetting.matchId AND matchBetting.isActive = true AND matchBetting.type not in (:...type)')
     .select(["match.id", "match.title", "matchBetting.id", "matchBetting.name", "matchBetting.type"])
-    .where({ competitionId: competitionId, stopAt: IsNull() })
+    .where({ stopAt: IsNull(), matchType: type })
     .andWhere('DATE_TRUNC(\'day\',match."startAt") = :date')
     .setParameters({ "date": new Date(date), type: [...manualMatchBettingType, ...[matchBettingType.bookmaker, matchBettingType.completeMatch]] })
     .getMany();

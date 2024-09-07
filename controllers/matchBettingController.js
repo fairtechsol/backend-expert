@@ -444,39 +444,79 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         },
       }, req, res);
     }
-    if(id){
-      await updateMatchBetting({ id: id }, { maxBet: maxBet });
-      const isMatchExist = await hasMatchInCache(matchId);
-      if (isMatchExist) {
-        const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
-        bettingData.maxBet = maxBet;
-        await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
+    if (type == matchBettingType.other) {
+      if (id) {
+        await updateMatchBetting({ id: id }, { maxBet: maxBet });
+        const isMatchExist = await hasMatchInCache(matchId);
+        if (isMatchExist) {
+          const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
+          if (bettingData.find((item) => item?.id == id)) {
+            bettingData.find((item) => item?.id == id).maxBet = maxBet;
+            await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
+          }
+        }
       }
-  
+      else {
+        const matchBettingData = {
+          matchId: match.id,
+          minBet: match.betFairSessionMinBet,
+          createBy: req.user.id,
+          type: type,
+          name: name,
+          maxBet: maxBet,
+          marketId: marketId,
+          activeStatus: betStatusType.save,
+          isManual: false,
+          gtype: gtype,
+          isActive: true
+        }
+
+        const matchBetting = await addMatchBetting(matchBettingData);
+
+        const isMatchExist = await hasMatchInCache(match?.id);
+        if (isMatchExist) {
+          const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
+          let bettingRedisData = bettingData || [];
+          bettingRedisData.push(matchBetting);
+
+          await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType[type], JSON.stringify(bettingRedisData));
+        }
+      }
     }
-    else{
-      const matchBettingData = {
-        matchId: match.id,
-        minBet: match.betFairSessionMinBet,
-        createBy: req.user.id,
-        type: type,
-        name: name,
-        maxBet: maxBet,
-        marketId: marketId,
-        activeStatus: betStatusType.save,
-        isManual: false,
-        gtype: gtype,
-        isActive: true
+    else {
+      if (id) {
+        await updateMatchBetting({ id: id }, { maxBet: maxBet });
+        const isMatchExist = await hasMatchInCache(matchId);
+        if (isMatchExist) {
+          const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
+          bettingData.maxBet = maxBet;
+          await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
+        }
+
       }
-  
-      const matchBetting = await addMatchBetting(matchBettingData);
-  
-      const isMatchExist = await hasMatchInCache(match?.id);
-      if (isMatchExist) {
-        await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType[type], JSON.stringify(matchBetting));
+      else {
+        const matchBettingData = {
+          matchId: match.id,
+          minBet: match.betFairSessionMinBet,
+          createBy: req.user.id,
+          type: type,
+          name: name,
+          maxBet: maxBet,
+          marketId: marketId,
+          activeStatus: betStatusType.save,
+          isManual: false,
+          gtype: gtype,
+          isActive: true
+        }
+
+        const matchBetting = await addMatchBetting(matchBettingData);
+
+        const isMatchExist = await hasMatchInCache(match?.id);
+        if (isMatchExist) {
+          await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType[type], JSON.stringify(matchBetting));
+        }
       }
     }
-    
 
     return SuccessResponse(
       {

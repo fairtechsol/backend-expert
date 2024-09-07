@@ -444,8 +444,14 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       ...(match.marketTiedMatch
         ? { "apiTideMatch": match.marketTiedMatch }
         : {}),
+      ...(match.marketTiedMatch2
+        ? { "apiTideMatch2": match.marketTiedMatch2 }
+        : {}),
       manualTiedMatch: null,
-      manualCompleteMatch: null
+      manualCompleteMatch: null,
+      ...(match.other
+        ? { "otherMarket": match.otherMarket }
+        : {})
     };
     // Iterate through matchBettings and categorize them
     (Object.values(betting) || []).forEach(
@@ -471,6 +477,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 
     delete match.marketBookmaker;
     delete match.marketTiedMatch;
+    delete match.marketTiedMatch2;
 
     match.sessionBettings = sessions;
   } else {
@@ -496,7 +503,8 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       apiTideMatch: null,
       apiTideMatch2: null,
       manualTideMatch: null,
-      manualCompleteMatch: null
+      manualCompleteMatch: null,
+      other: []
     };
 
     // Iterate through matchBettings and categorize them
@@ -510,6 +518,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           break;
         case matchBettingType.bookmaker2:
           categorizedMatchBettings[matchBettingType.bookmaker2] = item;
+          break;
+        case matchBettingType.other:
+          categorizedMatchBettings[matchBettingType.other].push(item);
           break;
         case matchBettingType.quickbookmaker1:
         case matchBettingType.quickbookmaker2:
@@ -540,6 +551,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
       marketTiedMatch: categorizedMatchBettings.apiTideMatch,
       marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
+      otherMarket: categorizedMatchBettings[matchBettingType.other],
     };
     await addMatchInCache(match.id, payload);
 
@@ -736,6 +748,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
 
     delete match.marketBookmaker;
     delete match.marketTiedMatch;
+    delete match.marketTiedMatch2;
 
   } else {
     match = await getMatchDetails(matchId, []);

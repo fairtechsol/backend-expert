@@ -73,6 +73,7 @@ module.exports.matchBettingType = {
   tiedMatch3: "tiedMatch3",
   other: "other",
   completeMatch: "completeMatch",
+  completeMatch1: "completeMatch1",
   completeManual: "completeManual",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
@@ -127,6 +128,7 @@ module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.tiedMatch3]: "marketTiedMatch2",
   [this.matchBettingType.other]: "other",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
+  [this.matchBettingType.completeMatch1]: "marketCompleteMatch1",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
     return prev;
@@ -153,6 +155,7 @@ module.exports.marketMatchBettingType = {
   [this.matchBettingType.tiedMatch1]: "tiedMatch1",
   [this.matchBettingType.tiedMatch3]: "tiedMatch3",
   [this.matchBettingType.completeMatch]: "completeMatch",
+  [this.matchBettingType.completeMatch1]: "completeMatch1",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
     return prev;
@@ -176,6 +179,7 @@ module.exports.intialMatchBettingsName = {
   [this.matchBettingType.tiedMatch2]: "tied_manual",
   [this.matchBettingType.tiedMatch3]: "Tied Match",
   [this.matchBettingType.completeMatch]: "complete_match",
+  [this.matchBettingType.completeMatch1]: "Complete Match",
   [this.matchBettingType.completeManual]: "complete_manual",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `over_under_${curr}.5`
@@ -200,6 +204,7 @@ module.exports.matchBettingKeysForMatchDetails = {
   [this.matchBettingType.bookmaker]: "bookmaker",
   [this.matchBettingType.bookmaker2]: "bookmaker2",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
+  [this.matchBettingType.completeMatch1]: "marketCompleteMatch1",
   [this.matchBettingType.completeManual]: "completeManual",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
@@ -349,6 +354,7 @@ module.exports.redisKeysMarketWise = {
   [this.matchBettingType.tiedMatch2]: [this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
   [this.matchBettingType.tiedMatch3]: [this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
   [this.matchBettingType.completeMatch]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
+  [this.matchBettingType.completeMatch1]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
   [this.matchBettingType.completeManual]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = [this.redisKeys[`yesRateUnderOver${curr}.5`], this.redisKeys[`noRateUnderOver${curr}.5`]]
@@ -369,6 +375,7 @@ module.exports.thirdPartyMarketKey = {
   [this.matchBettingType.tiedMatch1]: "TIED_MATCH",
   [this.matchBettingType.tiedMatch3]: "TIED MATCH",
   [this.matchBettingType.completeMatch]: "COMPLETED_MATCH",
+  [this.matchBettingType.completeMatch1]: "COMPLETED MATCH",
 }
 
 module.exports.scoreBasedMarket = ["firstHalfGoal", "overUnder"];
@@ -417,6 +424,10 @@ module.exports.otherEventMatchBettingRedisKey = {
     "b": this.redisKeys.noRateTie
   },
   [this.matchBettingType.completeMatch]: {
+    "a": this.redisKeys.yesRateComplete,
+    "b": this.redisKeys.noRateComplete
+  },
+  [this.matchBettingType.completeMatch1]: {
     "a": this.redisKeys.yesRateComplete,
     "b": this.redisKeys.noRateComplete
   },

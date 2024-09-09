@@ -165,8 +165,8 @@ module.exports.MultipleMatchActiveInactive = Joi.object({
 module.exports.getMatchSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
   matchType: Joi.string(),
-  competitionId: Joi.string(),
-  competitionName: Joi.string(),
+  competitionId: Joi.string().allow("").allow(null),
+  competitionName: Joi.string().allow("").allow(null),
   title: Joi.string().required(),
   rateThan100: Joi.boolean(),
   marketId: Joi.string(),
@@ -177,8 +177,12 @@ module.exports.getMatchSchema = Joi.object({
   startAt: Joi.date(),
   betFairSessionMaxBet: Joi.number(),
   betFairSessionMinBet: Joi.number(),
+  sessionApiType: Joi.number().allow("").allow(null),
   apiSessionActive: Joi.boolean(),
   manualSessionActive: Joi.boolean(),
+  isTv: Joi.boolean(),
+  isFancy: Joi.boolean(),
+  isBookmaker: Joi.boolean(),
   ...(Object.values(marketBettingTypeByBettingType)?.reduce((prev, curr) => {
     prev[curr] = Joi.string().allow("");
     return prev;

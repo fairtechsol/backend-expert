@@ -110,7 +110,7 @@ exports.getMatchBetting = async (req, res) => {
 exports.getMatchBettingDetails = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { type } = req.query;
+    const { type, id } = req.query;
     let matchBetting, matchDetails;
     let manualBets = Object.values(manualMatchBettingType);
     matchDetails = await getMatchFromCache(matchId);
@@ -135,14 +135,18 @@ exports.getMatchBettingDetails = async (req, res) => {
     };
     if (manualBets.includes(type)) {
       matchBetting = await getBettingFromRedis(matchId, type);
-    } else {
+    } else if(matchDetails){
       matchBetting = matchDetails[marketBettingTypeByBettingType[type]];
+      if (id && type == matchBettingType.other) {
+        matchBetting = matchDetails?.other?.find((item) => item?.id == id);
+      }
       // fetch third party api for market rate
     }
     if (!matchBetting) {
       matchBetting = await getMatchBetting({
         matchId: matchId,
-        type: type
+        type: type,
+        ...(id ? { id: id } : {})
       });
     }
     let response = {

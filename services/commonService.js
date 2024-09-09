@@ -538,6 +538,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
         case matchBettingType.completeMatch:
           categorizedMatchBettings.marketCompleteMatch = item;
           break;
+        case matchBettingType.completeMatch1:
+          categorizedMatchBettings.marketCompleteMatch1 = item;
+          break;
         case matchBettingType.completeManual:
           categorizedMatchBettings.manualCompleteMatch = item;
           break;
@@ -849,7 +852,7 @@ exports.updateMatchMarketsByCron = async () => {
   for (let item of (matchs?.matches || [])) {
     let isMarketIdChange = false;
     const marketMatchData = await apiCall(apiMethod.get, `${microServiceDomain}${allApiRoutes.thirdParty.extraMarket}${item?.eventId}?eventType=cricket`);
-    for (let market of (item?.matchBettings?.filter((data) => [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch].includes(data.type)) || [])) {
+    for (let market of (item?.matchBettings?.filter((data) => [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch, matchBettingType.completeMatch1].includes(data.type)) || [])) {
       const matchMarketId = marketMatchData?.find((data) => data?.description?.marketType == thirdPartyMarketKey[market?.type])?.marketId;
       if (market?.marketId != matchMarketId) {
         isMarketIdChange = true;

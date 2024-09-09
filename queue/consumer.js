@@ -342,10 +342,10 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
 
         if ([sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(sessionType)) {
           Object.keys(userDeleteProfitLoss.betData).forEach((ob) => {
-            let partnershipData = (ob * partnership) / 100;
-            parentPLbetPlaced[item] = parentPLbetPlaced[item] + partnershipData;
-            if (newMaxLossParent < Math.abs(parentPLbetPlaced[item]) && parentPLbetPlaced[item] < 0) {
-              newMaxLossParent = Math.abs(parentPLbetPlaced[item]);
+            let partnershipData = (userDeleteProfitLoss.betData[ob] * partnership) / 100;
+            parentPLbetPlaced[ob] = parentPLbetPlaced[ob] + partnershipData;
+            if (newMaxLossParent < Math.abs(parentPLbetPlaced[ob]) && parentPLbetPlaced[ob] < 0) {
+              newMaxLossParent = Math.abs(parentPLbetPlaced[ob]);
             }
           });
         }

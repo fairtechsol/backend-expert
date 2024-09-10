@@ -315,15 +315,18 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
   try {
     let reqUser = req.user;
     let sessionId = req.params.id;
-    let { status, matchId, stopAllSessions } = req.body;
+    let { status, matchId, stopAllSessions, type } = req.body;
     const user = await getUserRedisData(reqUser.id);
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
 
     if (stopAllSessions) {
-
-      let sessionData = await getSessionBettings({ matchId: matchId, isManual: false, activeStatus: betStatusType.live });
+      let conditionObj = { matchId: matchId, isManual: false, activeStatus: betStatusType.live };
+      if(type) {
+        conditionObj.type = type;
+      }
+      let sessionData = await getSessionBettings(conditionObj);
       if (!sessionData?.length) {
         return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Session" } } }, req, res);
       }
@@ -338,7 +341,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       let sessionDetailData = {};
 
 
-      await updateSessionBetting({ matchId: matchId, isManual: false, activeStatus: betStatusType.live }, { activeStatus: status });
+      await updateSessionBetting(conditionObj, { activeStatus: status });
 
       sessionData?.map((item) => {
         sessions[item?.selectionId] = item?.id;

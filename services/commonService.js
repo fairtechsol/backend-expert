@@ -605,6 +605,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 
       if (currSessionExpertResult?.length != 0 && !(sessionBettingData.activeStatus == betStatus.result)) {
         if (currSessionExpertResult?.length == 1) {
+          sessionBettingData.selfDeclare = currSessionExpertResult[0].userId == userId ? true : false;
           sessionBettingData.resultStatus = resultStatus.pending;
           match.sessionBettings[index] = JSON.stringify(sessionBettingData);
         }

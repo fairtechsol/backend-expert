@@ -33,6 +33,7 @@ module.exports.resultStatus = {
 module.exports.betStatus = {
   save: "save",
   live: "live",
+  unSave: "unSave",
   result: "result",
   close: "close",
 };

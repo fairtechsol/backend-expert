@@ -143,6 +143,12 @@ exports.getMatchBettingDetails = async (req, res) => {
       // fetch third party api for market rate
     }
     if (!matchBetting) {
+      if (!id && type == matchBettingType?.other) {
+        matchBetting = await getMatchAllBettings({
+          matchId: matchId,
+          type: type,
+        });
+      }
       matchBetting = await getMatchBetting({
         matchId: matchId,
         type: type,

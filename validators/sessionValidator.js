@@ -119,5 +119,6 @@ exports.UpdateSessionstatusValidator = Joi.object({
     matchId: Joi.string().guid({ version: 'uuidv4' }).messages({
         "string.base": "Match ID must be a string",
     }),
-    stopAllSessions: Joi.boolean()
+    stopAllSessions: Joi.boolean(),
+    type: Joi.string().allow("")
 })

@@ -276,10 +276,22 @@ exports.matchBettingStatusChange = async (req, res) => {
       );
 
       if (hasMatchDetailsInCache) {
-        await settingMatchKeyInCache(matchBettingUpdate?.matchId, {
-          [marketBettingTypeByBettingType[matchBettingUpdate?.type]]:
-            JSON.stringify(matchBettingUpdate),
-        });
+        if(matchBettingUpdate?.type==matchBettingType.other){
+          const bettingData = await getSingleMatchKey(matchBettingUpdate?.matchId, marketBettingTypeByBettingType[matchBettingUpdate?.type], "json");
+          if (bettingData.find((item) => item?.id == betId)) {
+            bettingData[bettingData.findIndex((item) => item?.id == betId)] = matchBettingUpdate;
+          }
+          else{
+           bettingData.push(matchBettingUpdate); 
+          }
+          await updateMatchKeyInCache(matchBettingUpdate?.matchId, marketBettingTypeByBettingType[matchBettingUpdate?.type], JSON.stringify(bettingData));
+        }
+        else {
+          await settingMatchKeyInCache(matchBettingUpdate?.matchId, {
+            [marketBettingTypeByBettingType[matchBettingUpdate?.type]]:
+              JSON.stringify(matchBettingUpdate),
+          });
+        }
       }
     }
 

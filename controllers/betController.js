@@ -26,7 +26,7 @@ const {
   updateExpertResult,
   deleteAllExpertResult,
 } = require("../services/expertResultService");
-const { getMatchBattingByMatchId, updateMatchBetting, getMatchBettingById } = require("../services/matchBettingService");
+const { getMatchBattingByMatchId, updateMatchBetting, getMatchBettingById, getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
 const { getMatchById, addMatch } = require("../services/matchService");
 const {
   getSessionFromRedis,
@@ -769,7 +769,7 @@ exports.declareMatchResult = async (req, res) => {
   const { matchId, result } = req.body;
   const { id: userId } = req.user;
   try {
-    const isRedisSessionResultDeclare= await getRedisKey(`${matchId}${redisKeys.declare}`);
+      const isRedisSessionResultDeclare= await getRedisKey(`${matchId}${redisKeys.declare}`);
 
     if (isRedisSessionResultDeclare) {
       return ErrorResponse(
@@ -808,7 +808,7 @@ exports.declareMatchResult = async (req, res) => {
     }
 
     // check result already declare
-    let resultDeclare = await getMatchBattingByMatchId(matchId);
+    let resultDeclare = await getMatchAllBettings({ matchId: matchId, type: Not(matchBettingType.other) });
     const matchOddBetting = resultDeclare?.find(
       (item) => item.type == matchBettingType.quickbookmaker1
     );
@@ -832,7 +832,7 @@ exports.declareMatchResult = async (req, res) => {
         message: { msg: "bet.matchDeclare" },
       }, req, res);
     }
-    await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
+    await updateMatchBetting({ matchId: matchId, type: Not(matchBettingType.other) }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
 
     isResultChange = true;
 
@@ -842,10 +842,25 @@ exports.declareMatchResult = async (req, res) => {
         error: `Sessions is not declared yet.`,
       });
       await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+      updateMatchBetting({ matchId: matchId , type: Not(matchBettingType.other)}, { activeStatus: betStatus.save, result: null, stopAt: null});
       
       return ErrorResponse(
         { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
+        req,
+        res
+      );
+    }
+
+    const otherMatchBetting = await getMatchBetting({ matchId: matchId, activeStatus: Not(betStatus.result), type: matchBettingType.other }, ["id"]);
+    if (otherMatchBetting) {
+      logger.error({
+        error: `Other match is not declared yet.`,
+      });
+      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
+      updateMatchBetting({ matchId: matchId , type: Not(matchBettingType.other)}, { activeStatus: betStatus.save, result: null, stopAt: null });
+      
+      return ErrorResponse(
+        { statusCode: 403, message: { msg: "bet.declareOtherMarket" } },
         req,
         res
       );
@@ -862,7 +877,7 @@ exports.declareMatchResult = async (req, res) => {
 
     if (resultValidate) {
       await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+      updateMatchBetting({ matchId: matchId, type: Not(matchBettingType.other) }, { activeStatus: betStatus.save, result: null, stopAt: null });
       return SuccessResponse(
         {
           statusCode: 200,
@@ -897,7 +912,7 @@ exports.declareMatchResult = async (req, res) => {
           message: err.message,
         });
         await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-        await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+        await updateMatchBetting({ matchId: matchId, type: Not(matchBettingType.other) }, { activeStatus: betStatus.save, result: null, stopAt: null});
         await deleteExpertResult(matchOddBetting.id, userId);
         throw err;
       });
@@ -960,9 +975,9 @@ exports.declareMatchResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+    await deleteRedisKey(`${matchId}${redisKeys.declare}`);
     if (isResultChange) {
-      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+      updateMatchBetting({ matchId: matchId , type: Not(matchBettingType.other)}, { activeStatus: betStatus.save, result: null, stopAt: null });
     }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
@@ -1005,7 +1020,7 @@ exports.unDeclareMatchResult = async (req, res) => {
     }
 
     // check result already declare
-    let bet = await getMatchBattingByMatchId(matchId);
+    let bet = await getMatchAllBettings({ matchId: matchId, type: Not(matchBettingType.other) });
     const matchOddBetting = bet?.find(
       (item) => item.type == matchBettingType.quickbookmaker1
     );
@@ -1042,7 +1057,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       );
     }
 
-    await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.live, result: null, stopAt: null });
+    await updateMatchBetting({ matchId: matchId, type: Not(matchBettingType.other) }, { activeStatus: betStatus.live, result: null, stopAt: null });
     isResultChange = true;
     oldResult = matchOddBetting.result;
     oldStopAt = match?.stopAt;
@@ -1067,7 +1082,7 @@ exports.unDeclareMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
-        await updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: match?.stopAt });
+        await updateMatchBetting({ matchId: matchId, type: Not(matchBettingType.other) }, { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: match?.stopAt });
         throw err;
       });
 
@@ -1101,7 +1116,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       message: err.message,
     });
     if (isResultChange) {
-      updateMatchBetting({ matchId: matchId }, { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
+      updateMatchBetting({ matchId: matchId, type: Not(matchBettingType.other) }, { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
     }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);

@@ -250,6 +250,7 @@ module.exports.betStatusType = {
   live: "live",
   result: "result",
   close: "close",
+  unSave: "unSave",
 };
 
 module.exports.betType = {

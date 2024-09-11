@@ -254,7 +254,6 @@ exports.declareSessionResult = async (req, res) => {
         profitLoss: fwProfitLoss,
         stopAt: match.stopAt,
         activeStatus: betStatusType.result,
-        expertId: req?.user?.id
       }
     );
 
@@ -687,7 +686,12 @@ const checkResult = async (body) => {
   }
   else if (betType) {
     const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[betType], 'json');
-    matchData.activeStatus = betStatus.save;
+    if(betType==matchBettingType.other){
+      matchData.find((item) => item?.id == betId).activeStatus = betStatus.save;
+    }
+    else {
+      matchData.activeStatus = betStatus.save;
+    }
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[betType]]: JSON.stringify(matchData) });
   }
   else if(isOtherMatch) {
@@ -1550,7 +1554,7 @@ exports.declareOtherMatchResult = async (req, res) => {
       userId: userId,
       result: result,
       match: match,
-      ...(betId ? { betType: matchOddBetting.type } : {}),
+      betType: matchOddBetting.type ,
       isOtherMatch: true
     });
 

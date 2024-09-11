@@ -631,6 +631,20 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           match.resultStatus = resultStatus.missMatched;
         }
       }
+
+      for (let items of (match?.other || [])) {
+        let matchResult = expertResults.filter((result) => result.betId == items?.id);
+        if (matchResult?.length != 0) {
+          if (matchResult?.length == 1) {
+            match.otherBettings = match.otherBettings || {};
+            match.otherBettings.betId = resultStatus.pending;
+          } else {
+            
+            match.otherBettings = match.otherBettings || {};
+            match.otherBettings.betId = resultStatus.pending;
+          }
+        }
+      }
     }
   }
   return match;

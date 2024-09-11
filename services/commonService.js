@@ -637,11 +637,11 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
         if (matchResult?.length != 0) {
           if (matchResult?.length == 1) {
             match.otherBettings = match.otherBettings || {};
-            match.otherBettings.betId = resultStatus.pending;
+            match.otherBettings[items?.id] = resultStatus.pending;
           } else {
             
             match.otherBettings = match.otherBettings || {};
-            match.otherBettings.betId = resultStatus.pending;
+            match.otherBettings[items?.id] = resultStatus.pending;
           }
         }
       }

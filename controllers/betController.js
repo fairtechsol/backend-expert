@@ -253,7 +253,8 @@ exports.declareSessionResult = async (req, res) => {
         score,
         profitLoss: fwProfitLoss,
         stopAt: match.stopAt,
-        activeStatus: betStatusType.result
+        activeStatus: betStatusType.result,
+        expertId: req?.user?.id
       }
     );
 

@@ -679,7 +679,7 @@ const checkResult = async (body) => {
         sendMessageToUser(
           socketData.expertRoomSocket,
           socketData.updateSessionRateClient,
-          redisSessionData
+          redisSessionData,
         );
       } catch (error) { }
     }
@@ -718,7 +718,7 @@ const checkResult = async (body) => {
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.updateInResultDeclare,
-      { matchId, betId, status: resultStatus.pending, userId }
+      { matchId, betId, status: resultStatus.pending, userId, betType }
     );
 
     return true;
@@ -759,7 +759,7 @@ const checkResult = async (body) => {
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.updateInResultDeclare,
-      { matchId, betId, status: resultStatus.missMatched, userId }
+      { matchId, betId, status: resultStatus.missMatched, userId, betType }
     );
 
     throw {

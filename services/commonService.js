@@ -641,7 +641,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           } else {
             
             match.otherBettings = match.otherBettings || {};
-            match.otherBettings[items?.id] = resultStatus.pending;
+            match.otherBettings[items?.id] = resultStatus.missMatched;
           }
         }
       }

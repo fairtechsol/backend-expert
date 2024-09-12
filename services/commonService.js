@@ -633,6 +633,10 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       }
 
       for (let items of (match?.other || [])) {
+        if(items?.activeStatus==betStatus.result){
+          match.otherBettings[items?.id] = resultStatus.declared;
+          continue;
+        }
         let matchResult = expertResults.filter((result) => result.betId == items?.id);
         if (matchResult?.length != 0) {
           if (matchResult?.length == 1) {

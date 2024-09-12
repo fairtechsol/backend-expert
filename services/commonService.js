@@ -407,12 +407,12 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       let result = {};
       let apiSelectionIdObj = {};
       for (let index = 0; index < sessions?.length; index++) {
-        if (sessions?.[index]?.activeStatus == betStatusType.live) {
+        // if (sessions?.[index]?.activeStatus == betStatusType.live) {
           if (sessions?.[index]?.selectionId) {
             apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
           }
           result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
-        }
+        // }
         sessions[index] = JSON.stringify(sessions?.[index]);
       }
       settingAllSessionMatchRedis(matchId, result);
@@ -578,12 +578,12 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     let result = {};
     let apiSelectionIdObj = {};
     for (let index = 0; index < sessions?.length; index++) {
-      if (sessions?.[index]?.activeStatus == betStatusType.live) {
+      // if (sessions?.[index]?.activeStatus == betStatusType.live) {
         if (sessions?.[index]?.selectionId) {
           apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
         }
         result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
-      }
+      // }
       sessions[index] = JSON.stringify(sessions?.[index]);
     }
     settingAllSessionMatchRedis(matchId, result);

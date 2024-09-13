@@ -187,7 +187,7 @@ let calculateTournamentRateAmount = async (jobData, userId) => {
     let mPartenerShip = partnership['fwPartnership'];
     try {
       let masterRedisData = (await getExpertsRedisData()) || {};
-      let teamRates = masterRedisData?.[`${jobData?.matchId}${redisKeys.profitLoss}`];
+      let teamRates = masterRedisData?.[`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`];
 
       if (teamRates) {
         teamRates = JSON.parse(teamRates);
@@ -207,7 +207,7 @@ let calculateTournamentRateAmount = async (jobData, userId) => {
 
       let teamData = await calculateRacingExpertRate(teamRates, obj, mPartenerShip);
       let userRedisObj = {
-        [`${jobData?.matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamData)
+        [`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`]: JSON.stringify(teamData)
       }
       await setExpertsRedisData(userRedisObj);
       logger.info({

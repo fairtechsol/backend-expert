@@ -55,7 +55,7 @@ const racingBettingSchema = new EntitySchema({
     },
     apiType:{
       type: "int",
-      nullable: false,
+      nullable: true,
       default: 0
     }
   },

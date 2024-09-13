@@ -54,7 +54,10 @@ exports.createMatch = async (req, res) => {
       marketData,
       bookmakers,
       isManualMatch = false,
-      rateThan100
+      rateThan100,
+      isTv,
+      isFancy,
+      isBookmaker
     } = req.body;
 
 
@@ -77,12 +80,12 @@ exports.createMatch = async (req, res) => {
 
     if (isManualMatch) {
       marketId = 'manual' + Date.now();
-      const isCompetitionExist = await getOneMatchByCondition({ competitionName: ILike(competitionName) }, ['competitionName', 'competitionId']);
-      if (isCompetitionExist) {
-        competitionName = isCompetitionExist.competitionName;
-        competitionId = isCompetitionExist.competitionId;
-      }
-      competitionId = competitionId || marketId;
+      // const isCompetitionExist = await getOneMatchByCondition({ competitionName: ILike(competitionName) }, ['competitionName', 'competitionId']);
+      // if (isCompetitionExist) {
+      //   competitionName = isCompetitionExist.competitionName;
+      //   competitionId = isCompetitionExist.competitionId;
+      // }
+      // competitionId = competitionId || marketId;
 
       if (!title) {
         title = teamA + ' v ' + teamB;
@@ -106,7 +109,9 @@ exports.createMatch = async (req, res) => {
 
     // Prepare match data for a new match
     let matchData = {
-      matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, betFairSessionMaxBet: betFairSessionMaxBet, betFairSessionMinBet: minBet, createBy: loginId, rateThan100
+      matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, betFairSessionMaxBet: betFairSessionMaxBet, betFairSessionMinBet: minBet, createBy: loginId, rateThan100, isTv,
+      isFancy,
+      isBookmaker
     };
 
     let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
@@ -233,7 +238,10 @@ exports.createMatch = async (req, res) => {
         teamC: match.teamC,
         startAt: match.startAt,
         id: match.id,
-        createdAt: match.createdAt
+        createdAt: match.createdAt,
+        isTv: match.isTv,
+        isFancy: match.isFancy,
+        isBookmaker: match.isBookmaker
       }
     )
       .then((data) => {
@@ -775,9 +783,9 @@ exports.getMatchCompetitionsByType = async (req, res) => {
 
 exports.getMatchDatesByCompetitionId = async (req, res) => {
   try {
-    const { competitionId } = req.params;
+    const { type  } = req.params;
 
-    const dates = await getMatchDates(competitionId);
+    const dates = await getMatchDates(type );
 
     return SuccessResponse(
       {
@@ -800,9 +808,9 @@ exports.getMatchDatesByCompetitionId = async (req, res) => {
 
 exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
   try {
-    const { competitionId, date } = req.params;
+    const {  date, type  } = req.params;
 
-    const matches = await getMatchByCompetitionIdAndDates(competitionId, date);
+    const matches = await getMatchByCompetitionIdAndDates(type, date);
 
     return SuccessResponse(
       {

@@ -30,7 +30,10 @@ exports.addMatchInCache = async (matchId, data) => {
     startAt: data.startAt,
     apiSessionActive: data.apiSessionActive,
     manualSessionActive: data.manualSessionActive,
-    rateThan100: data.rateThan100
+    rateThan100: data.rateThan100,
+    isTv: data?.isTv,
+    isFancy: data?.isFancy,
+    isBookmaker: data?.isBookmaker
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
@@ -570,7 +573,7 @@ exports.getExpertsRedisSessionDataByKeys = async (keys) => {
     if (item) {
 
       expertRedisData[keys?.[index]?.split("_")[0]] = {
-
+        profitLoss: JSON.parse(item)?.betPlaced,
         maxLoss: JSON.parse(item)?.maxLoss,
         totalBet: JSON.parse(item)?.totalBet
 
@@ -583,18 +586,8 @@ exports.getExpertsRedisSessionDataByKeys = async (keys) => {
 }
 
 exports.getExpertsRedisMatchData = async (matchId) => {
-  // Retrieve match data from Redis
-  let redisIds = [`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`];
-
-  const matchData = await internalRedis.hmget(redisKeys.expertRedisData, ...redisIds);
-  let teamRates = {};
-  matchData?.forEach((item, index) => {
-    if (item) {
-      teamRates[redisIds?.[index]?.split("_")[0]] = item;
-    }
-  });
-  // Parse and return the match data or null if it doesn't exist
-  return teamRates;
+  let matchResult = await this.getHashKeysByPattern(redisKeys.expertRedisData, `*_${matchId}`);
+  return matchResult;
 
 }
 
@@ -780,4 +773,18 @@ exports.setRedisKey = async (key, val) => {
 
 exports.deleteRedisKey = async (key, val) => {
   await internalRedis.del(key);
+}
+
+exports.getHashKeysByPattern = async (key, pattern) => {
+  let cursor = '0';
+  let resultObj={};
+  do {
+    const result = await internalRedis.hscan(key, cursor, 'MATCH', pattern);
+    cursor = result[0];
+    const keys = result[1];
+    for (let i = 0; i < keys?.length - 1; i += 2) {
+      resultObj[keys[i]] = keys[i + 1];
+    }
+  } while (cursor !== '0');
+  return resultObj;
 }

@@ -52,6 +52,11 @@ const racingBettingSchema = new EntitySchema({
     marketId : {
       type : "varchar",
       nullable : true
+    },
+    apiType:{
+      type: "int",
+      nullable: true,
+      default: 0
     }
   },
   relations: {

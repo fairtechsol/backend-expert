@@ -12,8 +12,8 @@ router.post('/update', isAuthenticate, validator(updateMatchValidate), updateMat
 router.get('/list', isAuthenticate, listMatch);
 router.get('/listWithManualBetting', isAuthenticate, matchListWithManualBetting);
 router.get('/competitionList/:type', getMatchCompetitionsByType);
-router.get('/competition/dates/:competitionId', getMatchDatesByCompetitionId);
-router.get('/competition/getMatch/:competitionId/:date', getMatchDatesByCompetitionIdAndDate);
+router.get('/competition/dates/:type', getMatchDatesByCompetitionId);
+router.get('/competition/getMatch/:type/:date', getMatchDatesByCompetitionIdAndDate);
 router.post('/updateActiveStatus', isAuthenticate, validator(MatchActiveInactive), matchActiveInActive);
 router.post('/updateActiveStatus/multiple', isAuthenticate, validator(MultipleMatchActiveInactive), multipleMatchActiveInActive);
 

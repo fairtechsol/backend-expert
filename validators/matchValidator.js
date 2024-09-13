@@ -34,9 +34,8 @@ let addMatchSchema = Joi.object({
     "string.base": "Team A must be a string",
     "any.required": "Team A is required",
   }),
-  teamB: Joi.string().required().messages({
+  teamB: Joi.string().trim().allow("").messages({
     "string.base": "Team B must be a string",
-    "any.required": "Team B is required",
   }),
   teamC: Joi.string().trim().allow("").messages({
     "string.base": "Team C must be a string",

@@ -507,6 +507,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       apiTideMatch2: null,
       manualTideMatch: null,
       manualCompleteMatch: null,
+      tournament: null,
       other: []
     };
 
@@ -532,6 +533,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           break;
         case matchBettingType.tiedMatch1:
           categorizedMatchBettings.apiTideMatch = item;
+          break;
         case matchBettingType.tiedMatch3:
           categorizedMatchBettings.apiTideMatch2 = item;
           break;
@@ -553,7 +555,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     let payload = {
       ...match,
       matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
-      tournament: [...match?.tournamentBettings],
+      tournament: [...match?.tournamentBettings||[]],
       marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
       marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
       marketTiedMatch: categorizedMatchBettings.apiTideMatch,

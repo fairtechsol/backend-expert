@@ -55,7 +55,7 @@ exports.addTournamentBetting= async (body)=>{
   return addTournamentBetting;
 };
 
-exports.getRunners = async (where, select) => {
+exports.getTournamentRunners = async (where, select) => {
   return await TournamentRunner.find({
       where: where,
       select: select,

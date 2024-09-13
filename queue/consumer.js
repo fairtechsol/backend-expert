@@ -20,6 +20,7 @@ const ExpertMatchRacingBetQueue = new Queue('expertMatchRacingBetQueue', expertR
 const expertSessionBetDeleteQueue = new Queue('expertSessionBetDeleteQueue', expertRedisOption);
 const expertMatchBetDeleteQueue = new Queue('expertMatchBetDeleteQueue', expertRedisOption);
 const expertRaceMatchBetDeleteQueue = new Queue('expertRaceMatchBetDeleteQueue', expertRedisOption);
+const ExpertMatchTournamentBetQueue = new Queue('expertMatchTournamentBetQueue', expertRedisOption);
 
 ExpertMatchBetQueue.process(async function (job, done) {
   let jobData = job.data;
@@ -156,6 +157,77 @@ let calculateRacingRateAmount = async (jobData, userId) => {
   }
 }
 
+ExpertMatchTournamentBetQueue.process(async function (job, done) {
+  let jobData = job.data;
+  let userId = jobData.userId;
+  try {
+    await calculateTournamentRateAmount(jobData, userId);
+    return done(null, {});
+  } catch (error) {
+    logger.info({
+      file: `error in bet Queue for User id : ${userId}`,
+      error: error.message
+    })
+    return done(null, {});
+  }
+});
+
+let calculateTournamentRateAmount = async (jobData, userId) => {
+  let partnership = JSON.parse(jobData.partnerships);
+  let obj = {
+    runners: jobData.runners,
+    winAmount: jobData.winAmount,
+    lossAmount: jobData.lossAmount,
+    bettingType: jobData.bettingType,
+    runnerId: jobData.runnerId
+  }
+
+  if (partnership['fwPartnershipId']) {
+    let mPartenerShipId = partnership['fwPartnershipId'];
+    let mPartenerShip = partnership['fwPartnership'];
+    try {
+      let masterRedisData = (await getExpertsRedisData()) || {};
+      let teamRates = masterRedisData?.[`${jobData?.matchId}${redisKeys.profitLoss}`];
+
+      if (teamRates) {
+        teamRates = JSON.parse(teamRates);
+      }
+
+      if (!teamRates) {
+        teamRates = jobData?.runners?.reduce((acc, key) => {
+          acc[key?.id] = 0;
+          return acc;
+        }, {});
+      }
+
+      teamRates = Object.keys(teamRates).reduce((acc, key) => {
+        acc[key] = parseRedisData(key, teamRates);
+        return acc;
+      }, {});
+
+      let teamData = await calculateRacingExpertRate(teamRates, obj, mPartenerShip);
+      let userRedisObj = {
+        [`${jobData?.matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamData)
+      }
+      await setExpertsRedisData(userRedisObj);
+      logger.info({
+        context: "Update User Exposure",
+        process: `User ID : ${userId} expert`,
+      });
+      //send Data to socket
+      jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
+      sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData, userRedisObj: teamData });
+    }
+    catch (error) {
+      logger.error({
+        context: "error in super master exposure update",
+        process: `User ID : ${userId} and super master id ${mPartenerShipId}`,
+        error: error.message,
+        stake: error.stack
+      })
+    }
+  }
+}
 // ExpertCardMatchBetQueue.process(async function (job, done) {
 //   let jobData = job.data;
 //   let userId = jobData.userId;
@@ -568,4 +640,4 @@ expertRaceMatchBetDeleteQueue.process(async function (job, done) {
   }
 });
 
-module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, ExpertMatchRacingBetQueue, expertSessionBetDeleteQueue, expertMatchBetDeleteQueue }
+module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, ExpertMatchRacingBetQueue, expertSessionBetDeleteQueue, expertMatchBetDeleteQueue, ExpertMatchTournamentBetQueue }

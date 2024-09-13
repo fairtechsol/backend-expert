@@ -10,7 +10,7 @@ const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFro
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
-const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById } = require("../services/tournamentBettingService");
+const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById, getTournamentBetting, getTournamentBettingWithRunners, getTournamentRunners } = require("../services/tournamentBettingService");
 
 exports.getMatchBetting = async (req, res) => {
   try {
@@ -228,6 +228,76 @@ exports.getRaceBettingDetails = async (req, res) => {
 
     let response = {
       match: race,
+      matchBetting: matchBetting,
+      runners: runners
+    };
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "success", keys: { name: "Match" } },
+        data: response,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at get list match betting.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
+  }
+};
+
+exports.getTournamentBettingDetails = async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    const { type, id } = req.query;
+    let matchBetting, matchDetails, runners;
+    matchDetails = await getMatchFromCache(matchId);
+    if (!matchDetails) {
+      matchDetails = await getMatchById(matchId);
+    }
+    if (!matchDetails || lodash.isEmpty(matchDetails)) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "MAtch Betting" } } }, req, res);
+    }
+    let match = {
+      id: matchDetails.id,
+      eventId: matchDetails.eventId,
+      startAt: matchDetails.startAt,
+      title: matchDetails.title,
+      matchType: matchDetails.matchType,
+      stopAt: matchDetails.stopAt,
+      betPlaceStartBefore: matchDetails?.betPlaceStartBefore
+    };
+
+    matchBetting = matchDetails[matchBettingType[type]];
+    // fetch third party api for market rate
+
+    if (!matchBetting) {
+      matchBetting = await getTournamentBetting({
+        id: id
+      });
+    }
+    else {
+      matchBetting = JSON.parse(matchBetting);
+    }
+
+    runners = matchDetails?.runners;
+
+    if (!runners) {
+      runners = await getTournamentRunners({
+        bettingId: matchBetting.id
+      });
+    }
+    else {
+      runners = JSON.parse(runners);
+    }
+
+    let response = {
+      match: match,
       matchBetting: matchBetting,
       runners: runners
     };

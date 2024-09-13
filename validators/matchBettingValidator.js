@@ -161,5 +161,30 @@ exports.addMatchBettingDataValidator = Joi.object({
     gtype : Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
         "any.required": "Game type is required",
     }),
-    metaData: Joi.object().allow(null)
+    metaData: Joi.object().allow(null),
+    runners: Joi.when(Joi.object({ type: matchBettingType.tournament, id: null }), {
+        then: Joi.array().min(1).required().items(Joi.object().keys({
+            matchId: Joi.string().required().messages({
+                "any.required": "Runner match id required"
+            }),
+            metadata: Joi.object().allow(null),
+            runnerName: Joi.string().required().messages({
+                "any.required": "Runner name required"
+            }),
+            selectionId: Joi.string().required().messages({
+                "any.required": "Runner selection id required"
+            }),
+            sortPriority: Joi.number().required().messages({
+                "any.required": "Runner sort priority required"
+            })
+
+        })).messages({
+            'array.base': `Runners should be an array`,
+            'array.min': `Send at least one runner object`,
+            'any.required': `Runners are required when id is null and type is racing`,
+        })
+        ,
+        otherwise: Joi.array().allow(null)
+
+    })
 });

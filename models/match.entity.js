@@ -119,6 +119,11 @@ const matchSchema = new EntitySchema({
       type: "one-to-many",
       target: "sessionBetting",
       inverseSide: "match",
+    },
+    tournamentBettings:{
+      type: "one-to-many",
+      target: "tournamentBetting",
+      inverseSide: "match",
     }
   },
   indices: [

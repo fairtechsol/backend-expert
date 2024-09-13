@@ -431,9 +431,12 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       ...(match.matchOdd
         ? { [matchBettingType.matchOdd]: match.matchOdd }
         : {}),
+      ...(match.tournament
+        ? { [matchBettingType.tournament]: match.tournament }
+        : {}),
       ...(match.bookmaker2
         ? { [matchBettingType.bookmaker2]: match.bookmaker2 }
-        : {}),
+          : {}),
       ...(match.marketBookmaker
         ? { [matchBettingType.bookmaker]: match.marketBookmaker }
         : {}),
@@ -546,16 +549,18 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           break;
       }
     });
-
+    
     let payload = {
       ...match,
       matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
+      tournament: [...match?.tournamentBettings],
       marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
       marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
       marketTiedMatch: categorizedMatchBettings.apiTideMatch,
       marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
       other: categorizedMatchBettings[matchBettingType.other],
     };
+    delete match.tournamentBettings;
     await addMatchInCache(match.id, payload);
 
     // Create an empty object to store manual betting Redis data
@@ -592,7 +597,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     match.sessionBettings = sessions;
     // Assign the categorized match betting to the match object
     Object.assign(match, categorizedMatchBettings);
-
+    match.tournament = payload.tournament;
     delete match.matchBettings;
   }
   let teamRates = await getExpertsRedisMatchData(matchId);

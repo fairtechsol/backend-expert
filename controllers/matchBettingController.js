@@ -10,7 +10,7 @@ const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFro
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
-const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById, getTournamentBetting, getTournamentBettingWithRunners, getTournamentRunners } = require("../services/tournamentBettingService");
+const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById, getTournamentBetting, getTournamentBettingWithRunners, getTournamentRunners, getTournamentBettings } = require("../services/tournamentBettingService");
 
 exports.getMatchBetting = async (req, res) => {
   try {
@@ -261,7 +261,7 @@ exports.getTournamentBettingDetails = async (req, res) => {
       matchDetails = await getMatchById(matchId);
     }
     if (!matchDetails || lodash.isEmpty(matchDetails)) {
-      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "MAtch Betting" } } }, req, res);
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match Betting" } } }, req, res);
     }
     let match = {
       id: matchDetails.id,
@@ -273,35 +273,51 @@ exports.getTournamentBettingDetails = async (req, res) => {
       betPlaceStartBefore: matchDetails?.betPlaceStartBefore
     };
 
-    matchBetting = matchDetails[matchBettingType[type]];
+    matchBetting = matchDetails[marketBettingTypeByBettingType[type]];
     // fetch third party api for market rate
+    let response;
+    if (id) {
+      if (!matchBetting) {
+        matchBetting = await getTournamentBetting({
+          id: id
+        });
+      }
+      else {
+        matchBetting = JSON.parse(matchBetting)?.find((item) => item?.id == id);
+      }
 
-    if (!matchBetting) {
-      matchBetting = await getTournamentBetting({
-        id: id
-      });
+      runners = matchBetting?.runners;
+
+      if (!runners) {
+        runners = await getTournamentRunners({
+          bettingId: matchBetting.id
+        });
+      }
+      else {
+        runners = JSON.parse(runners);
+      }
+
+      response = {
+        match: match,
+        matchBetting: matchBetting,
+        runners: runners
+      };
     }
     else {
-      matchBetting = JSON.parse(matchBetting);
+      if (!matchBetting) {
+        matchBetting = await getTournamentBettings({
+          matchId: matchId
+        });
+      }
+      else {
+        matchBetting = JSON.parse(matchBetting);
+      }
+
+      response = {
+        match: match,
+        matchBetting: matchBetting
+      };
     }
-
-    runners = matchDetails?.runners;
-
-    if (!runners) {
-      runners = await getTournamentRunners({
-        bettingId: matchBetting.id
-      });
-    }
-    else {
-      runners = JSON.parse(runners);
-    }
-
-    let response = {
-      match: match,
-      matchBetting: matchBetting,
-      runners: runners
-    };
-
     return SuccessResponse(
       {
         statusCode: 200,

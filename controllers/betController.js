@@ -59,7 +59,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { extractNumbersFromString } = require("../services/commonService");
 const { getRacingMatchById, raceAddMatch } = require("../services/racingMatchService");
 const { getRaceBettingWithRunners, updateRaceBetting } = require("../services/raceBettingService");
-const { getTournamentBettingWithRunners, updateTournamentBetting, getTournamentBetting } = require("../services/tournamentBettingService");
+const { getTournamentBettingWithRunners, updateTournamentBetting, getTournamentBetting, getTournamentBettings } = require("../services/tournamentBettingService");
 
 
 exports.getPlacedBets = async (req, res, next) => {
@@ -1964,7 +1964,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       : 0;
 
     await addResult({
-      betType: bettingType.racing,
+      betType: bettingType.match,
       betId: matchOddBetting.id,
       matchId: matchId,
       result: result,
@@ -1985,11 +1985,21 @@ exports.declareTournamentMatchResult = async (req, res) => {
         type: match?.matchType
       }
     );
-    const unDeclaredMatchBetting = await getTournamentBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
-    if (!unDeclaredMatchBetting) {
+    const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
+    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
+    if (!unDeclaredMatchBetting && !unDeclaredMatchBettingTournament) {
       deleteAllMatchRedis(matchId);
       match.stopAt = new Date();
       await addMatch(match);
+    }
+    else{
+      const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
+
+      matchData.find((item) => item.id == betId).activeStatus = betStatus.result;
+      matchData.find((item) => item.id == betId).result = result;
+      matchData.find((item) => item.id == betId).stopAt = new Date();
+      matchData.find((item) => item.id == betId).updatedAt = new Date();
+      await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
     }
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${betId}${redisKeys.profitLoss}_${matchId}`);
 
@@ -2039,7 +2049,10 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       );
     }
 
-    if (!match.stopAt) {
+    const matchBettingsUndec = await getMatchBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
+    const tournamentBettingsUndec = await getTournamentBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
+
+    if (!match.stopAt && !matchBettingsUndec && !tournamentBettingsUndec) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -2145,12 +2158,21 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       }
     );
 
-    const declaredMatchBetting = await getTournamentBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
-    if (declaredMatchBetting?.length == 1) {
+    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
+    const declaredMatchBetting = await getTournamentBettings({ activeStatus: Not(betStatusType.result) }, ["id"]);
+    if (declaredMatchBetting?.length == 1 && !unDeclaredMatchBetting) {
       await deleteAllMatchRedis(matchId);
       match.stopAt = null;
-
       await addMatch(match);
+    }
+    else{
+      const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
+      matchData.find((item) => item.id == matchOddBetting?.id).activeStatus = betStatus.save;
+      matchData.find((item) => item.id == matchOddBetting?.id).result = null;
+      matchData.find((item) => item.id == matchOddBetting?.id).stopAt = null;
+      matchData.find((item) => item.id == matchOddBetting?.id).updatedAt = new Date();
+      await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
+
     }
     return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match result undeclared" } }, data: { matchId } }, req, res);
   } catch (err) {

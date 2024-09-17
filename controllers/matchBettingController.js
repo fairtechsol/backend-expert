@@ -636,8 +636,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         };
 
         const tournamentBetting = await addTournamentBetting(tournamentBettingData);
-        const runnersData = await insertTournamentRunners(runners?.map((item) => ({ ...item, bettingId: tournamentBetting?.id })));
-        tournamentBetting.runners = runnersData?.generatedMaps;
+         await insertTournamentRunners(runners?.map((item) => ({ ...item, bettingId: tournamentBetting?.id })));
+        tournamentBetting.runners = await getTournamentRunners({ matchId: matchId });
         const isMatchExist = await hasMatchInCache(match?.id);
         if (isMatchExist) {
           const bettingData = (await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json")) || [];

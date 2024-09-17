@@ -804,7 +804,8 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
       }
 
     });
-
+    match.tournament = [...(match.tournamentBettings || [])];
+    delete match.tournamentBettings;
     let payload = {
       ...match,
     };
@@ -825,7 +826,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
         }
       }
     });
-    payload.tournament = [...match?.tournamentBettings || []],
+    payload.tournament = [...match?.tournament || []],
 
     await addMatchInCache(match.id, payload);
 

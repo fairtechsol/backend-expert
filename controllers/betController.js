@@ -818,6 +818,8 @@ exports.declareMatchResult = async (req, res) => {
     const matchOddBetting = resultDeclare?.find(
       (item) => item.type == matchBettingType.quickbookmaker1
     );
+
+
     if (resultDeclare?.length > 0 && matchOddBetting.activeStatus == betStatus.result) {
       await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       return ErrorResponse(
@@ -858,7 +860,8 @@ exports.declareMatchResult = async (req, res) => {
     }
 
     const otherMatchBetting = await getMatchBetting({ matchId: matchId, activeStatus: Not(betStatus.result), type: matchBettingType.other }, ["id"]);
-    if (otherMatchBetting) {
+    let resultDeclareTournament = await getTournamentBetting({ matchId: matchId, activeStatus: Not(betStatus.result) });
+    if (otherMatchBetting || resultDeclareTournament) {
       logger.error({
         error: `Other match is not declared yet.`,
       });

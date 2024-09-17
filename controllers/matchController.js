@@ -114,17 +114,18 @@ exports.createMatch = async (req, res) => {
       isBookmaker
     };
 
-    let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
-    let minimumMaxBet = Math.min(...maxBetValues);
-    if (minimumMaxBet <= minBet) {
-      return ErrorResponse({
-        statusCode: 400,
-        message: {
-          msg: "match.maxMustBeGreater",
-        },
-      }, req, res);
+    if (teamB) {
+      let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
+      let minimumMaxBet = Math.min(...maxBetValues);
+      if (minimumMaxBet <= minBet) {
+        return ErrorResponse({
+          statusCode: 400,
+          message: {
+            msg: "match.maxMustBeGreater",
+          },
+        }, req, res);
+      }
     }
-
     // Check if market ID already exists
     const isMarketIdPresent = await getMatchByMarketId(marketId);
     if (isMarketIdPresent) {
@@ -144,83 +145,88 @@ exports.createMatch = async (req, res) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
     }
 
-    let matchBetting = {
-      matchId: match.id,
-      minBet: minBet,
-      createBy: loginId
-    }
+    let payload = {
+      ...match
+    };
 
-    let matchBettings = (marketData?.map((item) => {
-      if (marketMatchBettingType[item?.type]) {
+    if (teamB) {
+      let matchBetting = {
+        matchId: match.id,
+        minBet: minBet,
+        createBy: loginId
+      }
 
+      let matchBettings = (marketData?.map((item) => {
+        if (marketMatchBettingType[item?.type]) {
+
+          return {
+            ...matchBetting,
+            type: item?.type,
+            name: intialMatchBettingsName[item?.type],
+            maxBet: item?.maxBet,
+            marketId: item?.marketId,
+            activeStatus: betStatusType.save,
+            isManual: false
+          }
+
+        }
         return {
           ...matchBetting,
           type: item?.type,
           name: intialMatchBettingsName[item?.type],
           maxBet: item?.maxBet,
-          marketId: item?.marketId,
-          activeStatus: betStatusType.save,
-          isManual: false
         }
+      }) || []);
+      matchBettings.push(...(bookmakers?.map((item, index) => {
+        const { maxBet, marketName } = item;
+        index++;
+        return {
+          ...matchBetting,
+          type: matchBettingType["quickbookmaker" + index],
+          name: marketName,
+          maxBet: maxBet,
+        };
+      }) || []));
 
+
+      // Attach bookmakers to the match
+      let insertedMatchBettings = await insertMatchBettings(matchBettings);
+      if (!insertedMatchBettings) {
+        logger.error({
+          error: `Match quick bookmaker add fail for quick bookmaker`,
+          matchBettings: matchBettings
+        });
+
+        return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
       }
-      return {
-        ...matchBetting,
-        type: item?.type,
-        name: intialMatchBettingsName[item?.type],
-        maxBet: item?.maxBet,
+
+      let matchBettingData = await getMatchBattingByMatchId(match.id);
+
+      const convertedData = matchBettingData.reduce((result, item) => {
+        const key = item.type;
+        result[key] = item;
+        return result;
+      }, {});
+
+      for (let item of marketData) {
+        if (marketMatchBettingType[item?.type]) {
+          payload[marketBettingTypeByBettingType[item?.type]] = convertedData[item?.type];
+        }
       }
-    }) || []);
-    matchBettings.push(...(bookmakers?.map((item, index) => {
-      const { maxBet, marketName } = item;
-      index++;
-      return {
-        ...matchBetting,
-        type: matchBettingType["quickbookmaker" + index],
-        name: marketName,
-        maxBet: maxBet,
-      };
-    }) || []));
-
-
-    // Attach bookmakers to the match
-    let insertedMatchBettings = await insertMatchBettings(matchBettings);
-    if (!insertedMatchBettings) {
-      logger.error({
-        error: `Match quick bookmaker add fail for quick bookmaker`,
-        matchBettings: matchBettings
+      const manualBettingRedisData = {};
+      manualMatchBettingType?.forEach((item) => {
+        if (convertedData[item]) {
+          manualBettingRedisData[item] = JSON.stringify(convertedData[item]);
+        }
       });
 
-      return ErrorResponse({ statusCode: 400, message: { msg: "match.matchAddFail" } }, req, res);
+      await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
     }
 
-    let matchBettingData = await getMatchBattingByMatchId(match.id);
 
-    const convertedData = matchBettingData.reduce((result, item) => {
-      const key = item.type;
-      result[key] = item;
-      return result;
-    }, {});
-
-    let payload = {
-      ...match
-    };
-
-    for (let item of marketData) {
-      if (marketMatchBettingType[item?.type]) {
-        payload[marketBettingTypeByBettingType[item?.type]] = convertedData[item?.type];
-      }
-    }
-
+  
     await addMatchInCache(match.id, payload);
-    const manualBettingRedisData = {};
-    manualMatchBettingType?.forEach((item) => {
-      if (convertedData[item]) {
-        manualBettingRedisData[item] = JSON.stringify(convertedData[item]);
-      }
-    });
 
-    await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
     broadcastEvent(socketData.addMatchEvent, { gameType: match?.matchType });
 
     await apiCall(
@@ -265,7 +271,7 @@ exports.createMatch = async (req, res) => {
             name: "Match",
           },
         },
-        data: { match, matchBettingData },
+        data: { match },
       },
       req,
       res
@@ -294,7 +300,7 @@ exports.updateMatch = async (req, res) => {
     }
 
     // Check if the match exists
-    let match = await getMatchById(id, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "rateThan100"]);
+    let match = await getMatchById(id, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "rateThan100", "teamB"]);
 
     if (!match) {
       logger.error({
@@ -304,7 +310,7 @@ exports.updateMatch = async (req, res) => {
     }
 
     let matchBatting = await getMatchBattingByMatchId(id, ["id", "minBet", "maxBet", "type"]);
-    if (!matchBatting || !matchBatting.length) {
+    if ((!matchBatting || !matchBatting.length) && match?.teamB) {
       logger.error({
         error: `Match betting not found for match id ${id}`
       });
@@ -318,32 +324,33 @@ exports.updateMatch = async (req, res) => {
       return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
     }
 
-    let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
-    let minimumMaxBet = Math.min(...maxBetValues);
-    if (minimumMaxBet <= minBet) {
-      return ErrorResponse({
-        statusCode: 400,
-        message: {
-          msg: "match.maxMustBeGreater",
-        },
-      }, req, res);
+    if (match.teamB) {
+      let maxBetValues = [...bookmakers?.map(item => item.maxBet), ...marketData?.map(item => item.maxBet)];
+      let minimumMaxBet = Math.min(...maxBetValues);
+      if (minimumMaxBet <= minBet) {
+        return ErrorResponse({
+          statusCode: 400,
+          message: {
+            msg: "match.maxMustBeGreater",
+          },
+        }, req, res);
+      }
     }
-
     await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet, rateThan100: rateThan100, ...(startAt ? { startAt } : {}) });
 
+    if (match?.teamB) {
+      for (let item of marketData) {
+        await updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item?.maxBet, minBet: minBet });
+      }
 
-    for (let item of marketData) {
-      await updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item?.maxBet, minBet: minBet });
+      if (bookmakers && bookmakers.length) {
+        await Promise.all(bookmakers.map(item => updateMatchBetting({ id: item.id }, { maxBet: item.maxBet, minBet: minBet })));
+      }
+
+      updateMatchDataAndBettingInRedis(id);
     }
-
-    if (bookmakers && bookmakers.length) {
-      await Promise.all(bookmakers.map(item => updateMatchBetting({ id: item.id }, { maxBet: item.maxBet, minBet: minBet })));
-    }
-
-
     // await Promise.all(updatePromises);
 
-    updateMatchDataAndBettingInRedis(id);
 
     sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent, match);
     // Send success response with the updated match data

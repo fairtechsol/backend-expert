@@ -1549,6 +1549,20 @@ exports.declareOtherMatchResult = async (req, res) => {
         message: { msg: "bet.matchDeclare" },
       }, req, res);
     }
+
+    const resultDeclareTournament = await getTournamentBetting({ matchId: matchId, activeStatus: Not(betStatus.result) });
+    if (resultDeclareTournament) {
+      logger.error({
+        error: `Tournament match is not declared yet.`,
+      });
+      return ErrorResponse(
+        { statusCode: 403, message: { msg: "bet.declareOtherMarket" } },
+        req,
+        res
+      );
+    }
+
+
     await updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
     isResultChange = true;
 

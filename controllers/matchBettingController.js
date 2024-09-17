@@ -283,7 +283,7 @@ exports.getTournamentBettingDetails = async (req, res) => {
         });
       }
       else {
-        matchBetting = JSON.parse(matchBetting)?.find((item) => item?.id == id);
+        matchBetting = matchBetting?.find((item) => item?.id == id);
       }
 
       runners = matchBetting?.runners;
@@ -292,9 +292,6 @@ exports.getTournamentBettingDetails = async (req, res) => {
         runners = await getTournamentRunners({
           bettingId: matchBetting.id
         });
-      }
-      else {
-        runners = JSON.parse(runners);
       }
 
       response = {

@@ -100,7 +100,7 @@ module.exports.addMatchValidate = addMatchSchema.when(Joi.object({ isManualMatch
   then: Joi.object().unknown(true),
   otherwise: Joi.object({
     bookmakers: Joi.array().forbidden(),
-    marketData: Joi.array().forbidden
+    marketData: Joi.array().forbidden()
   })
 });
 

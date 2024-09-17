@@ -732,7 +732,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
     }
 
 
-    const categorizedMatchBettings = { quickBookmaker: [] };
+    const categorizedMatchBettings = { quickBookmaker: [], other: [] };
     Object.keys(marketBettingTypeByBettingType).forEach((bettingType) => {
       if (match[marketBettingTypeByBettingType[bettingType]]) {
         let records = Object.keys(multiMatchBettingRecord)?.find((bettingItem) => bettingType?.includes(multiMatchBettingRecord[bettingItem]));
@@ -806,7 +806,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
     });
 
     let payload = {
-      ...match
+      ...match,
     };
 
     Object.keys(marketMatchBettingType)?.forEach((item) => {
@@ -825,6 +825,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
         }
       }
     });
+    payload.tournament = [...match?.tournamentBettings || []],
 
     await addMatchInCache(match.id, payload);
 

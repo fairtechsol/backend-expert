@@ -639,7 +639,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
         }
       }
 
-      for (let items of (match?.other || [])) {
+      for (let items of [...(match?.other || []), ...(match?.tournament || [])]) {
         let matchResult = expertResults.filter((result) => result.betId == items?.id);
         if (matchResult?.length != 0) {
           if (matchResult?.length == 1) {
@@ -652,6 +652,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           }
         }
       }
+      
     }
   }
   return match;

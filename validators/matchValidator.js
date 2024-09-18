@@ -131,9 +131,7 @@ module.exports.updateMatchValidate = Joi.object({
   marketData: Joi.array().items(Joi.object({
     type: Joi.string().valid(...Object.values(matchBettingType)).required(),
     maxBet: Joi.number().required()
-  })).required().messages({
-    "array.base": "Market data must be an array",
-  })
+  }))
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });

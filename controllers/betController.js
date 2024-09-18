@@ -1530,8 +1530,9 @@ exports.declareOtherMatchResult = async (req, res) => {
 
     if(!betId){
       let isOtherMatchResultDeclared = matchBettingDetails?.filter((item) => !mainMatchMarketType.includes(item?.type) && item?.activeStatus != betStatus.result);
+      const resultDeclareTournament = await getTournamentBetting({ matchId: matchId, activeStatus: Not(betStatus.result) });
 
-      if (isOtherMatchResultDeclared?.length > 0) {
+      if (isOtherMatchResultDeclared?.length > 0 || resultDeclareTournament) {
         logger.error({
           error: `Other match markets is not declared yet.`,
         });
@@ -1550,17 +1551,6 @@ exports.declareOtherMatchResult = async (req, res) => {
       }, req, res);
     }
 
-    const resultDeclareTournament = await getTournamentBetting({ matchId: matchId, activeStatus: Not(betStatus.result) });
-    if (resultDeclareTournament) {
-      logger.error({
-        error: `Tournament match is not declared yet.`,
-      });
-      return ErrorResponse(
-        { statusCode: 403, message: { msg: "bet.declareOtherMarket" } },
-        req,
-        res
-      );
-    }
 
 
     await updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
@@ -1573,7 +1563,7 @@ exports.declareOtherMatchResult = async (req, res) => {
       userId: userId,
       result: result,
       match: match,
-      betType: matchOddBetting.type ,
+      ...(betId ? { betType: matchBettingDetails?.type } : {}),
       isOtherMatch: true
     });
 

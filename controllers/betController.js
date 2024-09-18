@@ -1937,6 +1937,9 @@ exports.declareTournamentMatchResult = async (req, res) => {
       return SuccessResponse({ statusCode: 200, message: { msg: "bet.resultApprove" }, }, req, res);
     }
 
+    const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
+    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
+
     let fwProfitLoss;
 
     const response = await apiCall(
@@ -1950,6 +1953,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
         matchOddId: matchOddBetting.id,
         match,
         matchBettingType: matchOddBetting?.type,
+        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
       }
     )
       .then((data) => {
@@ -1990,11 +1994,11 @@ exports.declareTournamentMatchResult = async (req, res) => {
         activeStatus: betStatusType.result,
         betId: matchOddBetting?.id,
         betType: matchOddBetting?.type,
-        type: match?.matchType
+        type: match?.matchType,
+        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
       }
     );
-    const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
-    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result) }, ["id"]);
+ 
     if (!unDeclaredMatchBetting && !unDeclaredMatchBettingTournament) {
       deleteAllMatchRedis(matchId);
       match.stopAt = new Date();

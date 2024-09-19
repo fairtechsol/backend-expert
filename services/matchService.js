@@ -176,7 +176,7 @@ exports.getMatchDetails = async (id, select) => {
       matchBettings: true,
       sessionBettings: true,
       tournamentBettings: {
-        runners:true
+        runners: true
       }
     }
   });

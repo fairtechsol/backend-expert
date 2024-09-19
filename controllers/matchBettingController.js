@@ -306,9 +306,6 @@ exports.getTournamentBettingDetails = async (req, res) => {
           matchId: matchId
         });
       }
-      else {
-        matchBetting = JSON.parse(matchBetting);
-      }
 
       response = {
         match: match,

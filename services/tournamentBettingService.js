@@ -40,6 +40,9 @@ exports.getTournamentBettings = async (where, select) => {
   return await TournamentBetting.find({
       where: where,
       select: select,
+      relations: {
+          runners: true
+      }
   });
 };
 

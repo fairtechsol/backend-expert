@@ -553,7 +553,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
     const { matchId, type, name, maxBet, marketId, id, gtype, metaData, runners } = req.body;
     const match = await getMatchById(matchId, ["id", "betFairSessionMinBet"]);
 
-    if (match.betFairSessionMinBet > maxBet) {
+    if (match.betFairSessionMinBet >= maxBet) {
       return ErrorResponse({
         statusCode: 400,
         message: {

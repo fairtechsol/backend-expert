@@ -132,6 +132,7 @@ module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.tiedMatch1]: "marketTiedMatch",
   [this.matchBettingType.tiedMatch3]: "marketTiedMatch2",
   [this.matchBettingType.other]: "other",
+  [this.matchBettingType.tournament]: "tournament",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
   [this.matchBettingType.completeMatch1]: "marketCompleteMatch1",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {

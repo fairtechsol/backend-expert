@@ -7,7 +7,7 @@ const { getMatchBattingByMatchId, updateMatchBetting } = require("./matchBetting
 const { getMatchDetails, getMatch, getRaceDetails } = require("./matchService");
 const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis, getExpertsRedisKeyData } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
-const { getExpertResult, getExpertResultBetWise } = require("./expertResultService");
+const { getExpertResult, getExpertResultBetWise, getExpertResultTournamentBetWise } = require("./expertResultService");
 const { MoreThan } = require("typeorm");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 
@@ -366,6 +366,8 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
 exports.commonGetMatchDetails = async (matchId, userId) => {
   let match = await getMatchFromCache(matchId);
   let expertResults = await getExpertResult({ matchId: matchId });
+  expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId }))]
+
   // Check if the match exists
   if (match) {
     // Retrieve all betting data from Redis for the given match
@@ -709,6 +711,7 @@ exports.commonGetRaceDetails = async (raceId, userId) => {
 exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
   let match = await getMatchFromCache(matchId);
   let expertResults = await getExpertResultBetWise({ matchId: matchId });
+  expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId }))]
   // Check if the match exists
   if (match) {
     // Retrieve all betting data from Redis for the given match
@@ -854,14 +857,36 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
     delete match.matchBettings;
   }
 
+  let teamRates = await getExpertsRedisMatchData(matchId);
+
+  match.teamRates = teamRates;
   if (userId) {
+   
     if (!(match.stopAt)) {
-      match.resultStatus = expertResults?.reduce((prev, curr) => {
-        prev = { ...prev, [curr?.betId]: curr }
-        return prev;
-      }, {});
-      let teamRates = await getExpertsRedisOtherMatchData(matchId, match.matchType);
-      match.teamRates = teamRates;
+      let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
+      let matchResult = expertResults.filter((result) => result.betId == qBookId[0]?.id);
+      if (matchResult?.length != 0) {
+        if (matchResult?.length == 1) {
+          match.resultStatus = resultStatus.pending;
+        } else {
+          match.resultStatus = resultStatus.missMatched;
+        }
+      }
+
+      for (let items of [...(match?.other || []), ...(match?.tournament || [])]) {
+        let matchResult = expertResults.filter((result) => result.betId == items?.id);
+        if (matchResult?.length != 0) {
+          if (matchResult?.length == 1) {
+            match.otherBettings = match.otherBettings || {};
+            match.otherBettings[items?.id] = resultStatus.pending;
+          } else {
+            
+            match.otherBettings = match.otherBettings || {};
+            match.otherBettings[items?.id] = resultStatus.missMatched;
+          }
+        }
+      }
+      
     }
   }
   return match;

@@ -1923,13 +1923,18 @@ exports.declareTournamentMatchResult = async (req, res) => {
     await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
     isResultChange = true;
 
+    const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+
+
     const resultValidate = await checkResult({
       betId: matchOddBetting.id,
       matchId: matchOddBetting.matchId,
       isSessionBet: false,
       userId: userId,
       result: result,
-      match: match
+      match: match,
+      betType: matchBettingType.tournament
     });
 
     if (resultValidate) {
@@ -1937,9 +1942,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       return SuccessResponse({ statusCode: 200, message: { msg: "bet.resultApprove" }, }, req, res);
     }
 
-    const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-
+ 
     let fwProfitLoss;
 
     const response = await apiCall(

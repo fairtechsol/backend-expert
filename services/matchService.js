@@ -157,7 +157,7 @@ exports.getMatchWithBettingAndSession = async (
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery.addSelect(["bookmakers.id", "bookmakers.name", "bookmakers.type"]);
     }
-    matchQuery = matchQuery.orderBy("match.startAt", "DESC").getManyAndCount();
+    matchQuery = matchQuery.orderBy("match.startAt", "DESC").addOrderBy('bookmakers.type', 'ASC').getManyAndCount();
 
     // Execute the query and get the result along with count
     const [matches, count] = await matchQuery;

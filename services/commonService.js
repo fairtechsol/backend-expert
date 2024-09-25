@@ -258,7 +258,7 @@ exports.calculateProfitLossSessionOddEven = async (redisProfitLoss, betData, par
   // Return the result
   return {
     betPlaced: betProfitloss,
-    maxLoss: parseFloat(maxLoss),
+    maxLoss: parseFloat(Math.abs(maxLoss)),
     totalBet: redisProfitLoss?.totalBet ? parseInt(redisProfitLoss?.totalBet) + 1 : 1
   };
 };
@@ -287,7 +287,7 @@ exports.calculateProfitLossSessionFancy1 = async (redisProfitLoss, betData, part
   // Return the result
   return {
     betPlaced: betProfitloss,
-    maxLoss: parseFloat(maxLoss),
+    maxLoss: parseFloat(Math.abs(maxLoss)),
     totalBet: redisProfitLoss?.totalBet ? parseInt(redisProfitLoss?.totalBet) + 1 : 1
   };
 };
@@ -316,7 +316,7 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
   // Return the result
   return {
     betPlaced: betProfitloss,
-    maxLoss: parseFloat(maxLoss),
+    maxLoss: parseFloat(Math.abs(maxLoss)),
     totalBet: redisProfitLoss?.totalBet ? parseInt(redisProfitLoss?.totalBet) + 1 : 1
   };
 };

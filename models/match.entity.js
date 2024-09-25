@@ -40,7 +40,7 @@ const matchSchema = new EntitySchema({
     },
     teamB: {
       type: "varchar",
-      nullable: false,
+      nullable: true,
       length: 100,
     },
     teamC: {
@@ -118,6 +118,11 @@ const matchSchema = new EntitySchema({
     sessionBettings:{
       type: "one-to-many",
       target: "sessionBetting",
+      inverseSide: "match",
+    },
+    tournamentBettings:{
+      type: "one-to-many",
+      target: "tournamentBetting",
       inverseSide: "match",
     }
   },

@@ -69,7 +69,8 @@ exports.UpdateMatchBettingRateInSocket = Joi.object({
         'any.required': `Bet id is a required field`
     }),
     isStop: Joi.boolean().required(),
-    isManual: Joi.boolean().required()
+    isManual: Joi.boolean().required(),
+    isTournament: Joi.boolean()
   });
   
   exports.raceBetStatusChangeValidator = Joi.object({
@@ -161,5 +162,31 @@ exports.addMatchBettingDataValidator = Joi.object({
     gtype : Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
         "any.required": "Game type is required",
     }),
-    metaData: Joi.object().allow(null)
+    metaData: Joi.object().allow(null),
+    runners: Joi.when(Joi.ref("type"), {
+        is: matchBettingType.tournament,
+        then: Joi.array().min(1).required().items(Joi.object().keys({
+            matchId: Joi.string().required().messages({
+                "any.required": "Runner match id required"
+            }),
+            metadata: Joi.object().allow(null),
+            runnerName: Joi.string().required().messages({
+                "any.required": "Runner name required"
+            }),
+            selectionId: Joi.string().required().messages({
+                "any.required": "Runner selection id required"
+            }),
+            sortPriority: Joi.number().required().messages({
+                "any.required": "Runner sort priority required"
+            })
+
+        })).messages({
+            'array.base': `Runners should be an array`,
+            'array.min': `Send at least one runner object`,
+            'any.required': `Runners are required when id is null and type is tournament`,
+        })
+        ,
+        otherwise: Joi.array().allow(null)
+
+    })
 });

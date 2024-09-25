@@ -17,7 +17,7 @@ const {
   getMatchWithBettingAndSession,
   getOneMatchByCondition,
 } = require("../services/matchService");
-const { addRaceInCache, addRaceBetttingInCache, addMatchInCache, updateMatchInCache, updateRaceInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache } = require("../services/redis/commonfunction");
+const { addRaceInCache, addRaceBetttingInCache, addMatchInCache, updateMatchInCache, updateRaceInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, updateMatchExpiry, hasMatchInCache } = require("../services/redis/commonfunction");
 
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
@@ -26,6 +26,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { commonGetMatchDetails, commonGetMatchDetailsForFootball, commonGetRaceDetails } = require("../services/commonService");
 const { getRacingMatchCountryList, getRacingMatchDateList, getRacingMatch } = require("../services/racingMatchService");
 const { getCardMatch } = require("../services/cardMatchService");
+const { updateTournamentBetting } = require("../services/tournamentBettingService");
 /**
  * Create or update a match.
  *
@@ -338,15 +339,17 @@ exports.updateMatch = async (req, res) => {
     }
     await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet, rateThan100: rateThan100, ...(startAt ? { startAt } : {}) });
 
+
     if (match?.teamB) {
       for (let item of marketData) {
         await updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item?.maxBet, minBet: minBet });
       }
-
       if (bookmakers && bookmakers.length) {
         await Promise.all(bookmakers.map(item => updateMatchBetting({ id: item.id }, { maxBet: item.maxBet, minBet: minBet })));
       }
-
+    }
+    const isExistInRedis=await hasMatchInCache(id);
+    if(isExistInRedis){
       updateMatchDataAndBettingInRedis(id);
     }
     // await Promise.all(updatePromises);
@@ -381,24 +384,13 @@ exports.updateMatch = async (req, res) => {
 
 const updateMatchDataAndBettingInRedis = async (id) => {
   const match = await getMatchById(id);
-  const matchBatting = await getMatchBattingByMatchId(id);
+  await updateMatchKeyInCache(id, "startAt", match.startAt);
+  const matchBatting = await getMatchAllBettings({ matchId: id, type: In(manualMatchBettingType) });
   const convertedData = matchBatting.reduce((result, item) => {
     const key = item.type;
     result[key] = item;
     return result;
   }, {});
-
-  let payload = {
-    ...match
-  };
-
-  Object.keys(convertedData)?.forEach((item) => {
-    if (marketMatchBettingType[item]) {
-      payload[marketBettingTypeByBettingType[item]] = convertedData[item];
-    }
-  });
-
-  updateMatchInCache(match.id, payload);
 
   // Create an empty object to store manual betting Redis data
   const manualBettingRedisData = {};
@@ -414,7 +406,7 @@ const updateMatchDataAndBettingInRedis = async (id) => {
   });
 
   // Update Redis with the manual betting data for the current match
-  await settingAllBettingMatchRedis(match.id, manualBettingRedisData);
+  await settingAllBettingMatchRedis(id, manualBettingRedisData);
 }
 
 exports.listMatch = async (req, res) => {

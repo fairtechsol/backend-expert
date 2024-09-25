@@ -18,7 +18,7 @@ const {
   getOneMatchByCondition,
 } = require("../services/matchService");
 const { addRaceInCache, addRaceBetttingInCache, addMatchInCache, updateMatchInCache, updateRaceInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, updateMatchExpiry, hasMatchInCache } = require("../services/redis/commonfunction");
-
+const { In } = require("typeorm");
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");

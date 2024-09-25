@@ -1,5 +1,5 @@
 const { EntitySchema } = require("typeorm");
-const { baseColumnsSchemaPart, teamStatus, sessionBettingType, betStatusType, gameTypeMatchBetting } = require("../config/contants");
+const { baseColumnsSchemaPart, teamStatus, sessionBettingType, betStatusType } = require("../config/contants");
 const {ColumnNumericTransformer} = require('../services/dbService')
 
 const sessionBettingSchema = new EntitySchema({
@@ -15,12 +15,6 @@ const sessionBettingSchema = new EntitySchema({
             enum: Object.values(sessionBettingType),
             nullable: false
         },
-        gtype:{
-            type: 'enum',
-            enum: Object.values(gameTypeMatchBetting),
-            nullable: false,
-            default: gameTypeMatchBetting.fancy
-          },
         name: {
             type: 'varchar',
             nullable: false

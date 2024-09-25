@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { matchBettingType, teamStatus } = require('../config/contants');
+const { matchBettingType, teamStatus, gameTypeMatchBetting } = require('../config/contants');
 
 exports.UpdateMatchBettingRateInSocket = Joi.object({
     id:Joi.string().guid({ version: 'uuidv4' }).required().messages({
@@ -81,3 +81,85 @@ exports.UpdateMatchBettingRateInSocket = Joi.object({
     }),
     isStop: Joi.boolean().required(),
   });
+
+exports.matchBetApiChangeValidator = Joi.object({
+    betIds: Joi.array().min(1).items(Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `Bet id should be a type of 'text'`,
+        'string.empty': `Bet id cannot be an empty field`,
+        'string.guid': `Bet id must be a valid GUID`,
+        'any.required': `Bet id is a required field`
+    })).required().messages({
+        'any.required': `Bet id is required`,
+        'any.min': `Send atleast one bet id.`,
+    }),
+    apiType: Joi.number().required().messages({
+        'any.required': `Api type is required`,
+    }),
+    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `Bet id should be a type of 'text'`,
+        'string.empty': `Bet id cannot be an empty field`,
+        'string.guid': `Bet id must be a valid GUID`,
+        'any.required': `Bet id is a required field`
+    })
+});
+
+
+exports.racingBetApiChangeValidator = Joi.object({
+    betIds: Joi.array().min(1).items(Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `Bet id should be a type of 'text'`,
+        'string.empty': `Bet id cannot be an empty field`,
+        'string.guid': `Bet id must be a valid GUID`,
+        'any.required': `Bet id is a required field`
+    })).required().messages({
+        'any.required': `Bet id is required`,
+        'any.min': `Send atleast one bet id.`,
+    }),
+    apiType: Joi.number().required().messages({
+        'any.required': `Api type is required`,
+    }),
+    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `Bet id should be a type of 'text'`,
+        'string.empty': `Bet id cannot be an empty field`,
+        'string.guid': `Bet id must be a valid GUID`,
+        'any.required': `Bet id is a required field`
+    })
+});
+
+exports.addMatchBettingDataValidator = Joi.object({
+    id: Joi.string().guid({ version: 'uuidv4' }).allow(null).messages({
+        'string.base': `id should be a type of 'text'`,
+        'string.empty': `id cannot be an empty field`,
+        'string.guid': `id must be a valid GUID`,
+        'any.required': `id is a required field`
+    }),
+    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `matchId should be a type of 'text'`,
+        'string.empty': `matchId cannot be an empty field`,
+        'string.guid': `matchId must be a valid GUID`,
+        'any.required': `matchId is a required field`
+    }),
+    type: Joi.string().valid(...Object.values(matchBettingType)).required().messages({
+        'string.base': `type should be a type of 'text'`,
+        'string.empty': `type cannot be an empty field`,
+        'any.only': `type must be a valid type`,
+        'any.required': `type is a required field`
+    }),
+    name: Joi.string().required().messages({
+        'number.base': `Market name should be a type of 'number'`,
+        'number.empty': `Market name cannot be an empty field`,
+        'any.required': `Market name is a required field`
+    }),
+    maxBet: Joi.number().messages({
+        'number.base': `Max bet should be a type of 'number'`,
+        'number.empty': `Max bet cannot be an empty field`,
+        'any.required': `Max bet is a required field`
+    }),
+    marketId: Joi.string().required().messages({
+        "string.base": "Market ID must be a string",
+        "any.required": "Market ID is required",
+    }),
+    gtype : Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
+        "any.required": "Game type is required",
+    }),
+    metaData: Joi.object().allow(null)
+});

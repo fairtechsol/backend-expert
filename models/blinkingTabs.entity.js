@@ -10,6 +10,10 @@ const blinkingTabsSchema = new EntitySchema({
       nullable: false,
       length: 50,
     },
+    order:{
+        type: "int",
+        nullable: false
+    },
     matchId: {
       type: "uuid",
       nullable: false,

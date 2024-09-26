@@ -7,6 +7,11 @@ exports.addBlinkingTabs = async (value) => {
     return await blinkingTabsRepo.save(value);
 }
 
+exports.updateBlinkingTabs = async (where, value) => {
+
+    return await blinkingTabsRepo.update(where,value);
+}
+
 exports.getBlinkingTabs = async () => {
     return await blinkingTabsRepo.find({});
 }

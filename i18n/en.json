@@ -10,6 +10,7 @@
   "created":"{name} created successfully.",
   "alreadyExist":"{name} already exist.",
   "fetched" : "{name} fetch successfully.",
+  "delete" : "{name} deleted successfully.",
   "required" : "{name} is required.",
   "notAuthorized" : "{name} not authorize to take this action.",
   "notCreated":"{name} can't Create for football",

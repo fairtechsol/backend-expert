@@ -10,6 +10,7 @@ const sessionRoute = require("./sessionRoutes");
 const generalRoute = require("./generalRoute");
 const matchBettingRoute = require('./matchBettingRoutes');
 const betRoutes = require('./betRoutes');
+const blinkingTabsRoutes = require('./blinkingTabRouter');
 
 router.use("/auth", authRoutes
 // #swagger.tags = ['auth']
@@ -37,4 +38,8 @@ router.use('/bet', betRoutes
 
 );
 
+router.use('/blinkingTabs', blinkingTabsRoutes
+    // #swagger.tags = ['blinking Tabs']
+    
+    );
 module.exports = router;

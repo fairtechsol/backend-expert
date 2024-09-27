@@ -4,16 +4,13 @@ const router = express.Router();
 const validator = require('../middleware/joi.validator');
 
 const { isAuthenticate } = require('../middleware/auth');
-const { getMatchBetting, matchBettingStatusChange, raceBettingStatusChange, matchBettingRateApiProviderChange, raceBettingRateApiProviderChange, addAndUpdateMatchBetting } = require('../controllers/matchBettingController');
-const { matchBetStatusChangeValidator, raceBetStatusChangeValidator, matchBetApiChangeValidator, racingBetApiChangeValidator, addMatchBettingDataValidator } = require('../validators/matchBettingValidator');
+const { getMatchBetting, matchBettingStatusChange, raceBettingStatusChange } = require('../controllers/matchBettingController');
+const { matchBetStatusChangeValidator, raceBetStatusChangeValidator } = require('../validators/matchBettingValidator');
 
 
 
 router.get('/:matchId',isAuthenticate,getMatchBetting);
 router.post('/status/change', isAuthenticate, validator(matchBetStatusChangeValidator), matchBettingStatusChange);
 router.post('/race/status/change', isAuthenticate, validator(raceBetStatusChangeValidator), raceBettingStatusChange);
-router.post('/change/api/provider', isAuthenticate, validator(matchBetApiChangeValidator), matchBettingRateApiProviderChange);
-router.post('/race/change/api/provider', isAuthenticate, validator(racingBetApiChangeValidator), raceBettingRateApiProviderChange);
-router.post('/add', isAuthenticate, validator(addMatchBettingDataValidator), addAndUpdateMatchBetting);
 
 module.exports = router;

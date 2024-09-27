@@ -15,7 +15,6 @@ const {
   redisKeysMarketWise,
   scoreBasedMarket,
   otherEventMatchBettingRedisKey,
-  betType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { addResult, deleteResult, getResult } = require("../services/betService");
@@ -26,7 +25,7 @@ const {
   updateExpertResult,
   deleteAllExpertResult,
 } = require("../services/expertResultService");
-const { getMatchBattingByMatchId, updateMatchBetting, getMatchBettingById, getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
+const { getMatchBattingByMatchId, updateMatchBetting } = require("../services/matchBettingService");
 const { getMatchById, addMatch } = require("../services/matchService");
 const {
   getSessionFromRedis,
@@ -254,7 +253,7 @@ exports.declareSessionResult = async (req, res) => {
         score,
         profitLoss: fwProfitLoss,
         stopAt: match.stopAt,
-        activeStatus: betStatusType.result,
+        activeStatus: betStatusType.result
       }
     );
 
@@ -681,7 +680,7 @@ const checkResult = async (body) => {
         sendMessageToUser(
           socketData.expertRoomSocket,
           socketData.updateSessionRateClient,
-          redisSessionData,
+          redisSessionData
         );
       } catch (error) { }
     }
@@ -720,7 +719,7 @@ const checkResult = async (body) => {
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.updateInResultDeclare,
-      { matchId, betId, status: resultStatus.pending, userId, betType }
+      { matchId, betId, status: resultStatus.pending, userId }
     );
 
     return true;
@@ -761,7 +760,7 @@ const checkResult = async (body) => {
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.updateInResultDeclare,
-      { matchId, betId, status: resultStatus.missMatched, userId, betType }
+      { matchId, betId, status: resultStatus.missMatched, userId }
     );
 
     throw {
@@ -776,7 +775,7 @@ exports.declareMatchResult = async (req, res) => {
   const { matchId, result } = req.body;
   const { id: userId } = req.user;
   try {
-      const isRedisSessionResultDeclare= await getRedisKey(`${matchId}${redisKeys.declare}`);
+    const isRedisSessionResultDeclare= await getRedisKey(`${matchId}${redisKeys.declare}`);
 
     if (isRedisSessionResultDeclare) {
       return ErrorResponse(
@@ -883,7 +882,7 @@ exports.declareMatchResult = async (req, res) => {
       userId: userId,
       result: result,
       match: match
-    });
+    })
 
     if (resultValidate) {
       await deleteRedisKey(`${matchId}${redisKeys.declare}`);
@@ -985,7 +984,6 @@ exports.declareMatchResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
-    await deleteRedisKey(`${matchId}${redisKeys.declare}`);
     if (isResultChange) {
       updateMatchBetting({ matchId: matchId , type: Not(In([matchBettingType.other, matchBettingType.tournament]))}, { activeStatus: betStatus.save, result: null, stopAt: null });
     }

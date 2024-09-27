@@ -13,11 +13,11 @@ const matchSchema = new EntitySchema({
     },
     competitionId: {
       type: "varchar",
-      nullable: true,
+      nullable: false,
     },
     competitionName: {
       type: "varchar",
-      nullable: true,
+      nullable: false,
     },
     title: {
       type: "varchar",
@@ -84,26 +84,6 @@ const matchSchema = new EntitySchema({
       type: "boolean",
       default: false,
       nullable: false,
-    },
-    sessionApiType:{
-      type: "int",
-      nullable: false,
-      default: 0
-    },
-    isTv: {
-      type: "boolean",
-      default: false,
-      nullable: false
-    },
-    isFancy:{
-      type: "boolean",
-      default: false,
-      nullable: false
-    },
-    isBookmaker:{
-      type: "boolean",
-      default: false,
-      nullable: false
     }
   },
   orderBy: {

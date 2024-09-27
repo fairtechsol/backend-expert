@@ -11,14 +11,12 @@ router.post("/declare/noResult/session", apiLimiter, isAuthenticate, validator(s
 router.post("/unDeclare/result/session", apiLimiter, isAuthenticate, validator(sessionUnDeclareValidator), unDeclareSessionResult);
 
 router.post("/declare/result/match", apiLimiter, isAuthenticate, validator(matchDeclareValidator), declareMatchResult);
-router.post("/declare/result/other/market", apiLimiter, isAuthenticate, validator(otherMatchDeclareValidator), declareMatchOtherMarketResult);
 router.post("/declare/result/other/match", apiLimiter, isAuthenticate, validator(otherMatchDeclareValidator), declareOtherMatchResult);
 router.post("/declare/result/race/match", apiLimiter, isAuthenticate, validator(raceMatchDeclareValidator), declareRacingMatchResult);
 router.post("/declare/result/tournament/match", apiLimiter, isAuthenticate, validator(tournamentMatchDeclareValidator), declareTournamentMatchResult);
 
 router.post("/unDeclare/result/match", apiLimiter, isAuthenticate, validator(matchUnDeclareValidator), unDeclareMatchResult);
 router.post("/unDeclare/result/other/match", apiLimiter, isAuthenticate, validator(otherMatchUnDeclareValidator), unDeclareOtherMatchResult);
-router.post("/unDeclare/result/other/market", apiLimiter, isAuthenticate, validator(otherMatchUnDeclareValidator), unDeclareMatchOtherMarketResult);
 router.post("/unDeclare/result/race/match", apiLimiter, isAuthenticate, validator(raceMatchUnDeclareValidator), unDeclareRacingMatchResult);
 router.post("/unDeclare/result/tournament/match", apiLimiter, isAuthenticate, validator(tournamentMatchUnDeclareValidator), unDeclareTournamentMatchResult);
 router.get("/", isAuthenticate, getPlacedBets);

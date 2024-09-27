@@ -12,11 +12,14 @@ let addMatchSchema = Joi.object({
     "string.base": "Match type must be a string",
     "any.required": "Match type is required",
   }),
-  competitionId: Joi.string().allow(null).messages({
+  competitionId: Joi.string().required().messages({
     "string.base": "Competition ID must be a string",
+    "any.required": "Competition ID is required",
   }),
-  competitionName: Joi.string().allow(null).messages({
-    "string.base": "Competition name must be a string",
+  competitionName: Joi.string().required().messages({
+    "string.base": "Match name must be a string",
+    "any.required": "Match name is required",
+    'any.empty': 'Match name cannot be empty'
   }),
   title: Joi.string().required().messages({
     "string.base": "Title must be a string",
@@ -53,9 +56,6 @@ let addMatchSchema = Joi.object({
     "number.greater": "Maximum bet amount for BetFair session must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for BetFair session is required",
   }),
-  isTv: Joi.boolean().allow(null),
-  isFancy: Joi.boolean().allow(null),
-  isBookmaker: Joi.boolean().allow(null),
   rateThan100: Joi.boolean().allow(null),
   bookmakers: Joi.array().items(bookmakerSchema).required().messages({
     "array.base": "Bookmakers must be an array",
@@ -72,15 +72,15 @@ let addMatchSchema = Joi.object({
   })).when(Joi.ref('isManualMatch'), {
     is: false,
     then: Joi.array().min(1).custom((value, helpers) => {
-      const hasMatchOdd = value.some(obj => obj.type === matchBettingType.quickbookmaker1);
+      const hasMatchOdd = value.some(obj => obj.type === matchBettingType.matchOdd);
       if (!hasMatchOdd) {
-        return helpers.error('any.custom', { message: 'Match must have a quick bookmaker.' });
+        return helpers.error('any.custom', { message: 'Match must have a matchOdd.' });
       }
       return value;
     })
   }).required().messages({
     "array.base": "Market data must be an array",
-    "any.custom": "Match must have a quick bookmaker."
+    "any.custom": "Match must have a matchOdd."
   }),
   isManualMatch: Joi.boolean()
 }).messages({
@@ -168,8 +168,8 @@ module.exports.MultipleMatchActiveInactive = Joi.object({
 module.exports.getMatchSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
   matchType: Joi.string(),
-  competitionId: Joi.string().allow("").allow(null),
-  competitionName: Joi.string().allow("").allow(null),
+  competitionId: Joi.string(),
+  competitionName: Joi.string(),
   title: Joi.string().required(),
   rateThan100: Joi.boolean(),
   marketId: Joi.string(),
@@ -180,12 +180,8 @@ module.exports.getMatchSchema = Joi.object({
   startAt: Joi.date(),
   betFairSessionMaxBet: Joi.number(),
   betFairSessionMinBet: Joi.number(),
-  sessionApiType: Joi.number().allow("").allow(null),
   apiSessionActive: Joi.boolean(),
   manualSessionActive: Joi.boolean(),
-  isTv: Joi.boolean(),
-  isFancy: Joi.boolean(),
-  isBookmaker: Joi.boolean(),
   ...(Object.values(marketBettingTypeByBettingType)?.reduce((prev, curr) => {
     prev[curr] = Joi.string().allow("");
     return prev;

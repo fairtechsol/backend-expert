@@ -1,12 +1,11 @@
-const { In } = require("typeorm");
-const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, redisKeys, matchBettingType, betStatus, resultStatus, raceTypeByBettingType, intialMatchBettingsName } = require("../config/contants");
+const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, redisKeys, matchBettingType, betStatus, resultStatus, raceTypeByBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getExpertResult } = require("../services/expertResultService");
-const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting, updateMatchBetting } = require("../services/matchBettingService");
+const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting } = require("../services/matchBettingService");
 const { getMatchById } = require("../services/matchService");
-const { getRacingBetting, getRunners, getRacingBettingById, addRaceBetting, updateRaceBetting, getRacingBettings } = require("../services/raceBettingService");
+const { getRacingBetting, getRunners, getRacingBettingById, addRaceBetting } = require("../services/raceBettingService");
 const { getRaceByMarketId, getRacingMatchById } = require("../services/racingMatchService");
-const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData, updateBettingMatchRedis, getRaceFromCache, updateMatchKeyInCache, getSingleMatchKey } = require("../services/redis/commonfunction");
+const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData, updateBettingMatchRedis, getRaceFromCache } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
@@ -111,7 +110,7 @@ exports.getMatchBetting = async (req, res) => {
 exports.getMatchBettingDetails = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { type, id } = req.query;
+    const { type } = req.query;
     let matchBetting, matchDetails;
     let manualBets = Object.values(manualMatchBettingType);
     matchDetails = await getMatchFromCache(matchId);
@@ -136,24 +135,14 @@ exports.getMatchBettingDetails = async (req, res) => {
     };
     if (manualBets.includes(type)) {
       matchBetting = await getBettingFromRedis(matchId, type);
-    } else if(matchDetails){
+    } else {
       matchBetting = matchDetails[marketBettingTypeByBettingType[type]];
-      if (id && type == matchBettingType.other) {
-        matchBetting = matchDetails?.other?.find((item) => item?.id == id);
-      }
       // fetch third party api for market rate
     }
     if (!matchBetting) {
-      if (!id && type == matchBettingType?.other) {
-        matchBetting = await getMatchAllBettings({
-          matchId: matchId,
-          type: type,
-        });
-      }
       matchBetting = await getMatchBetting({
         matchId: matchId,
-        type: type,
-        ...(id ? { id: id } : {})
+        type: type
       });
     }
     let response = {

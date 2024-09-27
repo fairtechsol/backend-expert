@@ -1,5 +1,5 @@
 const { ILike, IsNull, Like } = require("typeorm");
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain, marketMatchBettingType, teamStatus } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain, marketMatchBettingType, teamStatus, gameTypeMatchBetting } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults, getAllProfitLossResultsRace } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
@@ -167,7 +167,7 @@ exports.createMatch = async (req, res) => {
             maxBet: item?.maxBet,
             marketId: item?.marketId,
             activeStatus: betStatusType.save,
-            isManual: false
+            isManual: false,
           }
 
         }
@@ -176,6 +176,8 @@ exports.createMatch = async (req, res) => {
           type: item?.type,
           name: intialMatchBettingsName[item?.type],
           maxBet: item?.maxBet,
+          isManual: true,
+          gtype: gameTypeMatchBetting.match1
         }
       }) || []);
       matchBettings.push(...(bookmakers?.map((item, index) => {
@@ -186,6 +188,8 @@ exports.createMatch = async (req, res) => {
           type: matchBettingType["quickbookmaker" + index],
           name: marketName,
           maxBet: maxBet,
+          isManual: true,
+          gtype: gameTypeMatchBetting.match1
         };
       }) || []));
 

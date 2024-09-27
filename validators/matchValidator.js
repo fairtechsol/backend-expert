@@ -37,9 +37,8 @@ let addMatchSchema = Joi.object({
     "string.base": "Team A must be a string",
     "any.required": "Team A is required",
   }),
-  teamB: Joi.string().required().messages({
+  teamB: Joi.string().trim().allow("").messages({
     "string.base": "Team B must be a string",
-    "any.required": "Team B is required",
   }),
   teamC: Joi.string().trim().allow("").messages({
     "string.base": "Team C must be a string",
@@ -97,6 +96,12 @@ module.exports.addMatchValidate = addMatchSchema.when(Joi.object({ isManualMatch
     eventId: Joi.string().optional().allow(""),
   }),
   otherwise: Joi.object().unknown(true) // Ensures that other validations are preserved
+}).when(Joi.object({ teamB: Joi.exist() }).unknown(),{
+  then: Joi.object().unknown(true),
+  otherwise: Joi.object({
+    bookmakers: Joi.array().forbidden(),
+    marketData: Joi.array().forbidden()
+  })
 });
 
 const updatebookmakerSchema = Joi.object({
@@ -123,12 +128,10 @@ module.exports.updateMatchValidate = Joi.object({
   bookmakers: Joi.array().items(updatebookmakerSchema).messages({
     "array.base": "Bookmakers must be an array",
   }),
-  marketData: Joi.array().min(1).items(Joi.object({
+  marketData: Joi.array().items(Joi.object({
     type: Joi.string().valid(...Object.values(matchBettingType)).required(),
     maxBet: Joi.number().required()
-  })).required().messages({
-    "array.base": "Market data must be an array",
-  })
+  }))
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });

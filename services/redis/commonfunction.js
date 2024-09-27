@@ -677,7 +677,7 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
 
   if (matchDetails) {
     Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
-      if (matchDetails[item]) {
+      if (matchDetails[item] && ![marketBettingTypeByBettingType.tournament, marketBettingTypeByBettingType.other].includes(item)) {
         let data = JSON.parse(matchDetails[item]);
         data.activeStatus = status;
         matchDetails[item] = JSON.stringify(data);

@@ -20,6 +20,8 @@ const ExpertMatchRacingBetQueue = new Queue('expertMatchRacingBetQueue', expertR
 const expertSessionBetDeleteQueue = new Queue('expertSessionBetDeleteQueue', expertRedisOption);
 const expertMatchBetDeleteQueue = new Queue('expertMatchBetDeleteQueue', expertRedisOption);
 const expertRaceMatchBetDeleteQueue = new Queue('expertRaceMatchBetDeleteQueue', expertRedisOption);
+const expertTournamentMatchBetDeleteQueue = new Queue('expertTournamentMatchBetDeleteQueue', expertRedisOption);
+const ExpertMatchTournamentBetQueue = new Queue('expertMatchTournamentBetQueue', expertRedisOption);
 
 ExpertMatchBetQueue.process(async function (job, done) {
   let jobData = job.data;
@@ -156,6 +158,77 @@ let calculateRacingRateAmount = async (jobData, userId) => {
   }
 }
 
+ExpertMatchTournamentBetQueue.process(async function (job, done) {
+  let jobData = job.data;
+  let userId = jobData.userId;
+  try {
+    await calculateTournamentRateAmount(jobData, userId);
+    return done(null, {});
+  } catch (error) {
+    logger.info({
+      file: `error in bet Queue for User id : ${userId}`,
+      error: error.message
+    })
+    return done(null, {});
+  }
+});
+
+let calculateTournamentRateAmount = async (jobData, userId) => {
+  let partnership = JSON.parse(jobData.partnerships);
+  let obj = {
+    runners: jobData.runners,
+    winAmount: jobData.winAmount,
+    lossAmount: jobData.lossAmount,
+    bettingType: jobData.bettingType,
+    runnerId: jobData.runnerId
+  }
+
+  if (partnership['fwPartnershipId']) {
+    let mPartenerShipId = partnership['fwPartnershipId'];
+    let mPartenerShip = partnership['fwPartnership'];
+    try {
+      let masterRedisData = (await getExpertsRedisData()) || {};
+      let teamRates = masterRedisData?.[`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`];
+
+      if (teamRates) {
+        teamRates = JSON.parse(teamRates);
+      }
+
+      if (!teamRates) {
+        teamRates = jobData?.runners?.reduce((acc, key) => {
+          acc[key?.id] = 0;
+          return acc;
+        }, {});
+      }
+
+      teamRates = Object.keys(teamRates).reduce((acc, key) => {
+        acc[key] = parseRedisData(key, teamRates);
+        return acc;
+      }, {});
+
+      let teamData = await calculateRacingExpertRate(teamRates, obj, mPartenerShip);
+      let userRedisObj = {
+        [`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`]: JSON.stringify(teamData)
+      }
+      await setExpertsRedisData(userRedisObj);
+      logger.info({
+        context: "Update User Exposure",
+        process: `User ID : ${userId} expert`,
+      });
+      //send Data to socket
+      jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
+      sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData, userRedisObj: teamData });
+    }
+    catch (error) {
+      logger.error({
+        context: "error in super master exposure update",
+        process: `User ID : ${userId} and super master id ${mPartenerShipId}`,
+        error: error.message,
+        stake: error.stack
+      })
+    }
+  }
+}
 // ExpertCardMatchBetQueue.process(async function (job, done) {
 //   let jobData = job.data;
 //   let userId = jobData.userId;
@@ -530,4 +603,79 @@ expertRaceMatchBetDeleteQueue.process(async function (job, done) {
   }
 });
 
-module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, ExpertMatchRacingBetQueue, expertSessionBetDeleteQueue, expertMatchBetDeleteQueue }
+expertTournamentMatchBetDeleteQueue.process(async function (job, done) {
+  let jobData = job.data;
+  let userId = jobData.userId;
+  try {
+    // Parse partnerships from userRedisData
+    let partnershipObj = {};
+    try {
+      partnershipObj = JSON.parse(jobData.partnership);
+    } catch {
+      partnershipObj = jobData.partnership;
+    }
+
+    // Extract relevant data from jobData
+    let betId = jobData.betId;
+    let matchId = jobData.matchId;
+    let deleteReason = jobData.deleteReason;
+    let domainUrl = jobData.domainUrl;
+    let betPlacedId = jobData.betPlacedId;
+    let matchBetType = jobData.matchBetType;
+    let newTeamRate = jobData.newTeamRate;
+
+    // Iterate through partnerships based on role and update exposure
+    if (partnershipObj['fwPartnershipId']) {
+      let partnershipId = partnershipObj['fwPartnershipId'];
+      let partnership = partnershipObj[`fwPartnership`];
+      try {
+        // Get user data from Redis or balance data by userId
+        let expertRedisData = await getExpertsRedisData();
+
+        let masterTeamRates = JSON.parse(expertRedisData[`${betId}${redisKeys.profitLoss}_${matchId}`]);
+
+        masterTeamRates = Object.keys(masterTeamRates).reduce((acc, key) => {
+          acc[key] = parseFloat((parseRedisData(key, masterTeamRates) + ((newTeamRate[key] * partnership) / 100)).toFixed(2));
+          return acc;
+        }, {});
+
+        let redisObj = {
+          [`${betId}${redisKeys.profitLoss}_${matchId}`]: JSON.stringify(masterTeamRates)
+        }
+
+        await setExpertsRedisData(redisObj);
+
+        // Send data to socket for session bet placement
+        sendMessageToUser(socketData.expertRoomSocket, socketData.matchDeleteBet, {
+          teamRate: masterTeamRates,
+          betId: betId,
+          matchId: matchId,
+          betPlacedId: betPlacedId,
+          deleteReason: deleteReason,
+          domainUrl: domainUrl,
+          matchBetType
+        });
+      } catch (error) {
+        // Log error if any during exposure update
+        logger.error({
+          context: `error in exposure update at delete match bet expert`,
+          process: `User ID : ${userId} and expert id ${partnershipId}`,
+          error: error.message,
+          stake: error.stack,
+        });
+      }
+    }
+
+    return done(null, {});
+  } catch (error) {
+    logger.error({
+      context: "error in match bet delete Queue",
+      process: `process job for user id ${userId}`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return done(null, {});
+  }
+});
+
+module.exports.ExpertMatchQueue = { ExpertMatchBetQueue, ExpertSessionBetQueue, ExpertMatchRacingBetQueue, expertTournamentMatchBetDeleteQueue, expertSessionBetDeleteQueue, expertMatchBetDeleteQueue, ExpertMatchTournamentBetQueue }

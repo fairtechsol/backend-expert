@@ -1,5 +1,5 @@
 const { EntitySchema } = require("typeorm");
-const { baseColumnsSchemaPart, matchBettingType, teamStatus, betStatusType } = require("../config/contants");
+const { baseColumnsSchemaPart, matchBettingType, teamStatus, betStatusType, gameTypeMatchBetting } = require("../config/contants");
 const {ColumnNumericTransformer} = require('../services/dbService')
 const matchBettingSchema = new EntitySchema({
   name: "matchBetting",
@@ -13,6 +13,12 @@ const matchBettingSchema = new EntitySchema({
       type: 'enum',
       enum: Object.values(matchBettingType),
       nullable: false
+    },
+    gtype:{
+      type: 'enum',
+      enum: Object.values(gameTypeMatchBetting),
+      nullable: false,
+      default: gameTypeMatchBetting.match
     },
     name: {
       type: 'varchar',
@@ -111,6 +117,15 @@ const matchBettingSchema = new EntitySchema({
     marketId : {
       type : "varchar",
       nullable : true
+    },
+    apiType:{
+      type: "int",
+      nullable: false,
+      default: 0
+    },
+    metaData:{
+      type: "jsonb",
+      nullable: true
     }
   },
   relations: {

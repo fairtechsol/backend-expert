@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { matchBettingType, teamStatus } = require('../config/contants');
+const { matchBettingType, teamStatus, gameTypeMatchBetting } = require('../config/contants');
 
 exports.UpdateMatchBettingRateInSocket = Joi.object({
     id:Joi.string().guid({ version: 'uuidv4' }).required().messages({

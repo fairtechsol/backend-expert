@@ -1,7 +1,7 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings, getSessionBetting } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { getUserById } = require("../services/userService");
-const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus, gameType } = require("../config/contants");
+const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus, gameType, gameTypeMatchBetting } = require("../config/contants");
 const { getMatchById } = require("../services/matchService");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis, updateMultipleMarketSessionIdRedis } = require("../services/redis/commonfunction");
@@ -11,7 +11,7 @@ const { getExpertResult } = require("../services/expertResultService");
 
 exports.addSession = async (req, res) => {
   try {
-    let { matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId } = req.body
+    let { matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId, gtype = gameTypeMatchBetting.fancy } = req.body
     const { id: loginId } = req.user;
     if (type == sessionBettingType.marketSession && !selectionId) {
       return ErrorResponse({ statusCode: 400, message: { msg: "required", keys: { name: "Selection id" } } }, req, res);
@@ -70,7 +70,8 @@ exports.addSession = async (req, res) => {
       selectionId,
       status,
       createBy: loginId,
-      isManual
+      isManual,
+      gtype
     }
     let session = await addSessionBetting(sessionData)
     if (!session) {
@@ -314,15 +315,18 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
   try {
     let reqUser = req.user;
     let sessionId = req.params.id;
-    let { status, matchId, stopAllSessions } = req.body;
+    let { status, matchId, stopAllSessions, type } = req.body;
     const user = await getUserRedisData(reqUser.id);
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
 
     if (stopAllSessions) {
-
-      let sessionData = await getSessionBettings({ matchId: matchId, isManual: false, activeStatus: betStatusType.live });
+      let conditionObj = { matchId: matchId, isManual: false, activeStatus: betStatusType.live };
+      if(type) {
+        conditionObj.type = type;
+      }
+      let sessionData = await getSessionBettings(conditionObj);
       if (!sessionData?.length) {
         return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Session" } } }, req, res);
       }
@@ -337,7 +341,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       let sessionDetailData = {};
 
 
-      await updateSessionBetting({ matchId: matchId, isManual: false, activeStatus: betStatusType.live }, { activeStatus: status });
+      await updateSessionBetting(conditionObj, { activeStatus: status });
 
       sessionData?.map((item) => {
         sessions[item?.selectionId] = item?.id;

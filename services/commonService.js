@@ -1,4 +1,4 @@
-const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord, gameType, microServiceDomain, thirdPartyMarketKey } = require("../config/contants");
+const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord, gameType, microServiceDomain, thirdPartyMarketKey, sessionBettingType } = require("../config/contants");
 const { __mf } = require("i18n");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
@@ -109,9 +109,9 @@ const calculateProfitLoss = (betData, odds, partnership) => {
   ) {
     return partnership != null || partnership != undefined
       ? +parseFloat(
-        (parseFloat(betData?.loseAmount) * partnership) / 100
+        (parseFloat(betData?.lossAmount) * partnership) / 100
       ).toFixed(2)
-      : -parseFloat(betData.loseAmount);
+      : -parseFloat(betData.lossAmount);
   }
   return 0;
 };
@@ -322,43 +322,45 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
 };
 
 exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
-  if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
-    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
-      const newEntry = {
-        odds: newbetPlaced[0].odds - 1,
-        profitLoss: newbetPlaced[0].profitLoss,
-      };
-      newbetPlaced.unshift(newEntry);
-    }
-  }
-  if (newbetPlaced[0].odds < oldbetPlaced[0].odds) {
-    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
-      const newEntry = {
-        odds: oldbetPlaced[0].odds - 1,
-        profitLoss: oldbetPlaced[0].profitLoss,
-      };
-      oldbetPlaced.unshift(newEntry);
-    }
-  }
+  
+      if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
+        while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+          const newEntry = {
+            odds: newbetPlaced[0].odds - 1,
+            profitLoss: newbetPlaced[0].profitLoss,
+          };
+          newbetPlaced.unshift(newEntry);
+        }
+      }
+      if (newbetPlaced[0].odds < oldbetPlaced[0].odds) {
+        while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+          const newEntry = {
+            odds: oldbetPlaced[0].odds - 1,
+            profitLoss: oldbetPlaced[0].profitLoss,
+          };
+          oldbetPlaced.unshift(newEntry);
+        }
+      }
 
-  if (newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds) {
-    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
-      const newEntry = {
-        odds: oldbetPlaced[oldbetPlaced.length - 1].odds + 1,
-        profitLoss: oldbetPlaced[oldbetPlaced.length - 1].profitLoss,
-      };
-      oldbetPlaced.push(newEntry);
-    }
-  }
-  if (newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds) {
-    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
-      const newEntry = {
-        odds: newbetPlaced[newbetPlaced.length - 1].odds + 1,
-        profitLoss: newbetPlaced[newbetPlaced.length - 1].profitLoss,
-      };
-      newbetPlaced.push(newEntry);
-    }
-  }
+      if (newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds) {
+        while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+          const newEntry = {
+            odds: oldbetPlaced[oldbetPlaced.length - 1].odds + 1,
+            profitLoss: oldbetPlaced[oldbetPlaced.length - 1].profitLoss,
+          };
+          oldbetPlaced.push(newEntry);
+        }
+      }
+      if (newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds) {
+        while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+          const newEntry = {
+            odds: newbetPlaced[newbetPlaced.length - 1].odds + 1,
+            profitLoss: newbetPlaced[newbetPlaced.length - 1].profitLoss,
+          };
+          newbetPlaced.push(newEntry);
+        }
+      }
+    
 };
 
 exports.commonGetMatchDetails = async (matchId, userId) => {
@@ -407,12 +409,12 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       let result = {};
       let apiSelectionIdObj = {};
       for (let index = 0; index < sessions?.length; index++) {
-        if (sessions?.[index]?.activeStatus == betStatusType.live) {
+        // if (sessions?.[index]?.activeStatus == betStatusType.live) {
           if (sessions?.[index]?.selectionId) {
             apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
           }
           result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
-        }
+        // }
         sessions[index] = JSON.stringify(sessions?.[index]);
       }
       settingAllSessionMatchRedis(matchId, result);
@@ -447,8 +449,14 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       ...(match.marketTiedMatch
         ? { "apiTideMatch": match.marketTiedMatch }
         : {}),
+      ...(match.marketTiedMatch2
+        ? { "apiTideMatch2": match.marketTiedMatch2 }
+        : {}),
       manualTiedMatch: null,
-      manualCompleteMatch: null
+      manualCompleteMatch: null,
+      ...(match.other
+        ? { "other": match.other }
+        : {})
     };
     // Iterate through matchBettings and categorize them
     (Object.values(betting) || []).forEach(
@@ -474,6 +482,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 
     delete match.marketBookmaker;
     delete match.marketTiedMatch;
+    delete match.marketTiedMatch2;
 
     match.sessionBettings = sessions;
   } else {
@@ -493,9 +502,11 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     const categorizedMatchBettings = {
       [matchBettingType.matchOdd]: null,
       [matchBettingType.bookmaker]: null,
+      [matchBettingType.bookmaker2]: null,
       marketCompleteMatch: null,
       quickBookmaker: [],
       apiTideMatch: null,
+      apiTideMatch2: null,
       manualTideMatch: null,
       manualCompleteMatch: null,
       tournament: null,
@@ -510,6 +521,12 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
           break;
         case matchBettingType.bookmaker:
           categorizedMatchBettings[matchBettingType.bookmaker] = item;
+          break;
+        case matchBettingType.bookmaker2:
+          categorizedMatchBettings[matchBettingType.bookmaker2] = item;
+          break;
+        case matchBettingType.other:
+          categorizedMatchBettings[matchBettingType.other].push(item);
           break;
         case matchBettingType.quickbookmaker1:
         case matchBettingType.quickbookmaker2:
@@ -528,6 +545,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
         case matchBettingType.completeMatch:
           categorizedMatchBettings.marketCompleteMatch = item;
           break;
+        case matchBettingType.completeMatch1:
+          categorizedMatchBettings.marketCompleteMatch1 = item;
+          break;
         case matchBettingType.completeManual:
           categorizedMatchBettings.manualCompleteMatch = item;
           break;
@@ -539,8 +559,10 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
       tournament: [...match?.tournamentBettings||[]],
       marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
+      marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
       marketTiedMatch: categorizedMatchBettings.apiTideMatch,
       marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
+      other: categorizedMatchBettings[matchBettingType.other],
     };
     delete match.tournamentBettings;
     await addMatchInCache(match.id, payload);
@@ -565,12 +587,12 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     let result = {};
     let apiSelectionIdObj = {};
     for (let index = 0; index < sessions?.length; index++) {
-      if (sessions?.[index]?.activeStatus == betStatusType.live) {
+      // if (sessions?.[index]?.activeStatus == betStatusType.live) {
         if (sessions?.[index]?.selectionId) {
           apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
         }
         result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
-      }
+      // }
       sessions[index] = JSON.stringify(sessions?.[index]);
     }
     settingAllSessionMatchRedis(matchId, result);
@@ -592,6 +614,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 
       if (currSessionExpertResult?.length != 0 && !(sessionBettingData.activeStatus == betStatus.result)) {
         if (currSessionExpertResult?.length == 1) {
+          sessionBettingData.selfDeclare = currSessionExpertResult[0].userId == userId ? true : false;
           sessionBettingData.resultStatus = resultStatus.pending;
           match.sessionBettings[index] = JSON.stringify(sessionBettingData);
         }
@@ -640,13 +663,13 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 exports.commonGetRaceDetails = async (raceId, userId) => {
   let race = await getRaceFromCache(raceId);
   let expertResults = await getExpertResult({ matchId: raceId });
-  if(race){
+  if (race) {
     const { runners, matchOdd, ...updatedRace } = race;
     updatedRace.matchOdd = JSON.parse(matchOdd);
     updatedRace.runners = JSON.parse(runners);
     race = updatedRace;
-  }else {
-    race = await getRaceDetails({id: raceId});
+  } else {
+    race = await getRaceDetails({ id: raceId });
     if (!race) {
       throw {
         statusCode: 400,
@@ -658,7 +681,7 @@ exports.commonGetRaceDetails = async (raceId, userId) => {
         },
       }
     }
-    let { runners, matchOdd, ...cacheData}= race
+    let { runners, matchOdd, ...cacheData } = race
     cacheData.runners = JSON.stringify(runners)
     cacheData.matchOdd = JSON.stringify(matchOdd)
     await addRaceInCache(race.id, cacheData);
@@ -682,7 +705,7 @@ exports.commonGetRaceDetails = async (raceId, userId) => {
       }
     }
   }
-    return race
+  return race
 }
 
 exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
@@ -754,6 +777,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
 
     delete match.marketBookmaker;
     delete match.marketTiedMatch;
+    delete match.marketTiedMatch2;
 
   } else {
     match = await getMatchDetails(matchId, []);
@@ -878,7 +902,7 @@ exports.updateMatchMarketsByCron = async () => {
   for (let item of (matchs?.matches || [])) {
     let isMarketIdChange = false;
     const marketMatchData = await apiCall(apiMethod.get, `${microServiceDomain}${allApiRoutes.thirdParty.extraMarket}${item?.eventId}?eventType=cricket`);
-    for (let market of (item?.matchBettings?.filter((data) => [matchBettingType.tiedMatch1, matchBettingType.completeMatch].includes(data.type)) || [])) {
+    for (let market of (item?.matchBettings?.filter((data) => [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch, matchBettingType.completeMatch1].includes(data.type)) || [])) {
       const matchMarketId = marketMatchData?.find((data) => data?.description?.marketType == thirdPartyMarketKey[market?.type])?.marketId;
       if (market?.marketId != matchMarketId) {
         isMarketIdChange = true;

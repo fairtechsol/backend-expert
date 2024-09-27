@@ -28,12 +28,14 @@ module.exports.gameType = {
 
 module.exports.resultStatus = {
   pending: "PENDING",
-  missMatched: "MISMATCHED"
+  missMatched: "MISMATCHED",
+  declared: "DECLARED"
 }
 
 module.exports.betStatus = {
   save: "save",
   live: "live",
+  unSave: "unSave",
   result: "result",
   close: "close",
 };
@@ -72,7 +74,10 @@ module.exports.matchBettingType = {
   quickbookmaker3: "quickbookmaker3",
   tiedMatch1: "tiedMatch1",
   tiedMatch2: "tiedMatch2",
+  tiedMatch3: "tiedMatch3",
+  other: "other",
   completeMatch: "completeMatch",
+  completeMatch1: "completeMatch1",
   completeManual: "completeManual",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
@@ -87,6 +92,15 @@ module.exports.matchBettingType = {
     prev[`setWinner${curr}`] = `setWinner${curr}`
     return prev;
   }, {}))
+};
+
+module.exports.gameTypeMatchBetting = {
+  match: "match",
+  match1: "match1",
+  fancy: "fancy",
+  fancy1: "fancy1",
+  oddeven: "oddeven",
+  cricketcasino: "cricketcasino",
 };
 
 module.exports.racingBettingType = {
@@ -107,7 +121,7 @@ module.exports.quickBookmakers = [
   "quickbookmaker3",
 ];
 
-module.exports.mainMatchMarketType = [this.matchBettingType.matchOdd, this.matchBettingType.quickbookmaker1, this.matchBettingType.quickbookmaker2, this.matchBettingType.quickbookmaker3, this.matchBettingType.bookmaker];
+module.exports.mainMatchMarketType = [this.matchBettingType.matchOdd, this.matchBettingType.quickbookmaker1, this.matchBettingType.quickbookmaker2, this.matchBettingType.quickbookmaker3, this.matchBettingType.bookmaker,this.matchBettingType.bookmaker2];
 module.exports.mainMatchRacingMarketType = [this.matchBettingType.matchOdd];
 
 module.exports.marketBettingTypeByBettingType = {
@@ -116,7 +130,10 @@ module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.bookmaker2]: "marketBookmaker2",
   [this.matchBettingType.tournament]: "tournament",
   [this.matchBettingType.tiedMatch1]: "marketTiedMatch",
+  [this.matchBettingType.tiedMatch3]: "marketTiedMatch2",
+  [this.matchBettingType.other]: "other",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
+  [this.matchBettingType.completeMatch1]: "marketCompleteMatch1",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
     return prev;
@@ -142,7 +159,9 @@ module.exports.marketMatchBettingType = {
   [this.matchBettingType.bookmaker2]: "bookmaker2",
   [this.matchBettingType.tournament]: "tournament",
   [this.matchBettingType.tiedMatch1]: "tiedMatch1",
+  [this.matchBettingType.tiedMatch3]: "tiedMatch3",
   [this.matchBettingType.completeMatch]: "completeMatch",
+  [this.matchBettingType.completeMatch1]: "completeMatch1",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
     return prev;
@@ -160,11 +179,14 @@ module.exports.marketMatchBettingType = {
 
 module.exports.intialMatchBettingsName = {
   [this.matchBettingType.bookmaker]: "Bookmaker Market",
+  [this.matchBettingType.bookmaker2]: "Bookmaker Market",
   [this.matchBettingType.matchOdd]: "Match Odd",
   [this.matchBettingType.tournament]: "Bookamker",
   [this.matchBettingType.tiedMatch1]: "tied_match",
   [this.matchBettingType.tiedMatch2]: "tied_manual",
+  [this.matchBettingType.tiedMatch3]: "Tied Match",
   [this.matchBettingType.completeMatch]: "complete_match",
+  [this.matchBettingType.completeMatch1]: "Complete Match",
   [this.matchBettingType.completeManual]: "complete_manual",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `over_under_${curr}.5`
@@ -184,11 +206,13 @@ module.exports.intialMatchBettingsName = {
 module.exports.matchBettingKeysForMatchDetails = {
   [this.matchBettingType.tiedMatch1]: "apiTideMatch",
   [this.matchBettingType.tiedMatch2]: "manualTideMatch",
+  [this.matchBettingType.tiedMatch3]: "apiTideMatch2",
   [this.matchBettingType.matchOdd]: "matchOdd",
   [this.matchBettingType.bookmaker]: "bookmaker",
   [this.matchBettingType.tournament]: "tournament",
   [this.matchBettingType.bookmaker2]: "bookmaker2",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
+  [this.matchBettingType.completeMatch1]: "marketCompleteMatch1",
   [this.matchBettingType.completeManual]: "completeManual",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
@@ -213,8 +237,11 @@ module.exports.multiMatchBettingRecord = {
 
 module.exports.sessionBettingType = {
   session: "session",
+  fancy1: "fancy1",
   overByOver: "overByover",
   ballByBall: "ballByBall",
+  oddEven: "oddEven",
+  cricketCasino: "cricketCasino"
 };
 module.exports.teamStatus = {
   suspended: "suspended",
@@ -230,6 +257,7 @@ module.exports.betStatusType = {
   live: "live",
   result: "result",
   close: "close",
+  unSave: "unSave",
 };
 
 module.exports.betType = {
@@ -260,6 +288,7 @@ module.exports.socketData = {
   matchResultDeclared: "matchResultDeclared",
   matchResultUnDeclared: "matchResultUnDeclared",
   matchBettingStatusChange: "matchBettingStatusChange",
+  matchBettingApiChange: "matchBettingApiChange",
   sessionDeleteBet: "sessionDeleteBet",
   updateSessionRateClient: "updateSessionRateClient",
   matchDeleteBet: "matchDeleteBet",
@@ -294,6 +323,11 @@ module.exports.redisKeys = {
     return prev;
   }, {})),
 
+  
+  userTeamARateOther: "userTeamARateOther_",
+  userTeamBRateOther: "userTeamBRateOther_",
+  userTeamCRateOther: "userTeamCRateOther_",
+
   userTeamARateHalfTime: "userTeamARateHalfTime_",
   userTeamBRateHalfTime: "userTeamBRateHalfTime_",
   userTeamCRateHalfTime: "userTeamCRateHalfTime_",
@@ -319,13 +353,17 @@ module.exports.redisKeysMatchWise = {
 
 module.exports.redisKeysMarketWise = {
   [this.matchBettingType.bookmaker]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
+  [this.matchBettingType.bookmaker2]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
   [this.matchBettingType.quickbookmaker1]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
   [this.matchBettingType.quickbookmaker2]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
   [this.matchBettingType.quickbookmaker3]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
   [this.matchBettingType.matchOdd]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
+  [this.matchBettingType.other]: [this.redisKeys.userTeamARateOther, this.redisKeys.userTeamBRateOther, this.redisKeys.userTeamCRateOther],
   [this.matchBettingType.tiedMatch1]: [this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
   [this.matchBettingType.tiedMatch2]: [this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
+  [this.matchBettingType.tiedMatch3]: [this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
   [this.matchBettingType.completeMatch]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
+  [this.matchBettingType.completeMatch1]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
   [this.matchBettingType.completeManual]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = [this.redisKeys[`yesRateUnderOver${curr}.5`], this.redisKeys[`noRateUnderOver${curr}.5`]]
@@ -344,7 +382,9 @@ module.exports.redisKeysMarketWise = {
 
 module.exports.thirdPartyMarketKey = {
   [this.matchBettingType.tiedMatch1]: "TIED_MATCH",
+  [this.matchBettingType.tiedMatch3]: "TIED MATCH",
   [this.matchBettingType.completeMatch]: "COMPLETED_MATCH",
+  [this.matchBettingType.completeMatch1]: "COMPLETED MATCH",
 }
 
 module.exports.scoreBasedMarket = ["firstHalfGoal", "overUnder"];
@@ -356,6 +396,11 @@ module.exports.otherEventMatchBettingRedisKey = {
     "c": this.redisKeys.userTeamCRate,
   },
   [this.matchBettingType.bookmaker]: {
+    "a": this.redisKeys.userTeamARate,
+    "b": this.redisKeys.userTeamBRate,
+    "c": this.redisKeys.userTeamCRate,
+  },
+  [this.matchBettingType.bookmaker2]: {
     "a": this.redisKeys.userTeamARate,
     "b": this.redisKeys.userTeamBRate,
     "c": this.redisKeys.userTeamCRate,
@@ -383,7 +428,15 @@ module.exports.otherEventMatchBettingRedisKey = {
     "a": this.redisKeys.yesRateTie,
     "b": this.redisKeys.noRateTie
   },
+  [this.matchBettingType.tiedMatch3]: {
+    "a": this.redisKeys.yesRateTie,
+    "b": this.redisKeys.noRateTie
+  },
   [this.matchBettingType.completeMatch]: {
+    "a": this.redisKeys.yesRateComplete,
+    "b": this.redisKeys.noRateComplete
+  },
+  [this.matchBettingType.completeMatch1]: {
     "a": this.redisKeys.yesRateComplete,
     "b": this.redisKeys.noRateComplete
   },
@@ -559,4 +612,23 @@ exports.cardGames = [
     type: "cricketv3",
     name: "FIVE FIVE CRICKET",
     id: "7a5e7d3e-7a5e-4a5e-9a7e-7a5e7d3e7a63"
-  }];
+  },
+  {
+    type: "cmeter",
+    name: "Casino Meter",
+    id: "7a5e7d3e-7a5e-4a5e-9a7e-9a5e7d3e7a63"
+  },
+  {
+    type: "worli",
+    name: "Worli Matka",
+    id: "7a5e7d3e-7a5a-4a5e-9a7e-7a5e7d3e7a63"
+  }, {
+    type: "queen",
+    name: "Queen",
+    id: "7a5e7d3e-7a5a-4a5e-9a7e-7a5e7b3e7a63"
+  }, {
+    type: "ballbyball",
+    name: "Ball By Ball",
+    id: "7a5e7d3e-7a5e-4a5e-9a7e-7a5e7d3e8c63"
+  }
+];

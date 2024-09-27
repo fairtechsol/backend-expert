@@ -1,5 +1,5 @@
 const { ILike, IsNull, Like } = require("typeorm");
-const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain, marketMatchBettingType, teamStatus, gameTypeMatchBetting } = require("../config/contants");
+const { matchBettingType, intialMatchBettingsName, bettingType, manualMatchBettingType, initialMatchNames, marketBettingTypeByBettingType, socketData, betStatusType, walletDomain, marketMatchBettingType, teamStatus } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults, getAllProfitLossResultsRace } = require("../services/betService");
 const { insertMatchBettings, getMatchBattingByMatchId, updateMatchBetting, updateMatchBettingById, getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
@@ -55,7 +55,10 @@ exports.createMatch = async (req, res) => {
       marketData,
       bookmakers,
       isManualMatch = false,
-      rateThan100
+      rateThan100,
+      isTv,
+      isFancy,
+      isBookmaker
     } = req.body;
 
 
@@ -78,12 +81,12 @@ exports.createMatch = async (req, res) => {
 
     if (isManualMatch) {
       marketId = 'manual' + Date.now();
-      const isCompetitionExist = await getOneMatchByCondition({ competitionName: ILike(competitionName) }, ['competitionName', 'competitionId']);
-      if (isCompetitionExist) {
-        competitionName = isCompetitionExist.competitionName;
-        competitionId = isCompetitionExist.competitionId;
-      }
-      competitionId = competitionId || marketId;
+      // const isCompetitionExist = await getOneMatchByCondition({ competitionName: ILike(competitionName) }, ['competitionName', 'competitionId']);
+      // if (isCompetitionExist) {
+      //   competitionName = isCompetitionExist.competitionName;
+      //   competitionId = isCompetitionExist.competitionId;
+      // }
+      // competitionId = competitionId || marketId;
 
       if (!title) {
         title = teamA + ' v ' + teamB;
@@ -107,7 +110,9 @@ exports.createMatch = async (req, res) => {
 
     // Prepare match data for a new match
     let matchData = {
-      matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, betFairSessionMaxBet: betFairSessionMaxBet, betFairSessionMinBet: minBet, createBy: loginId, rateThan100
+      matchType, competitionId, competitionName, title, marketId, eventId, teamA, teamB, teamC, startAt, betFairSessionMaxBet: betFairSessionMaxBet, betFairSessionMinBet: minBet, createBy: loginId, rateThan100, isTv,
+      isFancy,
+      isBookmaker
     };
 
     if (teamB) {
@@ -162,7 +167,7 @@ exports.createMatch = async (req, res) => {
             maxBet: item?.maxBet,
             marketId: item?.marketId,
             activeStatus: betStatusType.save,
-            isManual: false,
+            isManual: false
           }
 
         }
@@ -171,8 +176,6 @@ exports.createMatch = async (req, res) => {
           type: item?.type,
           name: intialMatchBettingsName[item?.type],
           maxBet: item?.maxBet,
-          isManual: true,
-          gtype: gameTypeMatchBetting.match1
         }
       }) || []);
       matchBettings.push(...(bookmakers?.map((item, index) => {
@@ -183,8 +186,6 @@ exports.createMatch = async (req, res) => {
           type: matchBettingType["quickbookmaker" + index],
           name: marketName,
           maxBet: maxBet,
-          isManual: true,
-          gtype: gameTypeMatchBetting.match1
         };
       }) || []));
 
@@ -224,7 +225,7 @@ exports.createMatch = async (req, res) => {
     }
 
 
-
+  
     await addMatchInCache(match.id, payload);
 
     broadcastEvent(socketData.addMatchEvent, { gameType: match?.matchType });
@@ -244,7 +245,10 @@ exports.createMatch = async (req, res) => {
         teamC: match.teamC,
         startAt: match.startAt,
         id: match.id,
-        createdAt: match.createdAt
+        createdAt: match.createdAt,
+        isTv: match.isTv,
+        isFancy: match.isFancy,
+        isBookmaker: match.isBookmaker
       }
     )
       .then((data) => {
@@ -344,8 +348,8 @@ exports.updateMatch = async (req, res) => {
         await Promise.all(bookmakers.map(item => updateMatchBetting({ id: item.id }, { maxBet: item.maxBet, minBet: minBet })));
       }
     }
-    const isExistInRedis = await hasMatchInCache(id);
-    if (isExistInRedis) {
+    const isExistInRedis=await hasMatchInCache(id);
+    if(isExistInRedis){
       updateMatchDataAndBettingInRedis(id);
     }
     // await Promise.all(updatePromises);
@@ -778,7 +782,7 @@ exports.getMatchCompetitionsByType = async (req, res) => {
 
 exports.getMatchDatesByCompetitionId = async (req, res) => {
   try {
-    const { competitionId } = req.params;
+    const { type  } = req.params;
 
     const dates = await getMatchDates(type);
 
@@ -803,9 +807,9 @@ exports.getMatchDatesByCompetitionId = async (req, res) => {
 
 exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
   try {
-    const { competitionId, date } = req.params;
+    const {  date, type  } = req.params;
 
-    const matches = await getMatchByCompetitionIdAndDates(competitionId, date);
+    const matches = await getMatchByCompetitionIdAndDates(type, date);
 
     return SuccessResponse(
       {
@@ -1070,7 +1074,7 @@ exports.racingUpdateMatch = async (req, res) => {
 
     updateRaceInCache(raceBatting.matchId, raceBatting);
 
-    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent, raceBatting);
+    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent,raceBatting);
     // Send success response with the updated race data
     return SuccessResponse(
       {
@@ -1336,28 +1340,28 @@ exports.multipleMatchActiveInActive = async (req, res) => {
       );
     }
 
-
-    // If it's not a session betting type, update the active status for the specific betting ID
+ 
+      // If it's not a session betting type, update the active status for the specific betting ID
     await updateMatchBetting({ name: Like(`${type}%`), matchId: matchId }, {
-      isActive: isActive
-    });
+        isActive: isActive
+      });
 
-    const matchBetting = await getMatchAllBettings({ name: Like(`${type}%`), matchId: matchId });
+      const matchBetting = await getMatchAllBettings({  name: Like(`${type}%`), matchId: matchId });
 
-    if (!matchBetting?.length) {
-      // If match betting is not found, return a 400 Bad Request response
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "notFound",
-            keys: {
-              name: "Match Betting",
+      if (!matchBetting?.length) {
+        // If match betting is not found, return a 400 Bad Request response
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "notFound",
+              keys: {
+                name: "Match Betting",
+              },
             },
           },
-        },
-        req,
-        res
+          req,
+          res
       );
     }
 

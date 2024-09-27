@@ -36,6 +36,13 @@ exports.getRacingBetting = async (where, select) => {
   });
 };
 
+exports.getRacingBettings = async (where, select) => {
+  return await RacingBetting.find({
+      where: where,
+      select: select,
+  });
+};
+
 exports.getRacingBettingById = async (id, select) => {
   return await RacingBetting.findOne({
     where: { id: id },

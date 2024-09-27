@@ -25,7 +25,6 @@ const dataSourceOption = {
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DATABASE,
   synchronize: false,
-  logging: true,
   entities: [__dirname + "/../**/*.entity.{js,ts}"],
   migrations: [__dirname + "/../**/migrations/*{.js,.ts}"],
   migrationsTableName: "migrations",
@@ -36,6 +35,7 @@ if (process.env.NODE_ENV == 'production') {
   dataSourceOption.ssl = {
     rejectUnauthorized: false
   }
+  dataSourceOption.logging = true;
 }
 
 const AppDataSource = new DataSource(dataSourceOption);

@@ -60,6 +60,7 @@ const { extractNumbersFromString } = require("../services/commonService");
 const { getRacingMatchById, raceAddMatch } = require("../services/racingMatchService");
 const { getRaceBettingWithRunners, updateRaceBetting } = require("../services/raceBettingService");
 const { getTournamentBettingWithRunners, updateTournamentBetting, getTournamentBetting, getTournamentBettings } = require("../services/tournamentBettingService");
+const { removeBlinkingTabs } = require("../services/blinkingTabsService");
 
 
 exports.getPlacedBets = async (req, res, next) => {
@@ -961,6 +962,7 @@ exports.declareMatchResult = async (req, res) => {
 
     addMatch(match);
     await deleteRedisKey(`${matchId}${redisKeys.declare}`);
+    await removeBlinkingTabs({ matchId: matchId });
 
     return SuccessResponse(
       {
@@ -2005,6 +2007,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
     if (!unDeclaredMatchBetting && !unDeclaredMatchBettingTournament) {
       deleteAllMatchRedis(matchId);
       match.stopAt = new Date();
+      await removeBlinkingTabs({ matchId: matchId });
       await addMatch(match);
     }
     else{
@@ -2340,6 +2343,7 @@ exports.declareRacingMatchResult = async (req, res) => {
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${matchId}${redisKeys.profitLoss}`);
 
     await raceAddMatch(match);
+    await removeBlinkingTabs({ matchId: matchId });
 
     return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } }, data: { result, profitLoss: fwProfitLoss } }, req, res);
   } catch (err) {

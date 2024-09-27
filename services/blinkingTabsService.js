@@ -13,7 +13,11 @@ exports.updateBlinkingTabs = async (where, value) => {
 }
 
 exports.getBlinkingTabs = async () => {
-    return await blinkingTabsRepo.find({});
+    return await blinkingTabsRepo.find({
+        order: {
+            order: "ASC"
+        }
+    });
 }
 
 

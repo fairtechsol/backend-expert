@@ -388,6 +388,7 @@ exports.updateMatch = async (req, res) => {
 
 const updateMatchDataAndBettingInRedis = async (id) => {
   const match = await getMatchById(id);
+  await updateMatchKeyInCache(id, "betFairSessionMaxBet", match.betFairSessionMaxBet);
   await updateMatchKeyInCache(id, "startAt", match.startAt);
   const matchBatting = await getMatchAllBettings({ matchId: id, type: In(manualMatchBettingType) });
   const convertedData = matchBatting.reduce((result, item) => {

@@ -168,7 +168,8 @@ exports.createMatch = async (req, res) => {
             marketId: item?.marketId,
             activeStatus: betStatusType.save,
             isManual: false,
-          }
+          betLimit: item?.betLimit
+        }
 
         }
         return {
@@ -177,7 +178,8 @@ exports.createMatch = async (req, res) => {
           name: intialMatchBettingsName[item?.type],
           maxBet: item?.maxBet,
           isManual: true,
-          gtype: gameTypeMatchBetting.match1
+          gtype: gameTypeMatchBetting.match1,
+          betLimit: item?.betLimit
         }
       }) || []);
       matchBettings.push(...(bookmakers?.map((item, index) => {
@@ -189,7 +191,8 @@ exports.createMatch = async (req, res) => {
           name: marketName,
           maxBet: maxBet,
           isManual: true,
-          gtype: gameTypeMatchBetting.match1
+          gtype: gameTypeMatchBetting.match1,
+          betLimit: item?.betLimit
         };
       }) || []));
 
@@ -346,10 +349,10 @@ exports.updateMatch = async (req, res) => {
 
     if (match?.teamB) {
       for (let item of marketData) {
-        await updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item?.maxBet, minBet: minBet });
+        await updateMatchBetting({ matchId: id, type: item.type }, { maxBet: item?.maxBet, minBet: minBet, betLimit: item?.betLimit });
       }
       if (bookmakers && bookmakers.length) {
-        await Promise.all(bookmakers.map(item => updateMatchBetting({ id: item.id }, { maxBet: item.maxBet, minBet: minBet })));
+        await Promise.all(bookmakers.map(item => updateMatchBetting({ id: item.id }, { maxBet: item.maxBet, minBet: minBet, betLimit: item?.betLimit })));
       }
     }
     const isExistInRedis=await hasMatchInCache(id);

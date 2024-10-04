@@ -4,6 +4,7 @@ const { bettingType, matchBettingType, marketBettingTypeByBettingType, marketMat
 const bookmakerSchema = Joi.object({
   maxBet: Joi.number().required(),
   marketName: Joi.string().required(),
+  betLimit: Joi.number().allow(null)
 });
 
 let addMatchSchema = Joi.object({
@@ -64,6 +65,7 @@ let addMatchSchema = Joi.object({
   marketData: Joi.array().items(Joi.object({
     type: Joi.string().valid(...Object.values(matchBettingType)).required(),
     maxBet: Joi.number().required(),
+    betLimit: Joi.number().allow(null),
     marketId: Joi.when('type', {
       is: Joi.valid(...Object.keys(marketMatchBettingType)),
       then: Joi.string().required(),
@@ -106,7 +108,8 @@ module.exports.addMatchValidate = addMatchSchema.when(Joi.object({ isManualMatch
 
 const updatebookmakerSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
-  maxBet: Joi.number().required()
+  maxBet: Joi.number().required(),
+  betLimit: Joi.number().allow(null)
 });
 
 module.exports.updateMatchValidate = Joi.object({
@@ -130,7 +133,8 @@ module.exports.updateMatchValidate = Joi.object({
   }),
   marketData: Joi.array().items(Joi.object({
     type: Joi.string().valid(...Object.values(matchBettingType)).required(),
-    maxBet: Joi.number().required()
+    maxBet: Joi.number().required(),
+    betLimit: Joi.number().allow(null)
   }))
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",

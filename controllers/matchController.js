@@ -168,7 +168,7 @@ exports.createMatch = async (req, res) => {
             marketId: item?.marketId,
             activeStatus: betStatusType.save,
             isManual: false,
-          betLimit: item?.betLimit
+            betLimit: item?.betLimit
         }
 
         }
@@ -393,6 +393,7 @@ const updateMatchDataAndBettingInRedis = async (id) => {
   const match = await getMatchById(id);
   await updateMatchKeyInCache(id, "betFairSessionMaxBet", match.betFairSessionMaxBet);
   await updateMatchKeyInCache(id, "startAt", match.startAt);
+  await updateMatchKeyInCache(id, "rateThan100", match.rateThan100);
   const matchBatting = await getMatchAllBettings({ matchId: id, type: In(manualMatchBettingType) });
   const convertedData = matchBatting.reduce((result, item) => {
     const key = item.type;

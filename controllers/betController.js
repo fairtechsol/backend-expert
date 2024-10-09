@@ -243,7 +243,6 @@ exports.declareSessionResult = async (req, res) => {
       matchId: matchId,
       result: score,
       profitLoss: fwProfitLoss,
-      commission: response?.data?.totalCommission
     });
 
     sendMessageToUser(

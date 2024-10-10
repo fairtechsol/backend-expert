@@ -64,6 +64,11 @@ const tournamentBettingSchema = new EntitySchema({
       nullable: false,
       default: gameTypeMatchBetting.match1
     },
+    betLimit: {
+      type: "int",
+      nullable: false,
+      default: 0
+    }
   },
   relations: {
     match: {

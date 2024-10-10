@@ -188,5 +188,8 @@ exports.addMatchBettingDataValidator = Joi.object({
         ,
         otherwise: Joi.array().allow(null)
 
-    })
+    }),
+    betLimit: Joi.number().allow(null).messages({
+        'number.base': `Bet limit should be a type of 'number'`,
+    }),
 });

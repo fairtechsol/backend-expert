@@ -126,6 +126,11 @@ const matchBettingSchema = new EntitySchema({
     metaData:{
       type: "jsonb",
       nullable: true
+    },
+    betLimit: {
+      type: "int",
+      nullable: false,
+      default: 0
     }
   },
   relations: {

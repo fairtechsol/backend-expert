@@ -365,7 +365,7 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
 
 exports.commonGetMatchDetails = async (matchId, userId) => {
   let match = await getMatchFromCache(matchId);
-  let expertResults = await getExpertResult({ matchId: matchId });
+  let expertResults = await getExpertResultBetWise({ matchId: matchId });
   expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId }))]
 
   // Check if the match exists
@@ -632,26 +632,16 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     }
     if (!(match.stopAt)) {
       let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
-      let matchResult = expertResults.filter((result) => result.betId == qBookId[0]?.id);
-      if (matchResult?.length != 0) {
-        if (matchResult?.length == 1) {
-          match.resultStatus = resultStatus.pending;
-        } else {
-          match.resultStatus = resultStatus.missMatched;
-        }
+      let matchResult = expertResults.find((result) => result.betId == qBookId[0]?.id);
+      if (matchResult) {
+          match.resultStatus = matchResult.status;
       }
 
       for (let items of [...(match?.other || []), ...(match?.tournament || [])]) {
-        let matchResult = expertResults.filter((result) => result.betId == items?.id);
-        if (matchResult?.length != 0) {
-          if (matchResult?.length == 1) {
+        let matchResult = expertResults.find((result) => result.betId == items?.id);
+        if (matchResult) {
             match.otherBettings = match.otherBettings || {};
-            match.otherBettings[items?.id] = resultStatus.pending;
-          } else {
-            
-            match.otherBettings = match.otherBettings || {};
-            match.otherBettings[items?.id] = resultStatus.missMatched;
-          }
+            match.otherBettings[items?.id] = matchResult.status;
         }
       }
       
@@ -864,26 +854,17 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
    
     if (!(match.stopAt)) {
       let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
-      let matchResult = expertResults.filter((result) => result.betId == qBookId[0]?.id);
-      if (matchResult?.length != 0) {
-        if (matchResult?.length == 1) {
-          match.resultStatus = resultStatus.pending;
-        } else {
-          match.resultStatus = resultStatus.missMatched;
-        }
+      let matchResult = expertResults.find((result) => result.betId == qBookId[0]?.id);
+      if (matchResult) {
+          match.resultStatus = matchResult.status;
       }
 
       for (let items of [...(match?.other || []), ...(match?.tournament || [])]) {
-        let matchResult = expertResults.filter((result) => result.betId == items?.id);
-        if (matchResult?.length != 0) {
-          if (matchResult?.length == 1) {
+        let matchResult = expertResults.find((result) => result.betId == items?.id);
+        if (matchResult) {
             match.otherBettings = match.otherBettings || {};
-            match.otherBettings[items?.id] = resultStatus.pending;
-          } else {
+            match.otherBettings[items?.id] = matchResult.status;
             
-            match.otherBettings = match.otherBettings || {};
-            match.otherBettings[items?.id] = resultStatus.missMatched;
-          }
         }
       }
       

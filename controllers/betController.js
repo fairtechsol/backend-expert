@@ -2188,7 +2188,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       }
     );
 
-    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+    const unDeclaredMatchBetting = await getMatchBetting({ type: matchBettingType.quickbookmaker1, matchId: matchId }, ["id"]);
     const declaredMatchBetting = await getTournamentBettings({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
     if (declaredMatchBetting?.length == 1 && !unDeclaredMatchBetting) {
       await deleteAllMatchRedis(matchId);

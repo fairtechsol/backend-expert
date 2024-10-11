@@ -492,7 +492,7 @@ exports.updateSessionMaxBet = async (req, res) => {
     }
 
     await updateMatch({ id: matchId }, { sessionMaxBets: { ...match.sessionMaxBets, [type]: maxBet } })
-    const isExistInRedis = await hasMatchInCache(id);
+    const isExistInRedis = await hasMatchInCache(matchId);
     if (isExistInRedis) {
       await updateMatchKeyInCache(matchId, "sessionMaxBets", JSON.stringify({ ...match.sessionMaxBets, [type]: maxBet }))
     }

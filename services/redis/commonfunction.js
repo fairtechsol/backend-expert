@@ -33,7 +33,8 @@ exports.addMatchInCache = async (matchId, data) => {
     rateThan100: data.rateThan100,
     isTv: data?.isTv,
     isFancy: data?.isFancy,
-    isBookmaker: data?.isBookmaker
+    isBookmaker: data?.isBookmaker,
+    sessionMaxBets: data?.sessionMaxBets
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
@@ -114,7 +115,8 @@ exports.updateMatchInCache = async (matchId, data) => {
     startAt: data.startAt || match.startAt,
     apiSessionActive: data.apiSessionActive ?? match.apiSessionActive,
     manualSessionActive: data.manualSessionActive ?? match.manualSessionActive,
-    rateThan100: data.rateThan100 ?? match?.rateThan100
+    rateThan100: data.rateThan100 ?? match?.rateThan100,
+    sessionMaxBets: data?.sessionMaxBets ?? match?.sessionMaxBets
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {

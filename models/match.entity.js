@@ -104,6 +104,11 @@ const matchSchema = new EntitySchema({
       type: "boolean",
       default: false,
       nullable: false
+    },
+    sessionMaxBets: {
+      type: "jsonb",
+      nullable: true,
+      default: {}
     }
   },
   orderBy: {

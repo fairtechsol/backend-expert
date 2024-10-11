@@ -21,7 +21,7 @@ exports.addSession = async (req, res) => {
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
-    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "stopAt", "matchType"])
+    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "stopAt", "matchType", "sessionMaxBets"])
     if (!match) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
     }
@@ -511,9 +511,10 @@ exports.updateSessionMaxBet = async (req, res) => {
     const isSessionExist = await hasSessionInCache(matchId);
 
     if (isSessionExist) {
-      let sessions = await getSessionBetting({ matchId: matchId , type: type});
+      let sessions = await getSessionBettings({ matchId: matchId , type: type});
       sessions = sessions.reduce((prev, curr) => {
-        prev[curr?.id] = JSON.stringify(curr);
+        prev[curr.id] = JSON.stringify(curr);
+        return prev;
       }, {});
       await settingAllSessionMatchRedis(matchId, sessions);
     }

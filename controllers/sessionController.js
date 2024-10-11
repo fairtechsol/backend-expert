@@ -499,7 +499,7 @@ exports.updateSessionMaxBet = async (req, res) => {
     let sessionData = {
       maxBet: maxBet
     }
-    let updatedSession = await updateSessionBetting({ matchId: matchId }, sessionData);
+    let updatedSession = await updateSessionBetting({ matchId: matchId, type: type }, sessionData);
     if (!updatedSession) {
       logger.error({
         error: `Error at update session betting in match :${matchId}`,
@@ -511,8 +511,8 @@ exports.updateSessionMaxBet = async (req, res) => {
     const isSessionExist = await hasSessionInCache(matchId);
 
     if (isSessionExist) {
-      let sessions = await getSessionBetting({ matchId: matchId });
-      sessions = sessions.result((prev, curr) => {
+      let sessions = await getSessionBetting({ matchId: matchId , type: type});
+      sessions = sessions.reduce((prev, curr) => {
         prev[curr?.id] = JSON.stringify(curr);
       }, {});
       await settingAllSessionMatchRedis(matchId, sessions);

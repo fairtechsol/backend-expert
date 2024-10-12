@@ -5,7 +5,7 @@ const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchBattingByMatchId, updateMatchBetting } = require("./matchBettingService");
 const { getMatchDetails, getMatch, getRaceDetails } = require("./matchService");
-const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis, getExpertsRedisKeyData } = require("./redis/commonfunction");
+const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 const { getExpertResult, getExpertResultBetWise, getExpertResultTournamentBetWise } = require("./expertResultService");
 const { MoreThan } = require("typeorm");
@@ -418,7 +418,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
         sessions[index] = JSON.stringify(sessions?.[index]);
       }
       settingAllSessionMatchRedis(matchId, result);
-      addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
+      updateMultipleMarketSessionIdRedis(matchId, apiSelectionIdObj);
     }
     else {
       if (userId) {
@@ -596,7 +596,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       sessions[index] = JSON.stringify(sessions?.[index]);
     }
     settingAllSessionMatchRedis(matchId, result);
-    addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
+    updateMultipleMarketSessionIdRedis(matchId, apiSelectionIdObj);
 
     match.sessionBettings = sessions;
     // Assign the categorized match betting to the match object

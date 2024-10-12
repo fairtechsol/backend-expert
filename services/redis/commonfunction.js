@@ -501,12 +501,20 @@ exports.getMarketSessionIdFromRedis = async (matchId, selectionId) => {
 
 exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis.hset(`${matchId}_selectionId`, selectionId, data);
+  await internalRedis
+    .pipeline()
+    .hset(`${matchId}_selectionId`, selectionId, data)
+    .expire(`${matchId}_selectionId`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
+    .exec();
 };
 
 exports.updateMultipleMarketSessionIdRedis = async (matchId, data) => {
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis.hset(`${matchId}_selectionId`, data);
+  await internalRedis
+  .pipeline()
+  .hset(`${matchId}_selectionId`, data)
+  .expire(`${matchId}_selectionId`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
+  .exec();
 };
 
 exports.addDataInRedis = async (key, dataObj) => {

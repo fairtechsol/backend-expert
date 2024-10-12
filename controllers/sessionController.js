@@ -230,7 +230,7 @@ exports.getSessions = async (req, res) => {
           session[index] = JSON.stringify(session?.[index]);
         }
         settingAllSessionMatchRedis(matchId, result);
-        addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
+        updateMultipleMarketSessionIdRedis(matchId, apiSelectionIdObj);
       }
     } else {
       const redisMatchData = await getSessionFromRedis(matchId, sessionId);

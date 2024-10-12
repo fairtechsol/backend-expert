@@ -92,6 +92,7 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
           {
             types: [
               matchBettingType.bookmaker,
+              matchBettingType.bookmaker2,
               matchBettingType.quickbookmaker1,
               matchBettingType.quickbookmaker2,
               matchBettingType.quickbookmaker3,

@@ -5,9 +5,9 @@ const { logger } = require("../config/logger");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchBattingByMatchId, updateMatchBetting } = require("./matchBettingService");
 const { getMatchDetails, getMatch, getRaceDetails } = require("./matchService");
-const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis, getExpertsRedisKeyData } = require("./redis/commonfunction");
+const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addDataInRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisOtherMatchData, deleteKeyFromMatchRedisData, deleteAllMatchRedis, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
-const { getExpertResult, getExpertResultBetWise, getExpertResultTournamentBetWise } = require("./expertResultService");
+const { getExpertResult, getExpertResultBetWise, getExpertResultTournamentBetWise, getExpertResultSessionBetWise } = require("./expertResultService");
 const { MoreThan } = require("typeorm");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 
@@ -366,7 +366,7 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
 exports.commonGetMatchDetails = async (matchId, userId) => {
   let match = await getMatchFromCache(matchId);
   let expertResults = await getExpertResultBetWise({ matchId: matchId });
-  expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId }))]
+  expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId })), ...(await getExpertResultSessionBetWise({ matchId: matchId }))]
 
   // Check if the match exists
   if (match) {
@@ -418,7 +418,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
         sessions[index] = JSON.stringify(sessions?.[index]);
       }
       settingAllSessionMatchRedis(matchId, result);
-      addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
+      updateMultipleMarketSessionIdRedis(matchId, apiSelectionIdObj);
     }
     else {
       if (userId) {
@@ -596,7 +596,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       sessions[index] = JSON.stringify(sessions?.[index]);
     }
     settingAllSessionMatchRedis(matchId, result);
-    addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
+    updateMultipleMarketSessionIdRedis(matchId, apiSelectionIdObj);
 
     match.sessionBettings = sessions;
     // Assign the categorized match betting to the match object

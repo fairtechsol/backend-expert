@@ -33,7 +33,8 @@ exports.addMatchInCache = async (matchId, data) => {
     rateThan100: data.rateThan100,
     isTv: data?.isTv,
     isFancy: data?.isFancy,
-    isBookmaker: data?.isBookmaker
+    isBookmaker: data?.isBookmaker,
+    sessionMaxBets: data?.sessionMaxBets
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
@@ -114,7 +115,8 @@ exports.updateMatchInCache = async (matchId, data) => {
     startAt: data.startAt || match.startAt,
     apiSessionActive: data.apiSessionActive ?? match.apiSessionActive,
     manualSessionActive: data.manualSessionActive ?? match.manualSessionActive,
-    rateThan100: data.rateThan100 ?? match?.rateThan100
+    rateThan100: data.rateThan100 ?? match?.rateThan100,
+    sessionMaxBets: data?.sessionMaxBets ?? match?.sessionMaxBets
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
@@ -499,12 +501,20 @@ exports.getMarketSessionIdFromRedis = async (matchId, selectionId) => {
 
 exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis.hset(`${matchId}_selectionId`, selectionId, data);
+  await internalRedis
+    .pipeline()
+    .hset(`${matchId}_selectionId`, selectionId, data)
+    .expire(`${matchId}_selectionId`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
+    .exec();
 };
 
 exports.updateMultipleMarketSessionIdRedis = async (matchId, data) => {
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis.hset(`${matchId}_selectionId`, data);
+  await internalRedis
+  .pipeline()
+  .hset(`${matchId}_selectionId`, data)
+  .expire(`${matchId}_selectionId`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
+  .exec();
 };
 
 exports.addDataInRedis = async (key, dataObj) => {

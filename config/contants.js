@@ -282,6 +282,7 @@ module.exports.socketData = {
   matchActiveInActiveEvent: "matchActiveInActive",
   logoutUserForceEvent: "logoutUserForce",
   sessionUpdatedEvent: "sessionUpdated",
+  multiSessionUpdatedEvent: "multiSessionUpdated",
   SessionBetPlaced: "userSessionBetPlaced",
   MatchBetPlaced: "userMatchBetPlaced",
   sessionResultDeclared: "sessionResultDeclared",

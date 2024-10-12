@@ -2,9 +2,9 @@ const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessi
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { getUserById } = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus, gameType, gameTypeMatchBetting } = require("../config/contants");
-const { getMatchById } = require("../services/matchService");
+const { getMatchById, updateMatch } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis, updateMultipleMarketSessionIdRedis } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis, updateMultipleMarketSessionIdRedis, updateMatchInCache, updateMatchKeyInCache } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getSpecificResultsSession } = require("../services/betService");
 const { getExpertResult } = require("../services/expertResultService");
@@ -21,7 +21,7 @@ exports.addSession = async (req, res) => {
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
     }
-    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "stopAt", "matchType"])
+    let match = await getMatchById(matchId, ["id", "createBy", "betFairSessionMinBet", "betFairSessionMaxBet", "stopAt", "matchType", "sessionMaxBets"])
     if (!match) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
     }
@@ -43,7 +43,7 @@ exports.addSession = async (req, res) => {
       minBet = match.betFairSessionMinBet
     }
     if (!maxBet) {
-      maxBet = match.betFairSessionMaxBet
+      maxBet = match?.sessionMaxBets?.[type] || match.betFairSessionMaxBet
     }
     let status = teamStatus.suspended
     if (yesRate || noRate) {
@@ -230,7 +230,7 @@ exports.getSessions = async (req, res) => {
           session[index] = JSON.stringify(session?.[index]);
         }
         settingAllSessionMatchRedis(matchId, result);
-        addDataInRedis(`${matchId}_selectionId`, apiSelectionIdObj);
+        updateMultipleMarketSessionIdRedis(matchId, apiSelectionIdObj);
       }
     } else {
       const redisMatchData = await getSessionFromRedis(matchId, sessionId);
@@ -462,4 +462,89 @@ exports.getSessionBetResult = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 
+}
+
+//update session betting general data
+exports.updateSessionMaxBet = async (req, res) => {
+  try {
+    let { matchId, maxBet, type } = req.body
+    const { id: loginId } = req.user;
+    const user = await getUserById(loginId, ["allPrivilege", "sessionMatchPrivilege", "betFairMatchPrivilege"]);
+    if (!user) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
+    }
+
+    let match = await getMatchById(matchId, ["id", "sessionMaxBets"]);
+    if (!match) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
+    }
+
+    if (match.createBy != loginId) {
+      if (!user.allPrivilege) {
+        if (!user.sessionMatchPrivilege && !user.betFairMatchPrivilege) {
+          return ErrorResponse({ statusCode: 403, message: { msg: "notAuthorized", keys: { name: "User" } } }, req, res);
+        }
+      }
+    }
+
+    if (maxBet <= match.betFairSessionMinBet) {
+      return ErrorResponse({ statusCode: 400, message: { msg: "match.maxMustBeGreater" } }, req, res);
+    }
+
+    await updateMatch({ id: matchId }, { sessionMaxBets: { ...match.sessionMaxBets, [type]: maxBet } })
+    const isExistInRedis = await hasMatchInCache(matchId);
+    if (isExistInRedis) {
+      await updateMatchKeyInCache(matchId, "sessionMaxBets", JSON.stringify({ ...match.sessionMaxBets, [type]: maxBet }))
+    }
+    let sessionData = {
+      maxBet: maxBet
+    }
+    let updatedSession = await updateSessionBetting({ matchId: matchId, type: type }, sessionData);
+    if (!updatedSession) {
+      logger.error({
+        error: `Error at update session betting in match :${matchId}`,
+        session: sessionData
+      });
+      return ErrorResponse({ statusCode: 400, message: { msg: "match.sessionUpdateFail" } }, req, res);
+    }
+
+    const isSessionExist = await hasSessionInCache(matchId);
+
+    if (isSessionExist) {
+      let sessions = await getSessionBettings({ matchId: matchId , type: type});
+      sessions = sessions.reduce((prev, curr) => {
+        prev[curr.id] = JSON.stringify(curr);
+        return prev;
+      }, {});
+      await settingAllSessionMatchRedis(matchId, sessions);
+    }
+    else {
+      addAllsessionInRedis(matchId);
+    }
+
+    sendMessageToUser(socketData.expertRoomSocket, socketData.multiSessionUpdatedEvent, { type: type, maxBet: maxBet, matchId: matchId });
+
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "updated",
+          keys: {
+            name: "Session",
+          },
+        },
+        data: { ...sessionData, matchId: matchId, type: type }
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at update session.`,
+      stack: error.stack,
+      message: error.message
+    });
+    return ErrorResponse(error, req, res);
+  }
 }

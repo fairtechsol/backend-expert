@@ -170,17 +170,27 @@ exports.getMatchWithBettingAndSession = async (
 };
 
 exports.getMatchDetails = async (id, select) => {
-  return await match.findOne({
-    where: { id: id },
-    select: select,
-    relations: {
-      matchBettings: true,
-      sessionBettings: true,
-      tournamentBettings: {
-        runners: true
-      }
-    }
-  });
+  const result = await match.createQueryBuilder('match')
+  .leftJoinAndSelect('match.matchBettings', 'matchBettings')
+  .leftJoinAndSelect('match.sessionBettings', 'sessionBettings')
+  .leftJoinAndMapOne("sessionBettings.resultData", "result", "resultData", "resultData.betId = sessionBettings.id")
+  .leftJoinAndSelect('match.tournamentBettings', 'tournamentBettings')
+  .leftJoinAndSelect('tournamentBettings.runners', 'runners')
+  .where('match.id = :id', { id: id })
+  .select(select)
+  .getOne();
+return result;
+  // return await match.findOne({
+  //   where: { id: id },
+  //   select: select,
+  //   relations: {
+  //     matchBettings: true,
+  //     sessionBettings: true,
+  //     tournamentBettings: {
+  //       runners: true
+  //     }
+  //   }
+  // });
 };
 
 exports.getRaceDetails = async (where) => {

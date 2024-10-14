@@ -195,6 +195,7 @@ module.exports.getMatchSchema = Joi.object({
     return prev;
   }, {})),
   stopAt: Joi.date(),
+  sessionMaxBets: Joi.object()
 })
 
 module.exports.racingAddMatchValidate = Joi.object({

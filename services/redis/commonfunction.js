@@ -34,7 +34,7 @@ exports.addMatchInCache = async (matchId, data) => {
     isTv: data?.isTv,
     isFancy: data?.isFancy,
     isBookmaker: data?.isBookmaker,
-    sessionMaxBets: data?.sessionMaxBets
+    sessionMaxBets: JSON.stringify(data?.sessionMaxBets)
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
@@ -116,7 +116,7 @@ exports.updateMatchInCache = async (matchId, data) => {
     apiSessionActive: data.apiSessionActive ?? match.apiSessionActive,
     manualSessionActive: data.manualSessionActive ?? match.manualSessionActive,
     rateThan100: data.rateThan100 ?? match?.rateThan100,
-    sessionMaxBets: data?.sessionMaxBets ?? match?.sessionMaxBets
+    sessionMaxBets: JSON.stringify(data?.sessionMaxBets ?? match?.sessionMaxBets)
   }
 
   Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
@@ -387,6 +387,9 @@ exports.getMatchFromCache = async (matchId) => {
   let matchKey = `${matchId}_match`;
   let MatchData = await internalRedis.hgetall(matchKey);
   if (Object.keys(MatchData)?.length) {
+    if (MatchData?.sessionMaxBets) {
+      MatchData.sessionMaxBets = JSON.parse(MatchData.sessionMaxBets)
+    }
     let { validated } = await joiValidator.jsonValidator(getMatchSchema, MatchData);
 
     Object.values(marketBettingTypeByBettingType)?.forEach((item) => {

@@ -612,6 +612,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
   let match = await getMatchFromCache(matchId);
   let expertResults = await getExpertResultBetWise({ matchId: matchId });
   expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId })), ...(await getExpertResultSessionBetWise({ matchId: matchId }))]
+  const sessionExpertResult = await getExpertResult({ matchId: matchId },["betId","userId","id"]);
 
   // Check if the match exists
   if (match) {
@@ -855,16 +856,16 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
   if (userId) {
     const redisIds = match.sessionBettings?.map((item, index) => {
       const sessionBettingData = JSON.parse(item);
-      const currSessionExpertResult = expertResults.filter((result) => result.betId == sessionBettingData?.id);
-
-      if (currSessionExpertResult?.length != 0 && !(sessionBettingData.activeStatus == betStatus.result)) {
-        if (currSessionExpertResult?.length == 1) {
-          sessionBettingData.selfDeclare = currSessionExpertResult[0].userId == userId ? true : false;
-          sessionBettingData.resultStatus = resultStatus.pending;
+      const currSessionExpertResult = expertResults.find((result) => result.betId == sessionBettingData?.id);
+      const sessionResultExpert = sessionExpertResult.filter((result) => result.betId == sessionBettingData?.id)
+      if (currSessionExpertResult && !(sessionBettingData.activeStatus == betStatus.result)) {
+        if (sessionResultExpert?.length == 1) {
+          sessionBettingData.selfDeclare = sessionResultExpert?.[0]?.userId == userId ? true : false;
+          sessionBettingData.resultStatus = currSessionExpertResult?.status;
           match.sessionBettings[index] = JSON.stringify(sessionBettingData);
         }
         else {
-          sessionBettingData.resultStatus = resultStatus.missMatched;
+          sessionBettingData.resultStatus = currSessionExpertResult?.status;
           match.sessionBettings[index] = JSON.stringify(sessionBettingData);
         }
       }

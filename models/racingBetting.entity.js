@@ -88,7 +88,7 @@ const racingBettingSchema = new EntitySchema({
     },
     {
       name: "racingBetting_maxBet",
-      expression: `"maxBet" > "minBet"`
+      expression: `"maxBet" >= "minBet"`
     }
   ]
 });

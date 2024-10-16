@@ -550,10 +550,10 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
 
 exports.addAndUpdateMatchBetting = async (req, res) => {
   try {
-    const { matchId, type, name, maxBet, marketId, id, gtype, metaData, runners, betLimit = 0 } = req.body;
+    const { matchId, type, name, maxBet, minBet, marketId, id, gtype, metaData, runners, betLimit = 0 } = req.body;
     const match = await getMatchById(matchId, ["id", "betFairSessionMinBet"]);
 
-    if (match.betFairSessionMinBet >= maxBet) {
+    if ((minBet ?? match.betFairSessionMinBet) > maxBet) {
       return ErrorResponse({
         statusCode: 400,
         message: {
@@ -563,12 +563,13 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
     }
     if (type == matchBettingType.other) {
       if (id) {
-        await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit });
+        await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet });
         const isMatchExist = await hasMatchInCache(matchId);
         if (isMatchExist) {
           const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
           if (bettingData.find((item) => item?.id == id)) {
             bettingData.find((item) => item?.id == id).maxBet = maxBet;
+            bettingData.find((item) => item?.id == id).minBet = minBet ?? match.betFairSessionMinBet;
             bettingData.find((item) => item?.id == id).betLimit = betLimit;
             await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
           }
@@ -577,7 +578,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
       else {
         const matchBettingData = {
           matchId: match.id,
-          minBet: match.betFairSessionMinBet,
+          minBet: minBet ?? match.betFairSessionMinBet,
           createBy: req.user.id,
           type: type,
           name: name,
@@ -606,12 +607,13 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
 
     else if (type == matchBettingType.tournament) {
       if (id) {
-        await updateTournamentBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit });
+        await updateTournamentBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet });
         const isMatchExist = await hasMatchInCache(matchId);
         if (isMatchExist) {
           const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
           if (Array.isArray(bettingData)) {
             bettingData.find((item) => item?.id == id).maxBet = maxBet;
+            bettingData.find((item) => item?.id == id).minBet = minBet ?? match.betFairSessionMinBet;
             bettingData.find((item) => item?.id == id).betLimit = betLimit;
             await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
           }
@@ -621,7 +623,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
       else {
         const tournamentBettingData = {
           matchId: match.id,
-          minBet: match.betFairSessionMinBet,
+          minBet: minBet ?? match.betFairSessionMinBet,
           createBy: req.user.id,
           type: type,
           name: name,
@@ -646,22 +648,33 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         }
       }
     }
+    else if(manualMatchBettingType.includes(type)){
+      await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet  });
+      const isMatchExist = await hasBettingInCache(matchId);
+      if (isMatchExist) {
+        const bettingData = await getBettingFromRedis(matchId, type);
+        bettingData.maxBet = maxBet;
+        bettingData.minBet = minBet ?? match.betFairSessionMinBet;
+        bettingData.betLimit = betLimit;
+        await updateBettingMatchRedis(matchId, type, JSON.stringify(bettingData));
+      }
+    }
     else {
       if (id) {
-        await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit });
+        await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet });
         const isMatchExist = await hasMatchInCache(matchId);
         if (isMatchExist) {
           const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
           bettingData.maxBet = maxBet;
+          bettingData.minBet = minBet ?? match.betFairSessionMinBet;
           bettingData.betLimit = betLimit;
           await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
         }
-
       }
       else {
         const matchBettingData = {
           matchId: match.id,
-          minBet: match.betFairSessionMinBet,
+          minBet: minBet ?? match.betFairSessionMinBet,
           createBy: req.user.id,
           type: type,
           name: name,

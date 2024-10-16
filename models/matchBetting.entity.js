@@ -157,7 +157,7 @@ const matchBettingSchema = new EntitySchema({
     },
     {
       name: "matchBetting_maxBet",
-      expression: `"maxBet" > "minBet"`
+      expression: `"maxBet" >= "minBet"`
     }
   ]
 });

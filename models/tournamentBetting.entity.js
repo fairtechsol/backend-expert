@@ -99,7 +99,7 @@ const tournamentBettingSchema = new EntitySchema({
     },
     {
       name: "tournamentBetting_maxBet",
-      expression: `"maxBet" > "minBet"`
+      expression: `"maxBet" >= "minBet"`
     }
   ]
 });

@@ -5,10 +5,11 @@ const validator = require('../middleware/joi.validator');
 
 const { isAuthenticate } = require('../middleware/auth');
 
-const { notification } = require('../validators/generalValidator');
-const { addNotification, getNotification } = require('../controllers/generalController');
+const { notification, banner } = require('../validators/generalValidator');
+const { addNotification, getNotification, addBannerData } = require('../controllers/generalController');
 
 router.post('/notification/add', isAuthenticate, validator(notification), addNotification);
+router.post('/banner/add', isAuthenticate, validator(banner), addBannerData);
 router.get('/notification', getNotification);
 
 module.exports = router;

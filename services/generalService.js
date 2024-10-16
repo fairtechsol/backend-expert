@@ -14,7 +14,7 @@ exports.addNotification = async (value, userId) => {
     return await systemTableRepo.save(notification);
 }
 
-exports.getBanner = async (type='notification') => {
+exports.getNotification = async (type='notification') => {
     return await systemTableRepo.findOneBy({ type: type });
 }
 

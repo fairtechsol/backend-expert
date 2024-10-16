@@ -656,7 +656,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         bettingData.maxBet = maxBet;
         bettingData.minBet = minBet ?? match.betFairSessionMinBet;
         bettingData.betLimit = betLimit;
-        await updateBettingMatchRedis(matchId, type, JSON.stringify(bettingData));
+        await updateBettingMatchRedis(matchId, type, bettingData);
       }
     }
     else {

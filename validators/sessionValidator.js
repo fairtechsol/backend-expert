@@ -79,6 +79,10 @@ exports.updateMultiSessionBettingMaxBetValidator = Joi.object({
         "number.base": "Maximum bet amount must be a number",
         "any.required": "Maximum bet amount is required",
     }),
+    minBet: Joi.number().required().messages({
+        "number.base": "Minimum bet amount must be a number",
+        "any.required": "Minimum bet amount is required",
+    }),
     type: Joi.string().valid(...Object.values(sessionBettingType)).required().messages({
         'string.base': `status should be a type of 'text'`,
         'string.empty': `status cannot be an empty field`,

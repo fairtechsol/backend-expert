@@ -49,9 +49,9 @@ let addMatchSchema = Joi.object({
     "number.base": "Minimum bet amount must be a number",
     "any.required": "Minimum bet amount is required",
   }),
-  betFairSessionMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
+  betFairSessionMaxBet: Joi.number().min(Joi.ref("minBet")).required().messages({
     "number.base": "Maximum bet amount for BetFair session must be a number",
-    "number.greater": "Maximum bet amount for BetFair session must be greater than minimum bet amount",
+    "number.min": "Maximum bet amount for BetFair session must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for BetFair session is required",
   }),
   isTv: Joi.boolean().allow(null),
@@ -240,10 +240,10 @@ module.exports.racingAddMatchValidate = Joi.object({
     "number.base": "Minimum bet amount must be a number",
     "any.required": "Minimum bet amount is required",
   }),
-  maxBet: Joi.number().greater(Joi.ref('minBet')).required().messages({
+  maxBet: Joi.number().min(Joi.ref('minBet')).required().messages({
     "number.base": "Maximun bet amount must be a number",
     "any.required": "Maximun bet amount is required",
-    "number.greater": "Maximum bet must be greater than minimum bet",
+    "number.min": "Maximum bet must be greater than minimum bet",
   }),
   runners: Joi.array().min(1).items(Joi.object({
     selectionId: Joi.number().required(),
@@ -295,10 +295,10 @@ module.exports.racingUpdateMatchValidate = Joi.object({
     "number.base": "Minimum bet amount must be a number",
     "any.required": "Minimum bet amount is required",
   }),
-  maxBet: Joi.number().greater(Joi.ref('minBet')).required().messages({
+  maxBet: Joi.number().min(Joi.ref('minBet')).required().messages({
     "number.base": "Maximun bet amount must be a number",
     "any.required": "Maximun bet amount is required",
-    "number.greater": "Maximum bet must be greater than minimum bet",
+    "number.min": "Maximum bet must be greater than minimum bet",
   })
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",

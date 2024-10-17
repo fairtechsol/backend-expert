@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { matchBettingType, teamStatus, gameTypeMatchBetting } = require('../config/contants');
+const { matchBettingType, teamStatus, gameTypeMatchBetting, manualMatchBettingType } = require('../config/contants');
 
 exports.UpdateMatchBettingRateInSocket = Joi.object({
     id:Joi.string().guid({ version: 'uuidv4' }).required().messages({
@@ -155,9 +155,19 @@ exports.addMatchBettingDataValidator = Joi.object({
         'number.empty': `Max bet cannot be an empty field`,
         'any.required': `Max bet is a required field`
     }),
-    marketId: Joi.string().required().messages({
-        "string.base": "Market ID must be a string",
-        "any.required": "Market ID is required",
+    minBet: Joi.number().messages({
+        'number.base': `Min bet should be a type of 'number'`,
+        'number.empty': `Min bet cannot be an empty field`,
+        'any.required': `Min bet is a required field`
+    }),
+    marketId: Joi.string().when('type', {
+        is: Joi.valid(...Object.values(manualMatchBettingType)),
+        then: Joi.allow(null) ,
+        otherwise: Joi.required().messages({
+            'any.required': "Market ID is required"
+        })
+    }).messages({
+        "string.base": "Market ID must be a string"
     }),
     gtype : Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
         "any.required": "Game type is required",

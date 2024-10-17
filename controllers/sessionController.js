@@ -467,7 +467,7 @@ exports.getSessionBetResult = async (req, res) => {
 //update session betting general data
 exports.updateSessionMaxBet = async (req, res) => {
   try {
-    let { matchId, maxBet, type } = req.body
+    let { matchId, maxBet, minBet, type } = req.body
     const { id: loginId } = req.user;
     const user = await getUserById(loginId, ["allPrivilege", "sessionMatchPrivilege", "betFairMatchPrivilege"]);
     if (!user) {
@@ -487,17 +487,18 @@ exports.updateSessionMaxBet = async (req, res) => {
       }
     }
 
-    if (maxBet <= match.betFairSessionMinBet) {
+    if (maxBet < (minBet ?? match.betFairSessionMinBet)) {
       return ErrorResponse({ statusCode: 400, message: { msg: "match.maxMustBeGreater" } }, req, res);
     }
 
-    await updateMatch({ id: matchId }, { sessionMaxBets: { ...match.sessionMaxBets, [type]: maxBet } })
+    await updateMatch({ id: matchId }, { sessionMaxBets: { ...match.sessionMaxBets, [type]: maxBet, [`${type}_minBet`]: minBet ?? match.betFairSessionMinBet } })
     const isExistInRedis = await hasMatchInCache(matchId);
     if (isExistInRedis) {
-      await updateMatchKeyInCache(matchId, "sessionMaxBets", JSON.stringify({ ...match.sessionMaxBets, [type]: maxBet }))
+      await updateMatchKeyInCache(matchId, "sessionMaxBets", JSON.stringify({ ...match.sessionMaxBets, [type]: maxBet, [`${type}_minBet`]: minBet ?? match.betFairSessionMinBet }))
     }
     let sessionData = {
-      maxBet: maxBet
+      maxBet: maxBet,
+      minBet: minBet ?? match.betFairSessionMinBet
     }
     let updatedSession = await updateSessionBetting({ matchId: matchId, type: type }, sessionData);
     if (!updatedSession) {
@@ -522,7 +523,7 @@ exports.updateSessionMaxBet = async (req, res) => {
       addAllsessionInRedis(matchId);
     }
 
-    sendMessageToUser(socketData.expertRoomSocket, socketData.multiSessionUpdatedEvent, { type: type, maxBet: maxBet, matchId: matchId });
+    sendMessageToUser(socketData.expertRoomSocket, socketData.multiSessionUpdatedEvent, { type: type, maxBet: maxBet, matchId: matchId, minBet: minBet });
 
 
     return SuccessResponse(

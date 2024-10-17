@@ -696,7 +696,11 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         }
       }
     }
-
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchBettingMinMaxChange,
+      { matchId, type, maxBet, minBet, betId: id, betLimit }
+    );
     return SuccessResponse(
       {
         statusCode: 200,

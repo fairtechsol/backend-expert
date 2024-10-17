@@ -293,6 +293,7 @@ module.exports.socketData = {
   matchResultDeclared: "matchResultDeclared",
   matchResultUnDeclared: "matchResultUnDeclared",
   matchBettingStatusChange: "matchBettingStatusChange",
+  matchBettingMinMaxChange: "matchBettingMinMaxChange",
   matchBettingApiChange: "matchBettingApiChange",
   sessionDeleteBet: "sessionDeleteBet",
   updateSessionRateClient: "updateSessionRateClient",

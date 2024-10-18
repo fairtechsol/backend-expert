@@ -336,7 +336,16 @@ exports.matchBettingStatusChange = async (req, res) => {
     const { isStop, betId, isManual, isTournament } = req.body;
 
     if (isTournament) {
-      const tournamentData = await getTournamentBettingById(betId, ["id", "matchId"]);
+      const tournamentData = await getTournamentBettingById(betId, ["id", "matchId","activeStatus"]);
+      if(tournamentData.activeStatus==betStatusType.result){
+        return ErrorResponse({
+          statusCode: 400,
+          message: {
+            msg: "match.matchAlreadyDeclared",
+            keys: { name: "This market" }
+          },
+        }, req, res);
+      }
       await updateTournamentBetting({ id: betId }, { activeStatus: isStop ? betStatusType.save : betStatusType.live });
       const isMatchExist = await hasMatchInCache(tournamentData?.matchId);
       if (isMatchExist) {
@@ -355,7 +364,15 @@ exports.matchBettingStatusChange = async (req, res) => {
     }
     else {
       const matchBettingUpdate = await getMatchBettingById(betId);
-
+      if (matchBettingUpdate.activeStatus == betStatusType.result) {
+        return ErrorResponse({
+          statusCode: 400,
+          message: {
+            msg: "match.matchAlreadyDeclared",
+            keys: { name: "This market" }
+          },
+        }, req, res);
+      }
       if (isStop) {
         matchBettingUpdate.activeStatus = betStatusType.save;
       } else {

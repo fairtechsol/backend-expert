@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-const MAX_SIZE_IN_BYTES = 500 * 1024;
+const MAX_SIZE_IN_BYTES = 1000 * 1024;
 const MAX_BASE64_LENGTH = Math.ceil((MAX_SIZE_IN_BYTES * 4) / 3);
 
 module.exports.notification = Joi.object({

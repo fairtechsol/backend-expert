@@ -44,7 +44,8 @@
     "betAlreadyExistForMatch":"Bet already exist for this match.",
     "maxMustBeGreater":"Max bet must be greater than min bet.",
     "atLeastOneBookmaker":"Please create at least one bookmaker.",
-    "matchAddFail" : "Match add operation failed due to invalid data."
+    "matchAddFail" : "Match add operation failed due to invalid data.",
+    "matchAlreadyDeclared" : "{name} is already declared or inprogress you can not change its status."
   },
   "bet":{
     "matchDeclare": "Match Result already declared.",

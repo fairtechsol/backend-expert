@@ -593,6 +593,15 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         }
       }
       else {
+        const hasMatchBetting = await getMatchBetting({ marketId: marketId, matchId: matchId }, ["id"]);
+        if (hasMatchBetting) {
+          return ErrorResponse({
+            statusCode: 400,
+            message: {
+              msg: "bet.alreadyExist",
+            },
+          }, req, res);
+        }
         const matchBettingData = {
           matchId: match.id,
           minBet: minBet ?? match.betFairSessionMinBet,
@@ -638,6 +647,15 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
 
       }
       else {
+        const hasTournamentBetting = await getTournamentBetting({ marketId: marketId, matchId: matchId }, ["id"]);
+        if (hasTournamentBetting) {
+          return ErrorResponse({
+            statusCode: 400,
+            message: {
+              msg: "bet.alreadyExist",
+            },
+          }, req, res);
+        }
         const tournamentBettingData = {
           matchId: match.id,
           minBet: minBet ?? match.betFairSessionMinBet,
@@ -689,6 +707,15 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         }
       }
       else {
+        const hasMatchBetting = await getMatchBetting({ marketId: marketId, matchId: matchId }, ["id"]);
+        if (hasMatchBetting) {
+          return ErrorResponse({
+            statusCode: 400,
+            message: {
+              msg: "bet.alreadyExist",
+            },
+          }, req, res);
+        }
         const matchBettingData = {
           matchId: match.id,
           minBet: minBet ?? match.betFairSessionMinBet,

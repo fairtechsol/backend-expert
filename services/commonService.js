@@ -732,7 +732,7 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
 
     match.sessionBettings = sessions;
   } else {
-    match = await getMatchDetails(matchId, []);
+    match = await getMatchDetails(matchId, null);
     if (!match) {
       throw {
         statusCode: 400,
@@ -1016,7 +1016,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
     delete match.marketTiedMatch2;
 
   } else {
-    match = await getMatchDetails(matchId, []);
+    match = await getMatchDetails(matchId, null);
     if (!match) {
       throw {
         statusCode: 400,

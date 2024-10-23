@@ -4,7 +4,7 @@ const MAX_SIZE_IN_BYTES = 1000 * 1024;
 const MAX_BASE64_LENGTH = Math.ceil((MAX_SIZE_IN_BYTES * 4) / 3);
 
 module.exports.notification = Joi.object({
-    value : Joi.string().trim().required()
+    value : Joi.string().trim().required().allow("")
 })
 
 module.exports.banner = Joi.object({

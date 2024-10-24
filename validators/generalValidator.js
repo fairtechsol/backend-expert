@@ -17,7 +17,7 @@ module.exports.banner = Joi.object({
         'string.base64': 'The provided string must be in Base64 format.',
         'string.max': `Base64 string must not exceed ${MAX_SIZE_IN_BYTES / 1024} KB.`,
     }),
-    type: Joi.string().valid(Object.values(bannerType)).required().messages({
+    type: Joi.string().valid(...Object.values(bannerType)).required().messages({
         'any.required': `Banner type is a required field`
     })
 })

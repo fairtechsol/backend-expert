@@ -99,6 +99,8 @@ module.exports.gameTypeMatchBetting = {
   match1: "match1",
   fancy: "fancy",
   fancy1: "fancy1",
+  khado: "khado",
+  meter: "meter",
   oddeven: "oddeven",
   cricketcasino: "cricketcasino",
 };
@@ -241,7 +243,9 @@ module.exports.sessionBettingType = {
   overByOver: "overByover",
   ballByBall: "ballByBall",
   oddEven: "oddEven",
-  cricketCasino: "cricketCasino"
+  cricketCasino: "cricketCasino",
+  khado: "khado",
+  meter: "meter",
 };
 module.exports.teamStatus = {
   suspended: "suspended",
@@ -282,12 +286,14 @@ module.exports.socketData = {
   matchActiveInActiveEvent: "matchActiveInActive",
   logoutUserForceEvent: "logoutUserForce",
   sessionUpdatedEvent: "sessionUpdated",
+  multiSessionUpdatedEvent: "multiSessionUpdated",
   SessionBetPlaced: "userSessionBetPlaced",
   MatchBetPlaced: "userMatchBetPlaced",
   sessionResultDeclared: "sessionResultDeclared",
   matchResultDeclared: "matchResultDeclared",
   matchResultUnDeclared: "matchResultUnDeclared",
   matchBettingStatusChange: "matchBettingStatusChange",
+  matchBettingMinMaxChange: "matchBettingMinMaxChange",
   matchBettingApiChange: "matchBettingApiChange",
   sessionDeleteBet: "sessionDeleteBet",
   updateSessionRateClient: "updateSessionRateClient",

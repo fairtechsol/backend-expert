@@ -92,6 +92,7 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
           {
             types: [
               matchBettingType.bookmaker,
+              matchBettingType.bookmaker2,
               matchBettingType.quickbookmaker1,
               matchBettingType.quickbookmaker2,
               matchBettingType.quickbookmaker3,
@@ -169,17 +170,27 @@ exports.getMatchWithBettingAndSession = async (
 };
 
 exports.getMatchDetails = async (id, select) => {
-  return await match.findOne({
-    where: { id: id },
-    select: select,
-    relations: {
-      matchBettings: true,
-      sessionBettings: true,
-      tournamentBettings: {
-        runners: true
-      }
-    }
-  });
+  const result = await match.createQueryBuilder('match')
+  .leftJoinAndSelect('match.matchBettings', 'matchBettings')
+  .leftJoinAndSelect('match.sessionBettings', 'sessionBettings')
+  .leftJoinAndMapOne("sessionBettings.resultData", "result", "resultData", "resultData.betId = sessionBettings.id")
+  .leftJoinAndSelect('match.tournamentBettings', 'tournamentBettings')
+  .leftJoinAndSelect('tournamentBettings.runners', 'runners')
+  .where('match.id = :id', { id: id })
+  .select(select)
+  .getOne();
+return result;
+  // return await match.findOne({
+  //   where: { id: id },
+  //   select: select,
+  //   relations: {
+  //     matchBettings: true,
+  //     sessionBettings: true,
+  //     tournamentBettings: {
+  //       runners: true
+  //     }
+  //   }
+  // });
 };
 
 exports.getRaceDetails = async (where) => {
@@ -214,10 +225,11 @@ exports.getMatchDates = async (type) => {
 
 exports.getMatchByCompetitionIdAndDates = async (type, date) => {
   return await match.createQueryBuilder()
-    .leftJoinAndMapMany('match.matchBetting', 'matchBetting', 'matchBetting', 'match.id = matchBetting.matchId AND matchBetting.isActive = true AND matchBetting.type not in (:...type)')
-    .select(["match.id", "match.title", "matchBetting.id", "matchBetting.name", "matchBetting.type"])
-    .where({ stopAt: IsNull(), matchType: type })
+    .leftJoinAndMapMany('match.matchBetting', 'matchBetting', 'matchBetting', 'match.id = matchBetting.matchId AND matchBetting.isActive = true')
+    .leftJoinAndMapMany('match.tournamentBetting', 'tournamentBetting', 'tournamentBetting', 'match.id = tournamentBetting.matchId AND tournamentBetting.isActive = true')
+    .select(["match.id", "match.title", "matchBetting.id", "matchBetting.name", "matchBetting.type", "tournamentBetting.id", "tournamentBetting.name", "tournamentBetting.type"])
+    .where({ stopAt: IsNull() , matchType: type })
     .andWhere('DATE_TRUNC(\'day\',match."startAt") = :date')
-    .setParameters({ "date": new Date(date), type: [...manualMatchBettingType, ...[matchBettingType.bookmaker, matchBettingType.completeMatch]] })
+    .setParameters({ "date": new Date(date) })
     .getMany();
 };

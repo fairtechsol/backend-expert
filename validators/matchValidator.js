@@ -4,6 +4,7 @@ const { bettingType, matchBettingType, marketBettingTypeByBettingType, marketMat
 const bookmakerSchema = Joi.object({
   maxBet: Joi.number().required(),
   marketName: Joi.string().required(),
+  betLimit: Joi.number().allow(null)
 });
 
 let addMatchSchema = Joi.object({
@@ -48,9 +49,9 @@ let addMatchSchema = Joi.object({
     "number.base": "Minimum bet amount must be a number",
     "any.required": "Minimum bet amount is required",
   }),
-  betFairSessionMaxBet: Joi.number().greater(Joi.ref("minBet")).required().messages({
+  betFairSessionMaxBet: Joi.number().min(Joi.ref("minBet")).required().messages({
     "number.base": "Maximum bet amount for BetFair session must be a number",
-    "number.greater": "Maximum bet amount for BetFair session must be greater than minimum bet amount",
+    "number.min": "Maximum bet amount for BetFair session must be greater than minimum bet amount",
     "any.required": "Maximum bet amount for BetFair session is required",
   }),
   isTv: Joi.boolean().allow(null),
@@ -64,6 +65,7 @@ let addMatchSchema = Joi.object({
   marketData: Joi.array().items(Joi.object({
     type: Joi.string().valid(...Object.values(matchBettingType)).required(),
     maxBet: Joi.number().required(),
+    betLimit: Joi.number().allow(null),
     marketId: Joi.when('type', {
       is: Joi.valid(...Object.keys(marketMatchBettingType)),
       then: Joi.string().required(),
@@ -106,7 +108,8 @@ module.exports.addMatchValidate = addMatchSchema.when(Joi.object({ isManualMatch
 
 const updatebookmakerSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
-  maxBet: Joi.number().required()
+  maxBet: Joi.number().required(),
+  betLimit: Joi.number().allow(null)
 });
 
 module.exports.updateMatchValidate = Joi.object({
@@ -130,7 +133,8 @@ module.exports.updateMatchValidate = Joi.object({
   }),
   marketData: Joi.array().items(Joi.object({
     type: Joi.string().valid(...Object.values(matchBettingType)).required(),
-    maxBet: Joi.number().required()
+    maxBet: Joi.number().required(),
+    betLimit: Joi.number().allow(null)
   }))
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
@@ -191,6 +195,7 @@ module.exports.getMatchSchema = Joi.object({
     return prev;
   }, {})),
   stopAt: Joi.date(),
+  sessionMaxBets: Joi.object()
 })
 
 module.exports.racingAddMatchValidate = Joi.object({
@@ -235,10 +240,10 @@ module.exports.racingAddMatchValidate = Joi.object({
     "number.base": "Minimum bet amount must be a number",
     "any.required": "Minimum bet amount is required",
   }),
-  maxBet: Joi.number().greater(Joi.ref('minBet')).required().messages({
+  maxBet: Joi.number().min(Joi.ref('minBet')).required().messages({
     "number.base": "Maximun bet amount must be a number",
     "any.required": "Maximun bet amount is required",
-    "number.greater": "Maximum bet must be greater than minimum bet",
+    "number.min": "Maximum bet must be greater than minimum bet",
   }),
   runners: Joi.array().min(1).items(Joi.object({
     selectionId: Joi.number().required(),
@@ -290,10 +295,10 @@ module.exports.racingUpdateMatchValidate = Joi.object({
     "number.base": "Minimum bet amount must be a number",
     "any.required": "Minimum bet amount is required",
   }),
-  maxBet: Joi.number().greater(Joi.ref('minBet')).required().messages({
+  maxBet: Joi.number().min(Joi.ref('minBet')).required().messages({
     "number.base": "Maximun bet amount must be a number",
     "any.required": "Maximun bet amount is required",
-    "number.greater": "Maximum bet must be greater than minimum bet",
+    "number.min": "Maximum bet must be greater than minimum bet",
   })
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",

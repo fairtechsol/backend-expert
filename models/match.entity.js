@@ -104,7 +104,13 @@ const matchSchema = new EntitySchema({
       type: "boolean",
       default: false,
       nullable: false
-    }
+    },
+    sessionMaxBets: {
+      type: "jsonb",
+      nullable: true,
+      default: {}
+    },
+    
   },
   orderBy: {
     startAt: "DESC",
@@ -138,7 +144,7 @@ const matchSchema = new EntitySchema({
     expression: `"betFairSessionMinBet" >= 0`
   },{
     name: "match_betFairSessionMaxBet",
-    expression: `"betFairSessionMaxBet" > "betFairSessionMinBet"`
+    expression: `"betFairSessionMaxBet" >= "betFairSessionMinBet"`
   }]
 });
 

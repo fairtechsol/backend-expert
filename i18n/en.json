@@ -10,6 +10,7 @@
   "created":"{name} created successfully.",
   "alreadyExist":"{name} already exist.",
   "fetched" : "{name} fetch successfully.",
+  "delete" : "{name} deleted successfully.",
   "required" : "{name} is required.",
   "notAuthorized" : "{name} not authorize to take this action.",
   "notCreated":"{name} can't Create for football",
@@ -43,7 +44,8 @@
     "betAlreadyExistForMatch":"Bet already exist for this match.",
     "maxMustBeGreater":"Max bet must be greater than min bet.",
     "atLeastOneBookmaker":"Please create at least one bookmaker.",
-    "matchAddFail" : "Match add operation failed due to invalid data."
+    "matchAddFail" : "Match add operation failed due to invalid data.",
+    "matchAlreadyDeclared" : "{name} is already declared or inprogress you can not change its status."
   },
   "bet":{
     "matchDeclare": "Match Result already declared.",
@@ -55,7 +57,8 @@
     "sessionAllResult": "Please declare all session result first.",
     "resultDeclareOrProgress": "Result is already declare or inprogress.",
     "declareOtherMarket":"Please declare all other market results.",
-    "matchAlreadyDeclared":"You can not undeclare this market as match result is already declared."
+    "matchAlreadyDeclared":"You can not undeclare this market as match result is already declared.",
+    "alreadyExist":"Market already added."
   }
   
 }

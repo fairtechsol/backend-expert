@@ -73,6 +73,27 @@ exports.updateSessionBettingValidator = Joi.object({
     }),
 });
 
+exports.updateMultiSessionBettingMaxBetValidator = Joi.object({
+
+    maxBet: Joi.number().required().messages({
+        "number.base": "Maximum bet amount must be a number",
+        "any.required": "Maximum bet amount is required",
+    }),
+    minBet: Joi.number().required().messages({
+        "number.base": "Minimum bet amount must be a number",
+        "any.required": "Minimum bet amount is required",
+    }),
+    type: Joi.string().valid(...Object.values(sessionBettingType)).required().messages({
+        'string.base': `status should be a type of 'text'`,
+        'string.empty': `status cannot be an empty field`,
+        'any.only': `status must be a valid type`,
+    }),
+    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        "string.base": "Match ID must be a string",
+        "any.required": "Match ID is required",
+    }),
+});
+
 
 exports.UpdateSessionRateInSocket = Joi.object({
     id: Joi.string().guid({ version: 'uuidv4' }).required().messages({

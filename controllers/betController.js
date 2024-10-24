@@ -60,6 +60,7 @@ const { extractNumbersFromString } = require("../services/commonService");
 const { getRacingMatchById, raceAddMatch } = require("../services/racingMatchService");
 const { getRaceBettingWithRunners, updateRaceBetting } = require("../services/raceBettingService");
 const { getTournamentBettingWithRunners, updateTournamentBetting, getTournamentBetting, getTournamentBettings } = require("../services/tournamentBettingService");
+const { removeBlinkingTabs } = require("../services/blinkingTabsService");
 
 
 exports.getPlacedBets = async (req, res, next) => {
@@ -242,7 +243,6 @@ exports.declareSessionResult = async (req, res) => {
       matchId: matchId,
       result: score,
       profitLoss: fwProfitLoss,
-      commission: response?.data?.totalCommission
     });
 
     sendMessageToUser(
@@ -961,6 +961,7 @@ exports.declareMatchResult = async (req, res) => {
 
     addMatch(match);
     await deleteRedisKey(`${matchId}${redisKeys.declare}`);
+    await removeBlinkingTabs({ matchId: matchId });
 
     return SuccessResponse(
       {
@@ -1927,6 +1928,19 @@ exports.declareTournamentMatchResult = async (req, res) => {
     const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
 
 
+    const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
+    if (sessions?.length > 0) {
+      logger.error({
+        error: `Sessions is not declared yet.`,
+      });
+      updateTournamentBetting({ id: betId}, { activeStatus: betStatus.save, result: null, stopAt: null});
+      return ErrorResponse(
+        { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
+        req,
+        res
+      );
+    }
+
     const resultValidate = await checkResult({
       betId: matchOddBetting.id,
       matchId: matchOddBetting.matchId,
@@ -2005,6 +2019,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
     if (!unDeclaredMatchBetting && !unDeclaredMatchBettingTournament) {
       deleteAllMatchRedis(matchId);
       match.stopAt = new Date();
+      await removeBlinkingTabs({ matchId: matchId });
       await addMatch(match);
     }
     else{
@@ -2173,7 +2188,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       }
     );
 
-    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+    const unDeclaredMatchBetting = await getMatchBetting({ type: matchBettingType.quickbookmaker1, matchId: matchId }, ["id"]);
     const declaredMatchBetting = await getTournamentBettings({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
     if (declaredMatchBetting?.length == 1 && !unDeclaredMatchBetting) {
       await deleteAllMatchRedis(matchId);
@@ -2340,6 +2355,7 @@ exports.declareRacingMatchResult = async (req, res) => {
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${matchId}${redisKeys.profitLoss}`);
 
     await raceAddMatch(match);
+    await removeBlinkingTabs({ matchId: matchId });
 
     return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } }, data: { result, profitLoss: fwProfitLoss } }, req, res);
   } catch (err) {

@@ -6,6 +6,7 @@ const { getMatchBettingDetails, getRaceBettingDetails, getTournamentBettingDetai
 const { updateDeleteReason } = require('../validators/betsValidator');
 const { sendUpdateDeleteReason } = require('../controllers/betController');
 const validator = require('../middleware/joi.validator');
+const { getBlinkingTabsData } = require('../controllers/blinkingTabsController');
 const router = express.Router();
 
 router.get('/match/list', listMatchSuperAdmin);
@@ -24,5 +25,6 @@ router.get('/matchBetting/:matchId', getMatchBettingDetails);
 router.get('/raceBetting/:matchId', getRaceBettingDetails);
 router.get('/tournamentBetting/:matchId', getTournamentBettingDetails);
 router.post("/update/deleteReason", validator(updateDeleteReason), sendUpdateDeleteReason);
+router.get("/blinkingTabs", getBlinkingTabsData);
 
 module.exports = router;

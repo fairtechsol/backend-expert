@@ -41,7 +41,7 @@ app.use(helmet());
 /**
  * Parse incoming JSON data
  */
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 /**
  * Parse URL-encoded data with extended support

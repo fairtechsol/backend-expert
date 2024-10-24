@@ -1,5 +1,5 @@
 const Queue = require('bee-queue');
-const { calculateExpertRate, calculateProfitLossSession, mergeProfitLoss, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1 } = require('../services/commonService');
+const { calculateExpertRate, calculateProfitLossSession, mergeProfitLoss, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
 const { logger } = require('../config/logger');
 const { redisKeys, socketData, sessionBettingType } = require('../config/contants');
 const { sendMessageToUser } = require('../sockets/socketManager');
@@ -323,6 +323,20 @@ const calculateSessionRateAmount = async (jobData, userId) => {
         case sessionBettingType.overByOver:
         case sessionBettingType.ballByBall:
           redisData = await calculateProfitLossSession(
+            redisBetData,
+            placedBetObject,
+            partnership
+          );
+          break;
+        case sessionBettingType.khado:
+          redisData = await calculateProfitLossKhado(
+            redisBetData,
+            placedBetObject,
+            partnership
+          );
+          break;
+        case sessionBettingType.meter:
+          redisData = await calculateProfitLossMeter(
             redisBetData,
             placedBetObject,
             partnership

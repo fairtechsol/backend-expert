@@ -17,6 +17,11 @@ module.exports.userRoleConstant = {
   user: "user",
 };
 
+module.exports.bannerType = {
+  mobile: "mobile",
+  desktop: "desktop"
+};
+
 module.exports.gameType = {
   cricket: "cricket",
   football: "football",

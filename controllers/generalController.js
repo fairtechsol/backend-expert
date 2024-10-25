@@ -66,10 +66,10 @@ exports.getNotification = async (req, res) => {
 
 exports.addBannerData = async (req, res) => {
     try {
-        const { value } = req.body;
+        const { value, type } = req.body;
         const { id: userId } = req.user;
-        const data = await addBanner(value, userId);
-        logger.info({ message: `baner added success : ${userId} banner is : ${value}` });
+        const data = await addBanner(value, userId, type);
+        logger.info({ message: `baner added success : ${userId} banner is : ${value} ${type}` });
         return SuccessResponse(
             {
                 statusCode: 200,

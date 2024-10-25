@@ -18,11 +18,11 @@ exports.getNotification = async (type='notification') => {
     return await systemTableRepo.findOneBy({ type: type });
 }
 
-exports.addBanner = async (value, userId) => {
+exports.addBanner = async (value, userId, type) => {
     const banner = {};
     banner.createBy = userId;
-    banner.type = 'banner';
-    let bannerExist = await systemTableRepo.findOneBy({ type: 'banner' });
+    banner.type = 'banner' + type;
+    let bannerExist = await systemTableRepo.findOneBy({ type: 'banner' + type });
     if (bannerExist) {
         banner.id = bannerExist.id;
     }

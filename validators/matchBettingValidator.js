@@ -162,10 +162,8 @@ exports.addMatchBettingDataValidator = Joi.object({
     }),
     marketId: Joi.string().when('type', {
         is: Joi.valid(...Object.values(manualMatchBettingType)),
-        then: Joi.allow(null) ,
-        otherwise: Joi.required().messages({
-            'any.required': "Market ID is required"
-        })
+        then: Joi.allow(null),
+        otherwise: Joi.allow(null)
     }).messages({
         "string.base": "Market ID must be a string"
     }),

@@ -691,6 +691,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       ...(match.marketCompleteMatch
         ? { "marketCompleteMatch": match.marketCompleteMatch }
         : {}),
+      ...(match.marketCompleteMatch1
+        ? { "marketCompleteMatch1": match.marketCompleteMatch1 }
+        : {}),
       quickBookmaker: [],
       ...(match.marketTiedMatch
         ? { "apiTideMatch": match.marketTiedMatch }
@@ -807,7 +810,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
       marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
       marketTiedMatch: categorizedMatchBettings.apiTideMatch,
+      marketTiedMatch2: categorizedMatchBettings.apiTideMatch2,
       marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
+      marketCompleteMatch1: categorizedMatchBettings.marketCompleteMatch1,
       other: categorizedMatchBettings[matchBettingType.other],
     };
     delete match.tournamentBettings;

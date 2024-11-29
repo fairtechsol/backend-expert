@@ -15,7 +15,6 @@ const {
   redisKeysMarketWise,
   scoreBasedMarket,
   otherEventMatchBettingRedisKey,
-  betType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { addResult, deleteResult, getResult } = require("../services/betService");
@@ -31,13 +30,11 @@ const { getMatchById, addMatch } = require("../services/matchService");
 const {
   getSessionFromRedis,
   updateSessionMatchRedis,
-  deleteKeyFromMarketSessionId,
   deleteKeyFromManualSessionId,
   deleteKeyFromExpertRedisData,
   updateMarketSessionIdRedis,
   setExpertsRedisData,
   deleteAllMatchRedis,
-  deleteKeyFromMatchRedisData,
   settingAllBettingMatchRedisStatus,
   getSingleMatchKey,
   settingMatchKeyInCache,
@@ -123,11 +120,7 @@ exports.declareSessionResult = async (req, res) => {
     await setRedisKey(`${betId}${redisKeys.declare}`, true);
 
     const match = await getMatchById(matchId);
-    logger.info({
-      message: "Result declare",
-      data: match,
-    });
-
+   
     if (match?.stopAt) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
@@ -317,11 +310,6 @@ exports.declareSessionNoResult = async (req, res) => {
     await setRedisKey(`${betId}${redisKeys.declare}`, true);
 
     const match = await getMatchById(matchId);
-    logger.info({
-      message: "Result declare",
-      data: match,
-    });
-
     if (match?.stopAt) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
@@ -791,10 +779,6 @@ exports.declareMatchResult = async (req, res) => {
     await setRedisKey(`${matchId}${redisKeys.declare}`, true);
 
     const match = await getMatchById(matchId);
-    logger.info({
-      message: "Result declare",
-      data: match,
-    });
 
     if (!match) {
       await deleteRedisKey(`${matchId}${redisKeys.declare}`);
@@ -1140,12 +1124,6 @@ exports.declareMatchOtherMarketResult = async (req, res) => {
   const { id: userId } = req.user;
   try {
     const match = await getMatchById(matchId);
-    logger.info({
-      message: "Result declare other match",
-      data: match,
-      result: result,
-      betId: betId
-    });
 
     if (!match) {
       return ErrorResponse({
@@ -1322,12 +1300,6 @@ exports.unDeclareMatchOtherMarketResult = async (req, res) => {
   try {
     const match = await getMatchById(matchId);
 
-    logger.info({
-      message: "Result un declare other market match",
-      data: match,
-      betId: betId
-    });
-
     if (!match) {
       return ErrorResponse(
         {
@@ -1474,13 +1446,7 @@ exports.declareOtherMatchResult = async (req, res) => {
   const { id: userId } = req.user;
   try {
     const match = await getMatchById(matchId);
-    logger.info({
-      message: "Result declare other match",
-      data: match,
-      result: result,
-      betId: betId
-    });
-
+ 
     if (!match) {
       return ErrorResponse({
         statusCode: 403,
@@ -1693,12 +1659,6 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
   try {
     const match = await getMatchById(matchId);
 
-    logger.info({
-      message: "Result un declare other match",
-      data: match,
-      betId: betId
-    });
-
     if (!match) {
       return ErrorResponse(
         {
@@ -1871,12 +1831,6 @@ exports.declareTournamentMatchResult = async (req, res) => {
   const { id: userId } = req.user;
   try {
     const match = await getMatchById(matchId);
-    logger.info({
-      message: "Result declare tournament match",
-      data: match,
-      result: result,
-      betId: betId,
-    });
 
     if (!match) {
       return ErrorResponse({
@@ -2058,12 +2012,6 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
   try {
     const match = await getMatchById(matchId);
 
-    logger.info({
-      message: "Result un declare tournament match",
-      data: match,
-      betId: betId
-    });
-
     if (!match) {
       return ErrorResponse(
         {
@@ -2225,12 +2173,6 @@ exports.declareRacingMatchResult = async (req, res) => {
   const { id: userId } = req.user;
   try {
     const match = await getRacingMatchById(matchId);
-    logger.info({
-      message: "Result declare racing match",
-      data: match,
-      result: result,
-      betId: betId,
-    });
 
     if (!match) {
       return ErrorResponse({
@@ -2380,12 +2322,6 @@ exports.unDeclareRacingMatchResult = async (req, res) => {
   const { id: userId } = req.user;
   try {
     const match = await getRacingMatchById(matchId);
-
-    logger.info({
-      message: "Result un declare racing match",
-      data: match,
-      betId: betId
-    });
 
     if (!match) {
       return ErrorResponse(

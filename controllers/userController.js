@@ -198,7 +198,6 @@ const checkOldPassword = async (userId, oldPassword) => {
 };
 
 const forceLogoutUser = async (userId, stopForceLogout) => {
-  logger.info({ message: `logging out user ${userId}` });
   if (!stopForceLogout) {
     await forceLogoutIfLogin(userId);
   }

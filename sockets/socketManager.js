@@ -202,11 +202,6 @@ exports.socketManager = (server) => {
       }
       let { matchId, id, type } = body;
 
-      logger.info({
-        message: `updating rate in redis for match betting id ${id} and type ${type} of match ${matchId}`,
-        data: body,
-      });
-
       this.sendMessageToUser(
         socketData.expertRoomSocket,
         "updateMatchBettingRateClient",
@@ -243,11 +238,6 @@ exports.socketManager = (server) => {
         return;
       }
       let { matchId, id } = body;
-
-      logger.info({
-        message: `updating rate in redis for session id ${id} and match ${matchId}`,
-        data: body,
-      });
 
       this.sendMessageToUser(
         socketData.expertRoomSocket,

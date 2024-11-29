@@ -30,7 +30,7 @@ ExpertMatchBetQueue.process(async function (job, done) {
     await calculateRateAmount(jobData, userId);
     return done(null, {});
   } catch (error) {
-    logger.info({
+    logger.error({
       file: `error in bet Queue for User id : ${userId}`,
       error: error.message
     })
@@ -67,10 +67,6 @@ let calculateRateAmount = async (jobData, userId) => {
         ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {})
       }
       await setExpertsRedisData(userRedisObj);
-      logger.info({
-        context: "Update User Exposure",
-        process: `User ID : ${userId} expert`,
-      });
       //send Data to socket
       jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
       sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData, userRedisObj });
@@ -93,7 +89,7 @@ ExpertMatchRacingBetQueue.process(async function (job, done) {
     await calculateRacingRateAmount(jobData, userId);
     return done(null, {});
   } catch (error) {
-    logger.info({
+    logger.error({
       file: `error in bet Queue for User id : ${userId}`,
       error: error.message
     })
@@ -139,10 +135,7 @@ let calculateRacingRateAmount = async (jobData, userId) => {
         [`${jobData?.matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamData)
       }
       await setExpertsRedisData(userRedisObj);
-      logger.info({
-        context: "Update User Exposure",
-        process: `User ID : ${userId} expert`,
-      });
+
       //send Data to socket
       jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
       sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData, userRedisObj: teamData });
@@ -165,7 +158,7 @@ ExpertMatchTournamentBetQueue.process(async function (job, done) {
     await calculateTournamentRateAmount(jobData, userId);
     return done(null, {});
   } catch (error) {
-    logger.info({
+    logger.error({
       file: `error in bet Queue for User id : ${userId}`,
       error: error.message
     })
@@ -211,10 +204,7 @@ let calculateTournamentRateAmount = async (jobData, userId) => {
         [`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`]: JSON.stringify(teamData)
       }
       await setExpertsRedisData(userRedisObj);
-      logger.info({
-        context: "Update User Exposure",
-        process: `User ID : ${userId} expert`,
-      });
+
       //send Data to socket
       jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
       sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData, userRedisObj: teamData });
@@ -229,55 +219,6 @@ let calculateTournamentRateAmount = async (jobData, userId) => {
     }
   }
 }
-// ExpertCardMatchBetQueue.process(async function (job, done) {
-//   let jobData = job.data;
-//   let userId = jobData.userId;
-//   try {
-//     // await calculateCardMatcheAmount(jobData, userId);
-//     return done(null, {});
-//   } catch (error) {
-//     logger.info({
-//       file: `error in cad bet Queue for User id : ${userId}`,
-//       error: error.message
-//     })
-//     return done(null, {});
-//   }
-// });
-
-// let calculateCardMatcheAmount = async (jobData, userId) => {
-//   let partnership = JSON.parse(jobData.partnerships);
-
-//   if (partnership['fwPartnershipId']) {
-//     let mPartenerShipId = partnership['fwPartnershipId'];
-//     let mPartenerShip = partnership['fwPartnership'];
-//     try {
-//       let masterRedisData = (await getExpertsRedisData()) || {};
-//       let teamRates = masterRedisData?.[`${jobData?.mid}_${jobData?.selectionId}${redisKeys.card}`];
-
-//       let cardProfitLossAndExposure = new CardProfitLoss(jobData?.matchType, teamRates, { bettingType: jobData?.bettingType, winAmount: jobData?.winAmount, lossAmount: jobData?.lossAmount, playerName: jobData?.betOnTeam, partnership: partnership }, userOldExposure).getCardGameProfitLoss()
-
-//       let userRedisObj = {
-//         [`${jobData?.mid}_${jobData?.selectionId}${redisKeys.card}`]: cardProfitLossAndExposure.profitLoss
-//       }
-//       await setExpertsRedisData(userRedisObj);
-//       logger.info({
-//         context: "Update User Exposure",
-//         process: `User ID : ${userId} expert`,
-//       });
-//       //send Data to socket
-//       jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
-//       sendMessageToUser(socketData.expertRoomSocket, socketData.CardBetPlaced, { jobData, userRedisObj: userRedisObj });
-//     }
-//     catch (error) {
-//       logger.error({
-//         context: "error in super master exposure update",
-//         process: `User ID : ${userId} and super master id ${mPartenerShipId}`,
-//         error: error.message,
-//         stake: error.stack
-//       })
-//     }
-//   }
-// }
 
 ExpertSessionBetQueue.process(async function (job, done) {
   let jobData = job.data;
@@ -286,7 +227,7 @@ ExpertSessionBetQueue.process(async function (job, done) {
     await calculateSessionRateAmount(jobData, userId);
     return done(null, {});
   } catch (error) {
-    logger.info({
+    logger.error({
       file: "error in session bet Queue",
       info: `process job for user id ${userId}`,
 

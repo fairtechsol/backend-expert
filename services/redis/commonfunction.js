@@ -175,10 +175,6 @@ exports.updateRaceInCache = async (matchId, data) => {
 exports.updateMatchKeyInCache = async (matchId, key, data) => {
   let matchKey = `${matchId}_match`;
   // Log the update information
-  logger.info({
-    message: `updating key ${data} in match data in redis with match id  ${matchId}`,
-    data: data
-  });
 
   let payload = {
     [key]: data
@@ -224,11 +220,6 @@ exports.getKeyFromMatchRedis = async (matchId, key) => {
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
 exports.updateSessionMatchRedis = async (matchId, sessionId, data) => {
-  // Log the update information
-  logger.info({
-    message: `updating data in redis for session ${sessionId} of match ${matchId}`,
-    data: data
-  });
 
   // Use a Redis pipeline for atomicity and efficiency
   await internalRedis
@@ -251,10 +242,6 @@ exports.hasSessionInCache = async (matchId) => {
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
 exports.settingAllSessionMatchRedis = async (matchId, data) => {
-  logger.info({
-    message: `updating data in redis for session of match ${matchId}`,
-    data: data
-  });
 
   // Use a Redis pipeline for atomicity and efficiency
   await internalRedis
@@ -330,10 +317,6 @@ exports.updateBettingMatchRedis = async (matchId, bettingType, data) => {
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
 exports.settingAllBettingMatchRedis = async (matchId, data) => {
-  logger.info({
-    message: `updating data in redis for betting of match ${matchId}`,
-    data: data
-  });
 
   // Use a Redis pipeline for atomicity and efficiency
   await internalRedis
@@ -656,12 +639,6 @@ exports.loginCount = async (key) => {
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
 exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
-  logger.info({
-    message: `updating data in redis for betting of match ${matchId}`,
-    status: status
-  });
-
-
   const manualBettingData = await internalRedis.hgetall(`${matchId}_manualBetting`);
 
   let redisPipeline = internalRedis
@@ -704,11 +681,6 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
 exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
-  logger.info({
-    message: `updating data in redis for betting of other match ${matchId}`,
-    status: status
-  });
-
   const manualBettingData = await internalRedis.hgetall(`${matchId}_manualBetting`);
 
   let redisPipeline = internalRedis
@@ -751,11 +723,6 @@ exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
 exports.settingAllBettingRacingMatchRedisStatus = async (matchId, status) => {
-  logger.info({
-    message: `updating data in redis for betting of racing match ${matchId}`,
-    status: status
-  });
-
   let redisPipeline = internalRedis
     .pipeline();
 

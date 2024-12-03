@@ -261,7 +261,8 @@ exports.getSessions = async (req, res) => {
           apiSessionActive: JSON.parse(match?.apiSessionActive),
           manualSessionActive: JSON.parse(match?.manualSessionActive),
           marketId: match?.marketId,
-          stopAt: match?.stopAt
+          stopAt: match?.stopAt,
+          sessionMaxBets: match?.sessionMaxBets
         };
 
 
@@ -270,7 +271,8 @@ exports.getSessions = async (req, res) => {
           "apiSessionActive",
           "manualSessionActive",
           "marketId",
-          "stopAt"
+          "stopAt",
+          "sessionMaxBets"
         ]);
       }
 
@@ -467,7 +469,7 @@ exports.getSessionBetResult = async (req, res) => {
 //update session betting general data
 exports.updateSessionMaxBet = async (req, res) => {
   try {
-    let { matchId, maxBet, minBet, type } = req.body
+    let { matchId, maxBet, minBet, type, exposureLimit } = req.body
     const { id: loginId } = req.user;
     const user = await getUserById(loginId, ["allPrivilege", "sessionMatchPrivilege", "betFairMatchPrivilege"]);
     if (!user) {
@@ -491,10 +493,10 @@ exports.updateSessionMaxBet = async (req, res) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "match.maxMustBeGreater" } }, req, res);
     }
 
-    await updateMatch({ id: matchId }, { sessionMaxBets: { ...match.sessionMaxBets, [type]: maxBet, [`${type}_minBet`]: minBet ?? match.betFairSessionMinBet } })
+    await updateMatch({ id: matchId }, { sessionMaxBets: { ...match.sessionMaxBets, [type]: maxBet, [`${type}_minBet`]: minBet ?? match.betFairSessionMinBet, [`${type}_exposureLimit`]: exposureLimit } })
     const isExistInRedis = await hasMatchInCache(matchId);
     if (isExistInRedis) {
-      await updateMatchKeyInCache(matchId, "sessionMaxBets", JSON.stringify({ ...match.sessionMaxBets, [type]: maxBet, [`${type}_minBet`]: minBet ?? match.betFairSessionMinBet }))
+      await updateMatchKeyInCache(matchId, "sessionMaxBets", JSON.stringify({ ...match.sessionMaxBets, [type]: maxBet, [`${type}_minBet`]: minBet ?? match.betFairSessionMinBet, [`${type}_exposureLimit`]: exposureLimit }))
     }
     let sessionData = {
       maxBet: maxBet,

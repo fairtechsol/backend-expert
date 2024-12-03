@@ -1,5 +1,5 @@
 const { In } = require("typeorm");
-const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, matchBettingType, betStatus, resultStatus, raceTypeByBettingType } = require("../config/contants");
+const { marketBettingTypeByBettingType, manualMatchBettingType, betStatusType, socketData, matchBettingType, betStatus, resultStatus, raceTypeByBettingType, mainMatchMarketType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getExpertResult } = require("../services/expertResultService");
 const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetting, updateMatchBetting } = require("../services/matchBettingService");
@@ -156,6 +156,26 @@ exports.getMatchBettingDetails = async (req, res) => {
         ...(id ? { id: id } : {})
       });
     }
+
+    if (mainMatchMarketType.includes(type)) {
+      matchBetting.exposureLimit = await getMatchBetting({
+        matchId: matchId,
+        type: matchBettingType.quickbookmaker1,
+      }, ["exposureLimit"]);
+    }
+    else if ([matchBettingType.tiedMatch1, matchBettingType.tiedMatch3].includes(type)) {
+      matchBetting.exposureLimit = await getMatchBetting({
+        matchId: matchId,
+        type: matchBettingType.tiedMatch2,
+      }, ["exposureLimit"]);
+    }
+    else if ([matchBettingType.completeMatch, matchBettingType.completeMatch1].includes(type)) {
+      matchBetting.exposureLimit = await getMatchBetting({
+        matchId: matchId,
+        type: matchBettingType.completeManual,
+      }, ["exposureLimit"]);
+    }
+
     let response = {
       match: match,
       matchBetting: matchBetting,
@@ -567,7 +587,7 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
 
 exports.addAndUpdateMatchBetting = async (req, res) => {
   try {
-    const { matchId, type, name, maxBet, minBet, marketId, id, gtype, metaData, runners, betLimit = 0 } = req.body;
+    const { matchId, type, name, maxBet, minBet, marketId, id, gtype, metaData, runners, betLimit = 0, exposureLimit } = req.body;
     const match = await getMatchById(matchId, ["id", "betFairSessionMinBet"]);
 
     if ((minBet ?? match.betFairSessionMinBet) > maxBet) {
@@ -580,7 +600,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
     }
     if (type == matchBettingType.other) {
       if (id) {
-        await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet });
+        await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit });
         const isMatchExist = await hasMatchInCache(matchId);
         if (isMatchExist) {
           const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
@@ -588,6 +608,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
             bettingData.find((item) => item?.id == id).maxBet = maxBet;
             bettingData.find((item) => item?.id == id).minBet = minBet ?? match.betFairSessionMinBet;
             bettingData.find((item) => item?.id == id).betLimit = betLimit;
+            bettingData.find((item) => item?.id == id).exposureLimit = exposureLimit;
             await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
           }
         }
@@ -615,7 +636,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
           gtype: gtype,
           isActive: true,
           metaData: metaData,
-          betLimit: betLimit
+          betLimit: betLimit,
+          exposureLimit: exposureLimit
         }
 
         const matchBetting = await addMatchBetting(matchBettingData);
@@ -633,7 +655,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
 
     else if (type == matchBettingType.tournament) {
       if (id) {
-        await updateTournamentBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet });
+        await updateTournamentBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit });
         const isMatchExist = await hasMatchInCache(matchId);
         if (isMatchExist) {
           const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
@@ -641,6 +663,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
             bettingData.find((item) => item?.id == id).maxBet = maxBet;
             bettingData.find((item) => item?.id == id).minBet = minBet ?? match.betFairSessionMinBet;
             bettingData.find((item) => item?.id == id).betLimit = betLimit;
+            bettingData.find((item) => item?.id == id).exposureLimit = exposureLimit;
             await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
           }
         }
@@ -667,7 +690,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
           activeStatus: betStatusType.save,
           gtype: gtype,
           isActive: true,
-          betLimit: betLimit
+          betLimit: betLimit,
+          exposureLimit: exposureLimit
         };
 
         const tournamentBetting = await addTournamentBetting(tournamentBettingData);
@@ -684,17 +708,29 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
       }
     }
     else if(manualMatchBettingType.includes(type)){
-      await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet  });
+      await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit });
       const isMatchExist = await hasBettingInCache(matchId);
       if (isMatchExist) {
         const bettingData = await getBettingFromRedis(matchId, type);
         bettingData.maxBet = maxBet;
         bettingData.minBet = minBet ?? match.betFairSessionMinBet;
         bettingData.betLimit = betLimit;
+        bettingData.exposureLimit = exposureLimit;
         await updateBettingMatchRedis(matchId, type, bettingData);
       }
     }
     else {
+      if (exposureLimit != null) {
+        if (mainMatchMarketType.includes(type)) {
+          await setExposureLimitMatch(matchId, matchBettingType.quickbookmaker1, exposureLimit);
+        }
+        else if ([matchBettingType.tiedMatch1, matchBettingType.tiedMatch3].includes(type)) {
+          await setExposureLimitMatch(matchId, matchBettingType.tiedMatch2, exposureLimit);
+        }
+        else if ([matchBettingType.completeMatch, matchBettingType.completeMatch1].includes(type)) {
+          await setExposureLimitMatch(matchId, matchBettingType.completeManual, exposureLimit);
+        }
+      }
       if (id) {
         await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet });
         const isMatchExist = await hasMatchInCache(matchId);
@@ -743,7 +779,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.matchBettingMinMaxChange,
-      { matchId, type, maxBet, minBet, betId: id, betLimit }
+      { matchId, type, maxBet, minBet, betId: id, betLimit, exposureLimit }
     );
     return SuccessResponse(
       {
@@ -760,5 +796,15 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
       message: error.message,
     });
     return ErrorResponse(error, req, res);
+  }
+}
+
+const setExposureLimitMatch = async (matchId, type, exposureLimit) => {
+  await updateMatchBetting({ matchId: matchId, type: type }, { exposureLimit: exposureLimit });
+  const isMatchExist = await hasBettingInCache(matchId);
+  if (isMatchExist) {
+    const bettingData = await getBettingFromRedis(matchId, type);
+    bettingData.exposureLimit = exposureLimit;
+    await updateBettingMatchRedis(matchId, type, bettingData);
   }
 }

@@ -92,6 +92,9 @@ exports.updateMultiSessionBettingMaxBetValidator = Joi.object({
         "string.base": "Match ID must be a string",
         "any.required": "Match ID is required",
     }),
+    exposureLimit: Joi.number().allow(null).messages({
+        'number.base': `Exposure limit should be a type of 'number'`,
+    }),
 });
 
 

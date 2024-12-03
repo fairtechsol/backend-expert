@@ -158,22 +158,22 @@ exports.getMatchBettingDetails = async (req, res) => {
     }
 
     if (mainMatchMarketType.includes(type)) {
-      matchBetting.exposureLimit = await getMatchBetting({
+      matchBetting.exposureLimit = (await getMatchBetting({
         matchId: matchId,
         type: matchBettingType.quickbookmaker1,
-      }, ["exposureLimit"]);
+      }, ["exposureLimit"]))?.exposureLimit;
     }
     else if ([matchBettingType.tiedMatch1, matchBettingType.tiedMatch3].includes(type)) {
-      matchBetting.exposureLimit = await getMatchBetting({
+      matchBetting.exposureLimit = (await getMatchBetting({
         matchId: matchId,
         type: matchBettingType.tiedMatch2,
-      }, ["exposureLimit"]);
+      }, ["exposureLimit"]))?.exposureLimit;
     }
     else if ([matchBettingType.completeMatch, matchBettingType.completeMatch1].includes(type)) {
-      matchBetting.exposureLimit = await getMatchBetting({
+      matchBetting.exposureLimit = (await getMatchBetting({
         matchId: matchId,
         type: matchBettingType.completeManual,
-      }, ["exposureLimit"]);
+      }, ["exposureLimit"]))?.exposureLimit;
     }
 
     let response = {

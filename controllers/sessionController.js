@@ -262,7 +262,7 @@ exports.getSessions = async (req, res) => {
           manualSessionActive: JSON.parse(match?.manualSessionActive),
           marketId: match?.marketId,
           stopAt: match?.stopAt,
-          sessionMaxBets: match?.sessionMaxBets
+          sessionMaxBets: JSON.parse(match?.sessionMaxBets||"{}")
         };
 
 

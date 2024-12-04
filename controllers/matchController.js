@@ -66,7 +66,6 @@ exports.createMatch = async (req, res) => {
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
-    logger.info({ message: `Match added by user ${loginId} with market id: ${marketId} and Manual Match: ${isManualMatch}` });
     let user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege"])
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
@@ -905,7 +904,6 @@ exports.racingCreateMatch = async (req, res) => {
     // Extract user ID from the request object
     const { id: loginId } = req.user;
 
-    logger.info({ message: `Race added by user ${loginId} with market id: ${marketId}` });
     let user = await getUserById(loginId, ["allPrivilege", "addMatchPrivilege"])
     if (!user) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res);

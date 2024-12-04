@@ -7,7 +7,6 @@ exports.addNotification = async (req, res) => {
         const { value } = req.body;
         const { id: userId } = req.user;
         const data = await addNotification(value, userId);
-        logger.info({ message: `notification added success : ${userId} notification is : ${value}` });
         return SuccessResponse(
             {
                 statusCode: 200,
@@ -69,7 +68,6 @@ exports.addBannerData = async (req, res) => {
         const { value, type } = req.body;
         const { id: userId } = req.user;
         const data = await addBanner(value, userId, type);
-        logger.info({ message: `baner added success : ${userId} banner is : ${value} ${type}` });
         return SuccessResponse(
             {
                 statusCode: 200,

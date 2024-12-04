@@ -108,10 +108,6 @@ exports.login = async (req, res) => {
       userLoginAtUpdate(user.id);
     }
 
-    logger.info({
-      message: `Setting login token in redis: ${token} for user: ${user.id}`,
-    });
-
     // setting token in redis for checking if user already loggedin
     await internalRedis.hmset(user.id, {
       token: token,

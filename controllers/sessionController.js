@@ -11,7 +11,7 @@ const { getExpertResult } = require("../services/expertResultService");
 
 exports.addSession = async (req, res) => {
   try {
-    let { matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId, gtype = gameTypeMatchBetting.fancy } = req.body
+    let { matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId, gtype = gameTypeMatchBetting.fancy, exposureLimit } = req.body
     const { id: loginId } = req.user;
     if (type == sessionBettingType.marketSession && !selectionId) {
       return ErrorResponse({ statusCode: 400, message: { msg: "required", keys: { name: "Selection id" } } }, req, res);
@@ -45,6 +45,9 @@ exports.addSession = async (req, res) => {
     if (!maxBet) {
       maxBet = match?.sessionMaxBets?.[type] || match.betFairSessionMaxBet
     }
+    if (!exposureLimit) {
+      exposureLimit = match?.sessionMaxBets?.[`${type}_exposureLimit`]
+    }
     let status = teamStatus.suspended
     if (yesRate || noRate) {
       status = teamStatus.active
@@ -71,7 +74,8 @@ exports.addSession = async (req, res) => {
       status,
       createBy: loginId,
       isManual,
-      gtype
+      gtype,
+      exposureLimit
     }
     let session = await addSessionBetting(sessionData)
     if (!session) {
@@ -125,7 +129,7 @@ exports.addSession = async (req, res) => {
 //update session betting general data
 exports.updateSession = async (req, res) => {
   try {
-    let { id, name, minBet, maxBet } = req.body
+    let { id, name, minBet, maxBet, exposureLimit } = req.body
     const { id: loginId } = req.user;
     const user = await getUserById(loginId, ["allPrivilege", "sessionMatchPrivilege", "betFairMatchPrivilege"]);
     if (!user) {
@@ -148,7 +152,8 @@ exports.updateSession = async (req, res) => {
     let sessionData = {
       name: name || session.name,
       minBet: minBet || session.minBet,
-      maxBet: maxBet || session.maxBet
+      maxBet: maxBet || session.maxBet,
+      exposureLimit: exposureLimit || session.exposureLimit
     }
     let updatedSession = await updateSessionBetting({ id }, sessionData)
     if (!updatedSession) {
@@ -262,7 +267,6 @@ exports.getSessions = async (req, res) => {
           manualSessionActive: JSON.parse(match?.manualSessionActive),
           marketId: match?.marketId,
           stopAt: match?.stopAt,
-          sessionMaxBets: JSON.parse(match?.sessionMaxBets||"{}")
         };
 
 
@@ -272,7 +276,6 @@ exports.getSessions = async (req, res) => {
           "manualSessionActive",
           "marketId",
           "stopAt",
-          "sessionMaxBets"
         ]);
       }
 
@@ -500,7 +503,8 @@ exports.updateSessionMaxBet = async (req, res) => {
     }
     let sessionData = {
       maxBet: maxBet,
-      minBet: minBet ?? match.betFairSessionMinBet
+      minBet: minBet ?? match.betFairSessionMinBet,
+      ...(exposureLimit ? { exposureLimit: exposureLimit } : {})
     }
     let updatedSession = await updateSessionBetting({ matchId: matchId, type: type }, sessionData);
     if (!updatedSession) {

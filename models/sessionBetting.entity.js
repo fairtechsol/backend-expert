@@ -91,7 +91,11 @@ const sessionBettingSchema = new EntitySchema({
           type: "boolean",
           nullable: false,
           default: true
-        }
+        },
+        exposureLimit:{
+            type: "int",
+            nullable: true,
+          }
     },
     relations: {
         match: {

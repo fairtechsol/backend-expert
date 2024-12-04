@@ -49,7 +49,10 @@ exports.addsessionBettingValidator = Joi.object({
     }),
     gtype : Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
         "any.required": "Game type is required",
-    })
+    }),
+    exposureLimit: Joi.number().allow(null).messages({
+        'number.base': `Exposure limit should be a type of 'number'`,
+    }),
 });
 
 exports.updateSessionBettingValidator = Joi.object({
@@ -70,6 +73,9 @@ exports.updateSessionBettingValidator = Joi.object({
     id: Joi.string().guid({ version: 'uuidv4' }).required().messages({
         "string.base": "Match ID must be a string",
         "any.required": "Match ID is required",
+    }),
+    exposureLimit: Joi.number().allow(null).messages({
+        'number.base': `Exposure limit should be a type of 'number'`,
     }),
 });
 

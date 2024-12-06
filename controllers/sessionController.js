@@ -529,7 +529,7 @@ exports.updateSessionMaxBet = async (req, res) => {
       addAllsessionInRedis(matchId);
     }
 
-    sendMessageToUser(socketData.expertRoomSocket, socketData.multiSessionUpdatedEvent, { type: type, maxBet: maxBet, matchId: matchId, minBet: minBet });
+    sendMessageToUser(socketData.expertRoomSocket, socketData.multiSessionUpdatedEvent, { type: type, maxBet: maxBet, matchId: matchId, minBet: minBet, exposureLimit: exposureLimit });
 
 
     return SuccessResponse(

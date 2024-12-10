@@ -15,6 +15,7 @@ const { logger } = require("./config/logger.js");
 const ExpertMatchQueue = require("./queue/consumer.js");
 const internalRedis = require("./config/internalRedisConnection.js");
 const helmet = require('helmet');
+const encryptDecryptData = require("./middleware/encryptDecryptData.js");
 
 
 const allowSubdomainsAndLocalhost = (origin, callback) => {
@@ -49,6 +50,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // configuring i18 for message control
 app.use(i18n.init);
 app.use(setI18Language);
+
+app.use(encryptDecryptData);
 
 app.use((req, res, next) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;

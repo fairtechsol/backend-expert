@@ -77,6 +77,7 @@ exports.updateSessionBettingValidator = Joi.object({
     exposureLimit: Joi.number().allow(null).messages({
         'number.base': `Exposure limit should be a type of 'number'`,
     }),
+    isCommissionActive:Joi.boolean().allow(null)
 });
 
 exports.updateMultiSessionBettingMaxBetValidator = Joi.object({

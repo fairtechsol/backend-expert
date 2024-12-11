@@ -129,7 +129,7 @@ exports.addSession = async (req, res) => {
 //update session betting general data
 exports.updateSession = async (req, res) => {
   try {
-    let { id, name, minBet, maxBet, exposureLimit } = req.body
+    let { id, name, minBet, maxBet, exposureLimit, isCommissionActive } = req.body
     const { id: loginId } = req.user;
     const user = await getUserById(loginId, ["allPrivilege", "sessionMatchPrivilege", "betFairMatchPrivilege"]);
     if (!user) {
@@ -153,7 +153,8 @@ exports.updateSession = async (req, res) => {
       name: name || session.name,
       minBet: minBet || session.minBet,
       maxBet: maxBet || session.maxBet,
-      exposureLimit: exposureLimit || session.exposureLimit
+      exposureLimit: exposureLimit || session.exposureLimit,
+      isCommissionActive: isCommissionActive || session.isCommissionActive
     }
     let updatedSession = await updateSessionBetting({ id }, sessionData)
     if (!updatedSession) {

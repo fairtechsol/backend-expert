@@ -45,7 +45,7 @@ exports.addSession = async (req, res) => {
     if (!maxBet) {
       maxBet = match?.sessionMaxBets?.[type] || match.betFairSessionMaxBet
     }
-    if (!exposureLimit) {
+    if (exposureLimit == null) {
       exposureLimit = match?.sessionMaxBets?.[`${type}_exposureLimit`]
     }
     let status = teamStatus.suspended
@@ -151,10 +151,10 @@ exports.updateSession = async (req, res) => {
 
     let sessionData = {
       name: name || session.name,
-      minBet: minBet || session.minBet,
-      maxBet: maxBet || session.maxBet,
-      exposureLimit: exposureLimit || session.exposureLimit,
-      isCommissionActive: isCommissionActive || session.isCommissionActive
+      minBet: minBet ?? session.minBet,
+      maxBet: maxBet ?? session.maxBet,
+      exposureLimit: exposureLimit ?? session.exposureLimit,
+      isCommissionActive: isCommissionActive ?? session.isCommissionActive
     }
     let updatedSession = await updateSessionBetting({ id }, sessionData)
     if (!updatedSession) {

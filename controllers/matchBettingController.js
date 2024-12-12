@@ -692,7 +692,9 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
     else if (manualMatchBettingType.includes(type)) {
       switch (type) {
         case matchBettingType.quickbookmaker1:
-          await updateMatchBettingExposureLimit([ matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3], [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.matchOdd], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type }, match)
+        case matchBettingType.quickbookmaker2:
+        case matchBettingType.quickbookmaker3:
+          await updateMatchBettingExposureLimit([matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3], [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.matchOdd], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type }, match)
           break;
         case matchBettingType.tiedMatch2:
           await updateMatchBettingExposureLimit([matchBettingType.tiedMatch2], [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type }, match);

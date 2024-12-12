@@ -47,9 +47,9 @@ const handleConnection = async (client) => {
     }
 
     // Extract user ID and role from the decoded user object
-    const { id: userId, roleName } = decodedUser;
+    const { id: userId, roleName, isDemo } = decodedUser;
 
-    if (roleName == userRoleConstant.user) {
+    if (roleName == userRoleConstant.user && !isDemo) {
       const userCount = parseInt(await internalRedis.get("loginUserCount"));
 
       // If the user is a regular user, manage user login count

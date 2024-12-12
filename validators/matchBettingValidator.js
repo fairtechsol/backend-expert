@@ -160,6 +160,9 @@ exports.addMatchBettingDataValidator = Joi.object({
         'number.empty': `Min bet cannot be an empty field`,
         'any.required': `Min bet is a required field`
     }),
+    exposureLimit: Joi.number().allow(null).messages({
+        'number.base': `Exposure limit should be a type of 'number'`,
+    }),
     marketId: Joi.string().when('type', {
         is: Joi.valid(...Object.values(manualMatchBettingType)),
         then: Joi.allow(null),

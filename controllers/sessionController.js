@@ -505,7 +505,7 @@ exports.updateSessionMaxBet = async (req, res) => {
     let sessionData = {
       maxBet: maxBet,
       minBet: minBet ?? match.betFairSessionMinBet,
-      ...(exposureLimit ? { exposureLimit: exposureLimit } : {})
+      ...(exposureLimit != null ? { exposureLimit: exposureLimit } : {})
     }
     let updatedSession = await updateSessionBetting({ matchId: matchId, type: type }, sessionData);
     if (!updatedSession) {

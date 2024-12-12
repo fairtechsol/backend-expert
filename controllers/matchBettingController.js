@@ -6,7 +6,7 @@ const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetti
 const { getMatchById } = require("../services/matchService");
 const { getRacingBetting, getRunners, getRacingBettingById, addRaceBetting, updateRaceBetting, getRacingBettings } = require("../services/raceBettingService");
 const { getRacingMatchById } = require("../services/racingMatchService");
-const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData, updateBettingMatchRedis, getRaceFromCache, updateMatchKeyInCache, getSingleMatchKey } = require("../services/redis/commonfunction");
+const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData, updateBettingMatchRedis, getRaceFromCache, updateMatchKeyInCache, getSingleMatchKey, settingAllBettingMatchRedis } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
@@ -155,25 +155,6 @@ exports.getMatchBettingDetails = async (req, res) => {
         type: type,
         ...(id ? { id: id } : {})
       });
-    }
-
-    if (mainMatchMarketType.includes(type)) {
-      matchBetting.exposureLimit = (await getMatchBetting({
-        matchId: matchId,
-        type: matchBettingType.quickbookmaker1,
-      }, ["exposureLimit"]))?.exposureLimit;
-    }
-    else if ([matchBettingType.tiedMatch1, matchBettingType.tiedMatch3].includes(type)) {
-      matchBetting.exposureLimit = (await getMatchBetting({
-        matchId: matchId,
-        type: matchBettingType.tiedMatch2,
-      }, ["exposureLimit"]))?.exposureLimit;
-    }
-    else if ([matchBettingType.completeMatch, matchBettingType.completeMatch1].includes(type)) {
-      matchBetting.exposureLimit = (await getMatchBetting({
-        matchId: matchId,
-        type: matchBettingType.completeManual,
-      }, ["exposureLimit"]))?.exposureLimit;
     }
 
     let response = {
@@ -707,28 +688,33 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         }
       }
     }
-    else if(manualMatchBettingType.includes(type)){
-      await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit });
-      const isMatchExist = await hasBettingInCache(matchId);
-      if (isMatchExist) {
-        const bettingData = await getBettingFromRedis(matchId, type);
-        bettingData.maxBet = maxBet;
-        bettingData.minBet = minBet ?? match.betFairSessionMinBet;
-        bettingData.betLimit = betLimit;
-        bettingData.exposureLimit = exposureLimit;
-        await updateBettingMatchRedis(matchId, type, bettingData);
+    
+    else if (manualMatchBettingType.includes(type)) {
+      switch (type) {
+        case matchBettingType.quickbookmaker1:
+          await updateMatchBettingExposureLimit([ matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3], [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.matchOdd], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type }, match)
+          break;
+        case matchBettingType.tiedMatch2:
+          await updateMatchBettingExposureLimit([matchBettingType.tiedMatch2], [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type }, match);
+          break;
+        case matchBettingType.completeManual:
+          await updateMatchBettingExposureLimit([matchBettingType.completeManual], [matchBettingType.completeMatch, matchBettingType.completeMatch1], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type }, match);
+          break;
+        default:
+          break;
       }
+
     }
     else {
       if (exposureLimit != null) {
         if (mainMatchMarketType.includes(type)) {
-          await setExposureLimitMatch(matchId, matchBettingType.quickbookmaker1, exposureLimit);
+          await setExposureLimitMatch([ matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3], [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.matchOdd], {  exposureLimit, matchId });
         }
         else if ([matchBettingType.tiedMatch1, matchBettingType.tiedMatch3].includes(type)) {
-          await setExposureLimitMatch(matchId, matchBettingType.tiedMatch2, exposureLimit);
+          await setExposureLimitMatch([matchBettingType.tiedMatch2], [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3], { exposureLimit, matchId });
         }
         else if ([matchBettingType.completeMatch, matchBettingType.completeMatch1].includes(type)) {
-          await setExposureLimitMatch(matchId, matchBettingType.completeManual, exposureLimit);
+          await setExposureLimitMatch([matchBettingType.completeManual], [matchBettingType.completeMatch, matchBettingType.completeMatch1], { exposureLimit, matchId });
         }
       }
       if (id) {
@@ -799,12 +785,71 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
   }
 }
 
-const setExposureLimitMatch = async (matchId, type, exposureLimit) => {
-  await updateMatchBetting({ matchId: matchId, type: type }, { exposureLimit: exposureLimit });
+const setExposureLimitMatch = async (manualMarket, apiMarket, data) => {
+  const { exposureLimit, matchId } = data;
+  await updateMatchBetting({ type: In([...manualMarket, ...apiMarket]), matchId: matchId }, { exposureLimit: exposureLimit });
   const isMatchExist = await hasBettingInCache(matchId);
   if (isMatchExist) {
+    const match = await getMatchFromCache(matchId);
+    let bettingObj = {};
+    for (let item of manualMarket) {
+      const bettingData = await getBettingFromRedis(matchId, item);
+      if (bettingData) {
+        bettingData.exposureLimit = exposureLimit;
+        bettingObj[item] = JSON.stringify(bettingData);
+      }
+    }
+    if (Object.keys(bettingObj).length > 0) {
+      await settingAllBettingMatchRedis(matchId, bettingObj);
+    }
+    bettingObj = {};
+    for (let item of apiMarket) {
+      const bettingData = match[marketBettingTypeByBettingType[item]];
+      if (bettingData) {
+        bettingData.exposureLimit = exposureLimit;
+        bettingObj[marketBettingTypeByBettingType[item]] = JSON.stringify(bettingData);
+      }
+    }
+    if (Object.keys(bettingObj).length > 0) {
+      await settingMatchKeyInCache(matchId, bettingObj);
+    }
+  }
+}
+
+const updateMatchBettingExposureLimit = async (manualMarket, apiMarket, id, data, match) => {
+  const { maxBet, betLimit, minBet, exposureLimit, matchId, type } = data;
+  await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit });
+  await updateMatchBetting({ type: In([...manualMarket, ...apiMarket]), matchId: matchId }, { exposureLimit: exposureLimit });
+  const isMatchExist = await hasBettingInCache(matchId);
+  if (isMatchExist) {
+    const match = await getMatchFromCache(matchId);
     const bettingData = await getBettingFromRedis(matchId, type);
+    bettingData.maxBet = maxBet;
+    bettingData.minBet = minBet ?? match.betFairSessionMinBet;
+    bettingData.betLimit = betLimit;
     bettingData.exposureLimit = exposureLimit;
-    await updateBettingMatchRedis(matchId, type, bettingData);
+    let bettingObj = {};
+    bettingObj[type] = JSON.stringify(bettingData);
+    for (let item of manualMarket) {
+      if (type != item) {
+        const bettingData = await getBettingFromRedis(matchId, item);
+        if (bettingData) {
+          bettingData.exposureLimit = exposureLimit;
+          bettingObj[item] = JSON.stringify(bettingData);
+        }
+      }
+    }
+    await settingAllBettingMatchRedis(matchId, bettingObj);
+    bettingObj = {};
+    for (let item of apiMarket) {
+      const bettingData = match[marketBettingTypeByBettingType[item]];
+      if (bettingData) {
+        bettingData.exposureLimit = exposureLimit;
+        bettingObj[marketBettingTypeByBettingType[item]] = JSON.stringify(bettingData);
+      }
+    }
+    if (Object.keys(bettingObj).length > 0) {
+      await settingMatchKeyInCache(matchId, bettingObj);
+    }
   }
 }

@@ -168,8 +168,8 @@ exports.createMatch = async (req, res) => {
             marketId: item?.marketId,
             activeStatus: betStatusType.save,
             isManual: false,
-
-            betLimit: item?.betLimit
+            betLimit: item?.betLimit,
+            exposureLimit: 500000,
         }
 
         }
@@ -180,7 +180,8 @@ exports.createMatch = async (req, res) => {
           maxBet: item?.maxBet,
           isManual: true,
           gtype: gameTypeMatchBetting.match1,
-          betLimit: item?.betLimit
+          betLimit: item?.betLimit,
+          exposureLimit: 500000,
         }
       }) || []);
       matchBettings.push(...(bookmakers?.map((item, index) => {
@@ -193,7 +194,8 @@ exports.createMatch = async (req, res) => {
           maxBet: maxBet,
           isManual: true,
           gtype: gameTypeMatchBetting.match1,
-          betLimit: item?.betLimit
+          betLimit: item?.betLimit,
+          exposureLimit: 500000,
         };
       }) || []));
 

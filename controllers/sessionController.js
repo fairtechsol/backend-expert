@@ -11,7 +11,7 @@ const { getExpertResult } = require("../services/expertResultService");
 
 exports.addSession = async (req, res) => {
   try {
-    let { matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId, gtype = gameTypeMatchBetting.fancy, exposureLimit = 200000 } = req.body
+    let { matchId, type, name, minBet, maxBet, yesRate, noRate, yesPercent, noPercent, selectionId, gtype = gameTypeMatchBetting.fancy, exposureLimit } = req.body
     const { id: loginId } = req.user;
     if (type == sessionBettingType.marketSession && !selectionId) {
       return ErrorResponse({ statusCode: 400, message: { msg: "required", keys: { name: "Selection id" } } }, req, res);
@@ -46,7 +46,36 @@ exports.addSession = async (req, res) => {
       maxBet = match?.sessionMaxBets?.[type] || match.betFairSessionMaxBet
     }
     if (exposureLimit == null) {
-      exposureLimit = match?.sessionMaxBets?.[`${type}_exposureLimit`]
+      let newExpLimit = null;
+      switch (type) {
+        case sessionBettingType.session:
+          newExpLimit = 500000
+          break;
+        case sessionBettingType.fancy1:
+          newExpLimit = 200000
+          break;
+        case sessionBettingType.oddEven:
+          newExpLimit = 1000000
+          break;
+        case sessionBettingType.meter:
+          newExpLimit = 300000
+          break;
+        case sessionBettingType.khado:
+          newExpLimit = 200000
+          break;
+        case sessionBettingType.cricketCasino:
+          newExpLimit = 1000000
+          break;
+        case sessionBettingType.overByOver:
+          newExpLimit = 1000000
+          break;
+        case sessionBettingType.ballByBall:
+          newExpLimit = 500000
+          break;
+        default:
+          break;
+      }
+      exposureLimit = match?.sessionMaxBets?.[`${type}_exposureLimit`] ?? newExpLimit;
     }
     let status = teamStatus.suspended
     if (yesRate || noRate) {

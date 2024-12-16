@@ -132,9 +132,13 @@ const matchBettingSchema = new EntitySchema({
       nullable: false,
       default: 0
     },
-    exposureLimit:{
+    exposureLimit: {
       type: "int",
       nullable: true,
+    },
+    isCommissionActive: {
+      type: "boolean",
+      default: false
     }
   },
   relations: {

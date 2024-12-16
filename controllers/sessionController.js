@@ -46,7 +46,36 @@ exports.addSession = async (req, res) => {
       maxBet = match?.sessionMaxBets?.[type] || match.betFairSessionMaxBet
     }
     if (exposureLimit == null) {
-      exposureLimit = match?.sessionMaxBets?.[`${type}_exposureLimit`] ?? type == sessionBettingType.session ? 300000 : 500000;
+      let newExpLimit = null;
+      switch (type) {
+        case sessionBettingType.session:
+          newExpLimit = 500000
+          break;
+        case sessionBettingType.fancy1:
+          newExpLimit = 200000
+          break;
+        case sessionBettingType.oddEven:
+          newExpLimit = 1000000
+          break;
+        case sessionBettingType.meter:
+          newExpLimit = 300000
+          break;
+        case sessionBettingType.khado:
+          newExpLimit = 200000
+          break;
+        case sessionBettingType.cricketCasino:
+          newExpLimit = 1000000
+          break;
+        case sessionBettingType.overByOver:
+          newExpLimit = 1000000
+          break;
+        case sessionBettingType.ballByBall:
+          newExpLimit = 500000
+          break;
+        default:
+          break;
+      }
+      exposureLimit = match?.sessionMaxBets?.[`${type}_exposureLimit`] ?? newExpLimit;
     }
     let status = teamStatus.suspended
     if (yesRate || noRate) {

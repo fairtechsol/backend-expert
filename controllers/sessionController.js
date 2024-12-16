@@ -46,7 +46,7 @@ exports.addSession = async (req, res) => {
       maxBet = match?.sessionMaxBets?.[type] || match.betFairSessionMaxBet
     }
     if (exposureLimit == null) {
-      exposureLimit = match?.sessionMaxBets?.[`${type}_exposureLimit`] ?? 500000;
+      exposureLimit = match?.sessionMaxBets?.[`${type}_exposureLimit`] ?? type == sessionBettingType.session ? 300000 : 500000;
     }
     let status = teamStatus.suspended
     if (yesRate || noRate) {

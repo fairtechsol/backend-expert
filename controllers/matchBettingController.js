@@ -568,7 +568,7 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
 
 exports.addAndUpdateMatchBetting = async (req, res) => {
   try {
-    const { matchId, type, name, maxBet, minBet, marketId, id, gtype, metaData, runners, betLimit = 0, exposureLimit } = req.body;
+    const { matchId, type, name, maxBet, minBet, marketId, id, gtype, metaData, runners, betLimit = 0, exposureLimit, isCommissionActive } = req.body;
     const match = await getMatchById(matchId, ["id", "betFairSessionMinBet"]);
 
     if ((minBet ?? match.betFairSessionMinBet) > maxBet) {
@@ -694,13 +694,13 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         case matchBettingType.quickbookmaker1:
         case matchBettingType.quickbookmaker2:
         case matchBettingType.quickbookmaker3:
-          await updateMatchBettingExposureLimit([matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3], [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.matchOdd], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type }, match)
+          await updateMatchBettingExposureLimit([matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3], [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.matchOdd], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type, isCommissionActive }, match)
           break;
         case matchBettingType.tiedMatch2:
-          await updateMatchBettingExposureLimit([matchBettingType.tiedMatch2], [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type }, match);
+          await updateMatchBettingExposureLimit([matchBettingType.tiedMatch2], [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type, isCommissionActive}, match);
           break;
         case matchBettingType.completeManual:
-          await updateMatchBettingExposureLimit([matchBettingType.completeManual], [matchBettingType.completeMatch, matchBettingType.completeMatch1], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type }, match);
+          await updateMatchBettingExposureLimit([matchBettingType.completeManual], [matchBettingType.completeMatch, matchBettingType.completeMatch1], id, { maxBet, betLimit, minBet, exposureLimit, matchId, type, isCommissionActive }, match);
           break;
         default:
           break;
@@ -727,6 +727,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
           bettingData.maxBet = maxBet;
           bettingData.minBet = minBet ?? match.betFairSessionMinBet;
           bettingData.betLimit = betLimit;
+          bettingData.isCommissionActive = isCommissionActive;
           await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
         }
       }
@@ -755,7 +756,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
           isActive: true,
           metaData: metaData,
           betLimit: betLimit,
-          exposureLimit: exposureLimit || bettingData?.exposureLimit
+          exposureLimit: exposureLimit || bettingData?.exposureLimit,
+          isCommissionActive: isCommissionActive
         }
 
         const matchBetting = await addMatchBetting(matchBettingData);
@@ -769,7 +771,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.matchBettingMinMaxChange,
-      { matchId, type, maxBet, minBet, betId: id, betLimit, exposureLimit }
+      { matchId, type, maxBet, minBet, betId: id, betLimit, exposureLimit, isCommissionActive }
     );
     return SuccessResponse(
       {
@@ -821,14 +823,15 @@ const setExposureLimitMatch = async (manualMarket, apiMarket, data) => {
 }
 
 const updateMatchBettingExposureLimit = async (manualMarket, apiMarket, id, data, match) => {
-  const { maxBet, betLimit, minBet, exposureLimit, matchId, type } = data;
-  await updateMatchBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit });
+  const { maxBet, betLimit, minBet, exposureLimit, matchId, type , isCommissionActive} = data;
+  await updateMatchBetting({ id: id }, { maxBet: maxBet, isCommissionActive: isCommissionActive, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit });
   await updateMatchBetting({ type: In([...manualMarket, ...apiMarket]), matchId: matchId }, { exposureLimit: exposureLimit });
   const isMatchExist = await hasBettingInCache(matchId);
   if (isMatchExist) {
     const match = await getMatchFromCache(matchId);
     const bettingData = await getBettingFromRedis(matchId, type);
     bettingData.maxBet = maxBet;
+    bettingData.isCommissionActive = isCommissionActive;
     bettingData.minBet = minBet ?? match.betFairSessionMinBet;
     bettingData.betLimit = betLimit;
     bettingData.exposureLimit = exposureLimit;

@@ -181,7 +181,7 @@ exports.createMatch = async (req, res) => {
           isManual: true,
           gtype: gameTypeMatchBetting.match1,
           betLimit: item?.betLimit,
-          exposureLimit: 500000,
+          exposureLimit: 1000000,
         }
       }) || []);
       matchBettings.push(...(bookmakers?.map((item, index) => {

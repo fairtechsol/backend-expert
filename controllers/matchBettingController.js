@@ -568,7 +568,7 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
 
 exports.addAndUpdateMatchBetting = async (req, res) => {
   try {
-    const { matchId, type, name, maxBet, minBet, marketId, id, gtype, metaData, runners, betLimit = 0, exposureLimit = 500000 } = req.body;
+    const { matchId, type, name, maxBet, minBet, marketId, id, gtype, metaData, runners, betLimit = 0, exposureLimit } = req.body;
     const match = await getMatchById(matchId, ["id", "betFairSessionMinBet"]);
 
     if ((minBet ?? match.betFairSessionMinBet) > maxBet) {
@@ -740,6 +740,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
             },
           }, req, res);
         }
+        const bettingData = await getBettingFromRedis(matchId, mainMatchMarketType.includes(type) ? matchBettingType.quickbookmaker1 : [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.tiedMatch3].includes(type) ? matchBettingType.tiedMatch2 : matchBettingType.completeManual);
         const matchBettingData = {
           matchId: match.id,
           minBet: minBet ?? match.betFairSessionMinBet,
@@ -753,7 +754,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
           gtype: gtype,
           isActive: true,
           metaData: metaData,
-          betLimit: betLimit
+          betLimit: betLimit,
+          exposureLimit: exposureLimit || bettingData?.exposureLimit
         }
 
         const matchBetting = await addMatchBetting(matchBettingData);

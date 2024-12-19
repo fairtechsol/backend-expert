@@ -411,6 +411,7 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
           betPlacedId: betPlacedId,
           deleteReason: deleteReason,
           domainUrl: domainUrl,
+          isPermanentDelete: jobData.isPermanentDelete,
           betId: betId
         });
       } catch (error) {
@@ -501,6 +502,7 @@ expertMatchBetDeleteQueue.process(async function (job, done) {
           teamArateRedisKey: teamArateRedisKey,
           teamBrateRedisKey: teamBrateRedisKey,
           teamCrateRedisKey: teamCrateRedisKey,
+          isPermanentDelete: jobData.isPermanentDelete,
           redisObject: redisObj
         });
       } catch (error) {
@@ -576,6 +578,7 @@ expertRaceMatchBetDeleteQueue.process(async function (job, done) {
           betPlacedId: betPlacedId,
           deleteReason: deleteReason,
           domainUrl: domainUrl,
+          isPermanentDelete: jobData.isPermanentDelete,
           matchBetType
         });
       } catch (error) {
@@ -651,6 +654,7 @@ expertTournamentMatchBetDeleteQueue.process(async function (job, done) {
           betPlacedId: betPlacedId,
           deleteReason: deleteReason,
           domainUrl: domainUrl,
+          isPermanentDelete: jobData.isPermanentDelete,
           matchBetType
         });
       } catch (error) {

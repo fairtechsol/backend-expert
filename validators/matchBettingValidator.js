@@ -203,4 +203,5 @@ exports.addMatchBettingDataValidator = Joi.object({
     betLimit: Joi.number().allow(null).messages({
         'number.base': `Bet limit should be a type of 'number'`,
     }),
+    isCommissionActive: Joi.boolean().allow(null)
 });

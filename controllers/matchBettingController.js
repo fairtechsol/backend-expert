@@ -271,7 +271,8 @@ exports.getTournamentBettingDetails = async (req, res) => {
       title: matchDetails.title,
       matchType: matchDetails.matchType,
       stopAt: matchDetails.stopAt,
-      betPlaceStartBefore: matchDetails?.betPlaceStartBefore
+      betPlaceStartBefore: matchDetails?.betPlaceStartBefore,
+      rateThan100: matchDetails?.rateThan100
     };
 
     matchBetting = matchDetails[marketBettingTypeByBettingType[type]];

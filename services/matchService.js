@@ -131,13 +131,11 @@ exports.getMatchWithBettingAndSession = async (
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery
         .leftJoinAndMapMany(
-          "match.bookmakers",
-          "match.matchBettings",
-          "bookmakers",
-          "bookmakers.type IN (:...types)",
-          {
-            types: manualMatchBettingType,
-          }
+          "match.tournaments",
+          "match.tournamentBettings",
+          "tournamentBetting",
+          "tournamentBetting.isManual = true",
+          
         );
     }
     if (sessionMatchPrivilege || allPrivilege || addMatchPrivilege) {
@@ -156,9 +154,9 @@ exports.getMatchWithBettingAndSession = async (
       matchQuery = matchQuery.addSelect(["sessions.id", "sessions.name"]);
     }
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
-      matchQuery = matchQuery.addSelect(["bookmakers.id", "bookmakers.name", "bookmakers.type"]);
+      matchQuery = matchQuery.addSelect(["tournamentBetting.id", "tournamentBetting.name"]);
     }
-    matchQuery = matchQuery.orderBy("match.startAt", "DESC").addOrderBy('bookmakers.type', 'ASC').getManyAndCount();
+    matchQuery = matchQuery.orderBy("match.startAt", "DESC").addOrderBy('tournamentBetting.createdAt', 'ASC').getManyAndCount();
 
     // Execute the query and get the result along with count
     const [matches, count] = await matchQuery;

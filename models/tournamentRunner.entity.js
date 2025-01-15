@@ -1,5 +1,5 @@
 const { EntitySchema } = require("typeorm");
-const { baseColumnsSchemaPart } = require("../config/contants");
+const { baseColumnsSchemaPart, teamStatus } = require("../config/contants");
 const tournamentRunnerSchema = new EntitySchema({
     name: "tournamentRunner",
     columns: {
@@ -35,6 +35,12 @@ const tournamentRunnerSchema = new EntitySchema({
         layRate: {
             type: "float",
             default: 0
+        },
+        status: {
+            type: 'enum',
+            enum: Object.values(teamStatus),
+            nullable: true,
+            default: teamStatus.suspended
         },
         stopAt: {
             type: "timestamp with time zone",

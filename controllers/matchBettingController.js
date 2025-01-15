@@ -255,7 +255,7 @@ exports.getRaceBettingDetails = async (req, res) => {
 exports.getTournamentBettingDetails = async (req, res) => {
   try {
     const { matchId } = req.params;
-    const { type, id } = req.query;
+    const { type, id, isRate } = req.query;
     let matchBetting, matchDetails, runners;
     matchDetails = await getMatchFromCache(matchId);
     if (!matchDetails) {
@@ -296,11 +296,15 @@ exports.getTournamentBettingDetails = async (req, res) => {
         });
       }
 
+      
       response = {
         match: match,
         matchBetting: matchBetting,
         runners: runners
       };
+      if(isRate){
+        response.teamRates = await getExpertsRedisMatchData(matchId)        
+      }
     }
     else {
       if (!matchBetting) {

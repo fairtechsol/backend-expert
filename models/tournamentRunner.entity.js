@@ -28,7 +28,11 @@ const tournamentRunnerSchema = new EntitySchema({
             type: 'int',
             nullable: false
         },
-        rate: {
+        backRate: {
+            type: "float",
+            default: 0
+        },
+        layRate: {
             type: "float",
             default: 0
         },

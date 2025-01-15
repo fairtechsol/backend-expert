@@ -72,6 +72,14 @@ const tournamentBettingSchema = new EntitySchema({
     exposureLimit:{
       type: "int",
       nullable: true,
+    },
+    isCommissionActive: {
+      type: "boolean",
+      default: false
+    },
+    isManual:{
+      type: "boolean",
+      default: false
     }
   },
   relations: {

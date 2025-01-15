@@ -104,7 +104,6 @@ exports.matchBetApiChangeValidator = Joi.object({
     })
 });
 
-
 exports.racingBetApiChangeValidator = Joi.object({
     betIds: Joi.array().min(1).items(Joi.string().guid({ version: 'uuidv4' }).required().messages({
         'string.base': `Bet id should be a type of 'text'`,
@@ -173,7 +172,6 @@ exports.addMatchBettingDataValidator = Joi.object({
     gtype : Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
         "any.required": "Game type is required",
     }),
-    metaData: Joi.object().allow(null),
     runners: Joi.when(Joi.ref("type"), {
         is: matchBettingType.tournament,
         then: Joi.array().min(1).required().items(Joi.object().keys({
@@ -203,5 +201,6 @@ exports.addMatchBettingDataValidator = Joi.object({
     betLimit: Joi.number().allow(null).messages({
         'number.base': `Bet limit should be a type of 'number'`,
     }),
-    isCommissionActive: Joi.boolean().allow(null)
+    isCommissionActive: Joi.boolean().allow(null),
+    isManual: Joi.boolean().allow(null),
 });

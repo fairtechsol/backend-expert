@@ -28,6 +28,10 @@ const tournamentRunnerSchema = new EntitySchema({
             type: 'int',
             nullable: false
         },
+        rate: {
+            type: "float",
+            default: 0
+        },
         stopAt: {
             type: "timestamp with time zone",
             nullable: true,

@@ -627,6 +627,9 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         const tournamentBetting = await addTournamentBetting(tournamentBettingData);
          await insertTournamentRunners(runners?.map((item) => ({ ...item, bettingId: tournamentBetting?.id })));
         tournamentBetting.runners = await getTournamentRunners({ bettingId: tournamentBetting?.id });
+         // sort the runner by the sort priority
+        tournamentBetting.runners.sort((a, b) => a.sortPriority - b.sortPriority);
+        
         const isMatchExist = await hasMatchInCache(match?.id);
         if (isMatchExist) {
           const bettingData = (await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json")) || [];

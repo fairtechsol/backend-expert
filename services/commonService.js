@@ -759,6 +759,10 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
         },
       }
     }
+    // sort the runner by the sort priority
+    match.tournamentBettings?.forEach(item =>{
+      item.runners.sort((a, b) => a.sortPriority - b.sortPriority);
+    })
 
     const categorizedMatchBettings = {
       [matchBettingType.matchOdd]: null,

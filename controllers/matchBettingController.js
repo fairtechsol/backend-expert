@@ -6,11 +6,11 @@ const { getMatchBetting, getMatchAllBettings, getMatchBettingById, addMatchBetti
 const { getMatchById } = require("../services/matchService");
 const { getRacingBetting, getRunners, getRacingBettingById, addRaceBetting, updateRaceBetting, getRacingBettings } = require("../services/raceBettingService");
 const { getRacingMatchById } = require("../services/racingMatchService");
-const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData, updateBettingMatchRedis, getRaceFromCache, updateMatchKeyInCache, getSingleMatchKey, settingAllBettingMatchRedis } = require("../services/redis/commonfunction");
+const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFromCache, hasBettingInCache, hasMatchInCache, settingMatchKeyInCache, getExpertsRedisMatchData, updateBettingMatchRedis, getRaceFromCache, updateMatchKeyInCache, getSingleMatchKey, settingAllBettingMatchRedis, getExpertsRedisKeyData } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
-const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById, getTournamentBetting, getTournamentRunners, getTournamentBettings } = require("../services/tournamentBettingService");
+const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById, getTournamentBetting, getTournamentRunners, getTournamentBettings, addTournamentRunners } = require("../services/tournamentBettingService");
 
 exports.getMatchBetting = async (req, res) => {
   try {
@@ -18,9 +18,9 @@ exports.getMatchBetting = async (req, res) => {
     const { id: matchBetId, type } = req.query;
     let matchBetting;
 
-    let matchDetails=await getMatchFromCache(matchId);
+    let matchDetails = await getMatchFromCache(matchId);
 
-    if(!matchDetails){
+    if (!matchDetails) {
       matchDetails = await getMatchById(matchId, ["id", "rateThan100"]);
     }
 
@@ -78,7 +78,7 @@ exports.getMatchBetting = async (req, res) => {
       if (expertResults?.length != 0) {
         if (expertResults?.length == 1) {
           matchBetting.resultStatus = resultStatus.pending;
-        } else{
+        } else {
           matchBetting.resultStatus = resultStatus.missMatched;
         }
       }
@@ -136,7 +136,7 @@ exports.getMatchBettingDetails = async (req, res) => {
     };
     if (manualBets.includes(type)) {
       matchBetting = await getBettingFromRedis(matchId, type);
-    } else if(matchDetails){
+    } else if (matchDetails) {
       matchBetting = matchDetails[marketBettingTypeByBettingType[type]];
       if (id && type == matchBettingType.other) {
         matchBetting = matchDetails?.other?.find((item) => item?.id == id);
@@ -296,14 +296,14 @@ exports.getTournamentBettingDetails = async (req, res) => {
         });
       }
 
-      
+
       response = {
         match: match,
         matchBetting: matchBetting,
-        runners: runners
+        runners: runners?.sort((a, b) => a.sortPriority - b.sortPriority)
       };
-      if(isRate){
-        response.teamRates = await getExpertsRedisMatchData(matchId)        
+      if (isRate) {
+        response.teamRates = JSON.parse((await getExpertsRedisKeyData(`${id}_profitLoss_${matchId}`)) || "{}")
       }
     }
     else {
@@ -342,8 +342,8 @@ exports.matchBettingStatusChange = async (req, res) => {
     const { isStop, betId, isManual, isTournament } = req.body;
 
     if (isTournament) {
-      const tournamentData = await getTournamentBettingById(betId, ["id", "matchId","activeStatus"]);
-      if(tournamentData.activeStatus==betStatusType.result){
+      const tournamentData = await getTournamentBettingById(betId, ["id", "matchId", "activeStatus"]);
+      if (tournamentData.activeStatus == betStatusType.result) {
         return ErrorResponse({
           statusCode: 400,
           message: {
@@ -418,7 +418,7 @@ exports.matchBettingStatusChange = async (req, res) => {
         }
       }
 
-      
+
     }
     return SuccessResponse(
       {
@@ -444,7 +444,7 @@ exports.raceBettingStatusChange = async (req, res) => {
 
     const raceBettingUpdate = await getRacingBettingById(betId);
 
-    if(!raceBettingUpdate){
+    if (!raceBettingUpdate) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match betting" } } }, req, res);
     }
 
@@ -498,8 +498,8 @@ exports.matchBettingRateApiProviderChange = async (req, res) => {
 
     await updateMatchBetting({ id: In(betIds) }, { apiType: apiType });
 
-    const matchBettings=await getMatchAllBettings({id:In(betIds)});
-   
+    const matchBettings = await getMatchAllBettings({ id: In(betIds) });
+
 
     const hasMatchDetailsInCache = await hasMatchInCache(
       matchId
@@ -512,11 +512,11 @@ exports.matchBettingRateApiProviderChange = async (req, res) => {
         }, {})
       );
     }
- 
+
     return SuccessResponse(
       {
         statusCode: 200,
-        message: { msg: "updated", keys: { name: "Api type" } }, 
+        message: { msg: "updated", keys: { name: "Api type" } },
       },
       req,
       res
@@ -533,12 +533,12 @@ exports.matchBettingRateApiProviderChange = async (req, res) => {
 
 exports.raceBettingRateApiProviderChange = async (req, res) => {
   try {
-    const { apiType,betIds,matchId } = req.body;
+    const { apiType, betIds, matchId } = req.body;
 
     await updateRaceBetting({ id: In(betIds) }, { apiType: apiType });
 
     const raceBettings = await getRacingBettings({ id: In(betIds) });
-   
+
 
     const hasRaceDetailsInCache = await hasMatchInCache(
       matchId
@@ -551,12 +551,12 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
         }, {})
       );
     }
-  
+
 
     return SuccessResponse(
       {
         statusCode: 200,
-        message: { msg: "updated", keys: { name: "Api type" } }, 
+        message: { msg: "updated", keys: { name: "Api type" } },
       },
       req,
       res
@@ -584,66 +584,71 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         },
       }, req, res);
     }
-   
-      if (id) {
-        await updateTournamentBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit, isCommissionActive: isCommissionActive });
-        const isMatchExist = await hasMatchInCache(matchId);
-        if (isMatchExist) {
-          const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
-          if (Array.isArray(bettingData)) {
-            bettingData.find((item) => item?.id == id).maxBet = maxBet;
-            bettingData.find((item) => item?.id == id).minBet = minBet ?? match.betFairSessionMinBet;
-            bettingData.find((item) => item?.id == id).betLimit = betLimit;
-            bettingData.find((item) => item?.id == id).exposureLimit = exposureLimit;
-            bettingData.find((item) => item?.id == id).isCommissionActive = isCommissionActive;
-            await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
-          }
-        }
+    let tournamentBettingData;
+    if (id) {
+      await updateTournamentBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit, isCommissionActive: isCommissionActive, name: name });
+      await addTournamentRunners(runners?.map((item) => ({ runnerName: item.runnerName, id: item.id })));
+      const isMatchExist = await hasMatchInCache(matchId);
+      if (isMatchExist) {
+        const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
+        if (Array.isArray(bettingData)) {
+          bettingData.find((item) => item?.id == id).maxBet = maxBet;
+          bettingData.find((item) => item?.id == id).minBet = minBet ?? match.betFairSessionMinBet;
+          bettingData.find((item) => item?.id == id).betLimit = betLimit;
+          bettingData.find((item) => item?.id == id).exposureLimit = exposureLimit;
+          bettingData.find((item) => item?.id == id).isCommissionActive = isCommissionActive;
 
-      }
-      else {
-        const hasTournamentBetting = await getTournamentBetting({ marketId: marketId, matchId: matchId }, ["id"]);
-        if (hasTournamentBetting) {
-          return ErrorResponse({
-            statusCode: 400,
-            message: {
-              msg: "bet.alreadyExist",
-            },
-          }, req, res);
-        }
-        const tournamentBettingData = {
-          matchId: match.id,
-          minBet: minBet ?? match.betFairSessionMinBet,
-          createBy: req.user.id,
-          type: type,
-          name: name,
-          maxBet: maxBet,
-          marketId: marketId,
-          activeStatus: betStatusType.save,
-          gtype: gtype,
-          isActive: true,
-          betLimit: betLimit,
-          exposureLimit: exposureLimit,
-          isCommissionActive: isCommissionActive,
-          isManual: isManual
-        };
-
-        const tournamentBetting = await addTournamentBetting(tournamentBettingData);
-         await insertTournamentRunners(runners?.map((item) => ({ ...item, bettingId: tournamentBetting?.id })));
-        tournamentBetting.runners = await getTournamentRunners({ bettingId: tournamentBetting?.id });
-         // sort the runner by the sort priority
-        tournamentBetting.runners.sort((a, b) => a.sortPriority - b.sortPriority);
-        
-        const isMatchExist = await hasMatchInCache(match?.id);
-        if (isMatchExist) {
-          const bettingData = (await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json")) || [];
-          if (Array.isArray(bettingData)) {
-            bettingData.push(tournamentBetting);
-            await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
+          for (let i = 0; i < runners.length; i++) {
+            bettingData.find((item) => item?.id == id).runners.find((item) => item.id == runners[i].id).runnerName = runners[i].runnerName;
           }
+          await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
         }
       }
-    
+
+    }
+    else {
+      const hasTournamentBetting = await getTournamentBetting({ marketId: marketId, matchId: matchId }, ["id"]);
+      if (hasTournamentBetting) {
+        return ErrorResponse({
+          statusCode: 400,
+          message: {
+            msg: "bet.alreadyExist",
+          },
+        }, req, res);
+      }
+      tournamentBettingData = {
+        matchId: match.id,
+        minBet: minBet ?? match.betFairSessionMinBet,
+        createBy: req.user.id,
+        type: type,
+        name: name,
+        maxBet: maxBet,
+        marketId: marketId,
+        activeStatus: betStatusType.save,
+        gtype: gtype,
+        isActive: true,
+        betLimit: betLimit,
+        exposureLimit: exposureLimit,
+        isCommissionActive: isCommissionActive,
+        isManual: isManual
+      };
+
+      const tournamentBetting = await addTournamentBetting(tournamentBettingData);
+      await insertTournamentRunners(runners?.map((item) => ({ ...item, bettingId: tournamentBetting?.id })));
+      tournamentBetting.runners = await getTournamentRunners({ bettingId: tournamentBetting?.id });
+      // sort the runner by the sort priority
+      tournamentBetting.runners.sort((a, b) => a.sortPriority - b.sortPriority);
+
+      const isMatchExist = await hasMatchInCache(match?.id);
+      if (isMatchExist) {
+        const bettingData = (await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json")) || [];
+        if (Array.isArray(bettingData)) {
+          bettingData.push(tournamentBetting);
+          await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
+        }
+      }
+    }
+
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.matchBettingMinMaxChange,
@@ -653,6 +658,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
       {
         statusCode: 200,
         message: { msg: "updated", keys: { name: "Match betting" } },
+        data: { id: tournamentBettingData?.id || id }
       },
       req,
       res

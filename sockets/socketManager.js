@@ -221,12 +221,12 @@ exports.socketManager = (server) => {
         matchBettingData.runners.find((item) => item.id == items.id).layRate = items.lay;
         matchBettingData.runners.find((item) => item.id == items.id).status = items.status;
       })
-      addTournamentRunners(matchBettingData.runners);
       if (redisMatchTournament) {
         const currRunnerIndex=redisMatchTournament.findIndex((item)=>item.id==id);
         redisMatchTournament[currRunnerIndex]=matchBettingData;
         updateMatchKeyInCache(matchId, "tournament", JSON.stringify(redisMatchTournament))
       }
+      addTournamentRunners(matchBettingData.runners);
       return;
     });
 

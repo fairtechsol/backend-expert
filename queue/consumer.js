@@ -386,7 +386,7 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
           userDeleteProfitLoss.betData.map((ob, index) => {
             let partnershipData = (ob.profitLoss * partnership) / 100;
             if (ob.odds == parentPLbetPlaced[index].odds) {
-              parentPLbetPlaced[index].profitLoss = parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData;
+              parentPLbetPlaced[index].profitLoss = parseFloat((parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData).toFixed(2));
               if (newMaxLossParent < Math.abs(parentPLbetPlaced[index].profitLoss) && parentPLbetPlaced[index].profitLoss < 0) {
                 newMaxLossParent = Math.abs(parentPLbetPlaced[index].profitLoss);
               }

@@ -484,7 +484,9 @@ exports.matchDetails = async (req, res) => {
   try {
     const { id: matchId } = req.params;
     const userId = req?.user?.id;
-
+    let { isSessionAllowed, isMarketAllowed } = req.query;
+    isSessionAllowed = isSessionAllowed == 'false' ? false : true
+    isMarketAllowed = isMarketAllowed == 'false' ? false : true
     let match;
 
     // splitting match ids to check if user asking for multiple match or single
@@ -492,10 +494,10 @@ exports.matchDetails = async (req, res) => {
     if (matchIds?.length > 1) {
       match = [];
       for (let i = 0; i < matchIds?.length; i++) {
-        match.push(await commonGetMatchDetails(matchIds[i], userId));
+        match.push(await commonGetMatchDetails(matchIds[i], userId, isSessionAllowed, isMarketAllowed));
       }
     } else {
-      match = await commonGetMatchDetails(matchId, userId);
+      match = await commonGetMatchDetails(matchId, userId, isSessionAllowed, isMarketAllowed);
     }
 
     return SuccessResponse(

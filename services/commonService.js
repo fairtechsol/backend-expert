@@ -604,7 +604,7 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
     
 };
 
-exports.commonGetMatchDetails = async (matchId, userId) => {
+exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true, isMarketAllowed = true) => {
   let match = await getMatchFromCache(matchId);
   let expertResults = await getExpertResultBetWise({ matchId: matchId });
   expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId })), ...(await getExpertResultSessionBetWise({ matchId: matchId }))]
@@ -663,73 +663,89 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       updateMultipleMarketSessionIdRedis(matchId, apiSelectionIdObj);
     }
     else {
-      if (userId) {
-        sessions = await getSessionBattingByMatchId(matchId);
-        sessions = sessions?.map((item) => JSON.stringify(item));
-      }
-      else {
-        sessions = Object.values(sessions);
-      }
-    }
-    const categorizedMatchBettings = {
-      ...(match.matchOdd
-        ? { [matchBettingType.matchOdd]: match.matchOdd }
-        : {}),
-      ...(match.tournament
-        ? { [matchBettingType.tournament]: match.tournament }
-        : {}),
-      ...(match.bookmaker2
-        ? { [matchBettingType.bookmaker2]: match.bookmaker2 }
-          : {}),
-      ...(match.marketBookmaker
-        ? { [matchBettingType.bookmaker]: match.marketBookmaker }
-        : {}),
-      ...(match.marketCompleteMatch
-        ? { "marketCompleteMatch": match.marketCompleteMatch }
-        : {}),
-      ...(match.marketCompleteMatch1
-        ? { "marketCompleteMatch1": match.marketCompleteMatch1 }
-        : {}),
-      quickBookmaker: [],
-      ...(match.marketTiedMatch
-        ? { "apiTideMatch": match.marketTiedMatch }
-        : {}),
-      ...(match.marketTiedMatch2
-        ? { "apiTideMatch2": match.marketTiedMatch2 }
-        : {}),
-      manualTiedMatch: null,
-      manualCompleteMatch: null,
-      ...(match.other
-        ? { "other": match.other }
-        : {})
-    };
-    // Iterate through matchBettings and categorize them
-    (Object.values(betting) || []).forEach(
-      (item) => {
-        item = JSON.parse(item);
-        switch (item?.type) {
-          case matchBettingType.quickbookmaker1:
-          case matchBettingType.quickbookmaker2:
-          case matchBettingType.quickbookmaker3:
-            categorizedMatchBettings.quickBookmaker.push(item);
-            break;
-          case matchBettingType.tiedMatch2:
-            categorizedMatchBettings.manualTiedMatch = item;
-            break;
-          case matchBettingType.completeManual:
-            categorizedMatchBettings.manualCompleteMatch = item;
-            break;
+      if (isSessionAllowed) {
+        if (userId) {
+          sessions = await getSessionBattingByMatchId(matchId);
+          sessions = sessions?.map((item) => JSON.stringify(item));
+        }
+        else {
+          sessions = Object.values(sessions);
         }
       }
-    );
-    // Assign the categorized match betting to the match object
-    Object.assign(match, categorizedMatchBettings);
+    }
 
+    if (isSessionAllowed) {
+      match.sessionBettings = sessions;
+    }
+
+    if (isMarketAllowed) {
+      const categorizedMatchBettings = {
+        ...(match.matchOdd
+          ? { [matchBettingType.matchOdd]: match.matchOdd }
+          : {}),
+        ...(match.tournament
+          ? { [matchBettingType.tournament]: match.tournament }
+          : {}),
+        ...(match.bookmaker2
+          ? { [matchBettingType.bookmaker2]: match.bookmaker2 }
+          : {}),
+        ...(match.marketBookmaker
+          ? { [matchBettingType.bookmaker]: match.marketBookmaker }
+          : {}),
+        ...(match.marketCompleteMatch
+          ? { "marketCompleteMatch": match.marketCompleteMatch }
+          : {}),
+        ...(match.marketCompleteMatch1
+          ? { "marketCompleteMatch1": match.marketCompleteMatch1 }
+          : {}),
+        quickBookmaker: [],
+        ...(match.marketTiedMatch
+          ? { "apiTideMatch": match.marketTiedMatch }
+          : {}),
+        ...(match.marketTiedMatch2
+          ? { "apiTideMatch2": match.marketTiedMatch2 }
+          : {}),
+        manualTiedMatch: null,
+        manualCompleteMatch: null,
+        ...(match.other
+          ? { "other": match.other }
+          : {})
+      };
+      // Iterate through matchBettings and categorize them
+      (Object.values(betting) || []).forEach(
+        (item) => {
+          item = JSON.parse(item);
+          switch (item?.type) {
+            case matchBettingType.quickbookmaker1:
+            case matchBettingType.quickbookmaker2:
+            case matchBettingType.quickbookmaker3:
+              categorizedMatchBettings.quickBookmaker.push(item);
+              break;
+            case matchBettingType.tiedMatch2:
+              categorizedMatchBettings.manualTiedMatch = item;
+              break;
+            case matchBettingType.completeManual:
+              categorizedMatchBettings.manualCompleteMatch = item;
+              break;
+          }
+        }
+      );
+      // Assign the categorized match betting to the match object
+      Object.assign(match, categorizedMatchBettings);
+    }
+    else{
+      delete match.other;
+      delete match.tournament;
+      delete match.matchOdd;
+      delete match.marketCompleteMatch;
+      delete match.marketCompleteMatch1;
+      delete match.marketCompleteMatch;
+      delete match.bookmaker2;
+    }
+    
     delete match.marketBookmaker;
     delete match.marketTiedMatch;
     delete match.marketTiedMatch2;
-
-    match.sessionBettings = sessions;
   } else {
     match = await getMatchDetails(matchId, null);
     if (!match) {
@@ -844,17 +860,25 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
     }
     settingAllSessionMatchRedis(matchId, result);
     updateMultipleMarketSessionIdRedis(matchId, apiSelectionIdObj);
+    if (isSessionAllowed) {
+      match.sessionBettings = sessions;
+    }
 
-    match.sessionBettings = sessions;
-    // Assign the categorized match betting to the match object
-    Object.assign(match, categorizedMatchBettings);
-    match.tournament = payload.tournament;
+    if (isMarketAllowed) {
+      // Assign the categorized match betting to the match object
+      Object.assign(match, categorizedMatchBettings);
+      match.tournament = payload.tournament;
+    }
     delete match.matchBettings;
   }
   let teamRates = await getExpertsRedisMatchData(matchId);
 
-  match.teamRates = teamRates;
+  if (isMarketAllowed) {
+    match.teamRates = teamRates;
+  }
   if (userId) {
+  if (isSessionAllowed) {
+
     const redisIds = match.sessionBettings?.map((item, index) => {
       const sessionBettingData = JSON.parse(item);
       const currSessionExpertResult = expertResults.find((result) => result.betId == sessionBettingData?.id);
@@ -877,8 +901,9 @@ exports.commonGetMatchDetails = async (matchId, userId) => {
       let sessionData = await getExpertsRedisSessionDataByKeys(redisIds);
       match.sessionProfitLoss = sessionData;
     }
-    if (!(match.stopAt)) {
-      let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
+  }
+    if (!(match.stopAt) && isMarketAllowed) {
+      let qBookId = match.quickBookmaker?.filter(book => book.type == matchBettingType.quickbookmaker1);
       let matchResult = expertResults.find((result) => result.betId == qBookId[0]?.id);
       if (matchResult) {
           match.resultStatus = matchResult.status;

@@ -592,6 +592,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
       if (isMatchExist) {
         const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
         if (Array.isArray(bettingData)) {
+          bettingData.find((item) => item?.id == id).name = name;
           bettingData.find((item) => item?.id == id).maxBet = maxBet;
           bettingData.find((item) => item?.id == id).minBet = minBet ?? match.betFairSessionMinBet;
           bettingData.find((item) => item?.id == id).betLimit = betLimit;

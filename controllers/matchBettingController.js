@@ -305,6 +305,18 @@ exports.getTournamentBettingDetails = async (req, res) => {
       if (isRate) {
         response.teamRates = JSON.parse((await getExpertsRedisKeyData(`${id}_profitLoss_${matchId}`)) || "{}")
       }
+
+      if (matchBetting.activeStatus != betStatus.result) {
+        let expertResults = await getExpertResult({ betId: id });
+  
+        if (expertResults?.length != 0) {
+          if (expertResults?.length == 1) {
+            matchBetting.resultStatus = resultStatus.pending;
+          } else {
+            matchBetting.resultStatus = resultStatus.missMatched;
+          }
+        }
+      }
     }
     else {
       if (!matchBetting) {

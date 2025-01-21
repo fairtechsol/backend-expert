@@ -643,3 +643,5 @@ exports.cardGames = [
     id: "7a5e7d3e-7a5e-4a5e-9a7e-7a5e7d3e8c63"
   }
 ];
+
+exports.matchOddName="MATCH_ODDS"

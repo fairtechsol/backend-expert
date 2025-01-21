@@ -15,6 +15,7 @@ const {
   redisKeysMarketWise,
   scoreBasedMarket,
   otherEventMatchBettingRedisKey,
+  matchOddName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { addResult, deleteResult, getResult } = require("../services/betService");
@@ -1926,7 +1927,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
         match,
         matchBettingType: matchOddBetting?.type,
         isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting,
-        isMatchOdd: matchOddBetting.name == "MATCH_ODDS"
+        isMatchOdd: matchOddBetting.name == matchOddName
       }
     )
       .then((data) => {

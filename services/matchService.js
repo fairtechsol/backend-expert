@@ -3,7 +3,7 @@ const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
 const RaceSchema = require("../models/racingMatch.entity");
-const { matchBettingType, betStatusType, manualMatchBettingType, gameType } = require("../config/contants");
+const { matchBettingType, betStatusType, manualMatchBettingType, gameType, matchOddName } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
 const race = AppDataSource.getRepository(RaceSchema);
 
@@ -83,6 +83,21 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
           {
             type: matchBettingType.matchOdd,
           }
+        )
+        .leftJoinAndMapOne(
+          "match.matchOddTournament",
+          "tournamentBetting",
+          "tournamentBetting",
+          "tournamentBetting.name = :name and tournamentBetting.matchId = match.id",
+          {
+            name: matchOddName,
+          }
+        )
+        .leftJoinAndMapMany(
+          "tournamentBetting.runners",
+          "tournamentRunner",
+          "tournamentRunner",
+          "tournamentRunner.bettingId = tournamentBetting.id"
         )
         .leftJoinAndMapMany(
           "match.isBookmaker",

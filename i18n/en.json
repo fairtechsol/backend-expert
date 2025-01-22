@@ -58,7 +58,8 @@
     "resultDeclareOrProgress": "Result is already declare or inprogress.",
     "declareOtherMarket":"Please declare all other market results.",
     "matchAlreadyDeclared":"You can not undeclare this market as match result is already declared.",
-    "alreadyExist":"Market already added."
+    "alreadyExist":"Market already added.",
+    "canNotAddTournament":"Match is already declare so you can not add new markets."
   }
   
 }

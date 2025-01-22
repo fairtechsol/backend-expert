@@ -2097,7 +2097,8 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
         matchId,
         match,
         matchBetting: bet,
-        matchBettingType: matchOddBetting?.type
+        matchBettingType: matchOddBetting?.type,
+        isMatchOdd: matchOddBetting.name == matchOddName
       }
     )
       .then((data) => {

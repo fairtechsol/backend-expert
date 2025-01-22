@@ -586,7 +586,15 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
 exports.addAndUpdateMatchBetting = async (req, res) => {
   try {
     const { matchId, type, name, maxBet, minBet, marketId, id, gtype, runners, betLimit = 0, exposureLimit, isCommissionActive, isManual } = req.body;
-    const match = await getMatchById(matchId, ["id", "betFairSessionMinBet"]);
+    const match = await getMatchById(matchId, ["id", "betFairSessionMinBet", "stopAt"]);
+    if (match.stopAt) {
+      return ErrorResponse({
+        statusCode: 400,
+        message: {
+          msg: "bet.canNotAddTournament",
+        },
+      }, req, res);
+    }
 
     if ((minBet ?? match.betFairSessionMinBet) > maxBet) {
       return ErrorResponse({

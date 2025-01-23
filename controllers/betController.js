@@ -1883,20 +1883,20 @@ exports.declareTournamentMatchResult = async (req, res) => {
     const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
     const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
 
-
-    const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
-    if (sessions?.length > 0) {
-      logger.error({
-        error: `Sessions is not declared yet.`,
-      });
-      updateTournamentBetting({ id: betId}, { activeStatus: betStatus.save, result: null, stopAt: null});
-      return ErrorResponse(
-        { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
-        req,
-        res
-      );
+    if (!unDeclaredMatchBettingTournament && !unDeclaredMatchBetting) {
+      const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
+      if (sessions?.length > 0) {
+        logger.error({
+          error: `Sessions is not declared yet.`,
+        });
+        await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+        return ErrorResponse(
+          { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
+          req,
+          res
+        );
+      }
     }
-
     const resultValidate = await checkResult({
       betId: matchOddBetting.id,
       matchId: matchOddBetting.matchId,

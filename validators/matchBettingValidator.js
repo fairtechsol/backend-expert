@@ -149,6 +149,7 @@ exports.addMatchBettingDataValidator = Joi.object({
     gtype: Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
         "any.required": "Game type is required",
     }),
+    sNo: Joi.number(),
     runners: Joi.when(Joi.ref("type"), {
         is: matchBettingType.tournament,
         then: Joi.array().min(1).required().items(Joi.object().keys({

@@ -622,7 +622,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
           for (let i = 0; i < runners.length; i++) {
             bettingData.find((item) => item?.id == id).runners.find((item) => item.id == runners[i].id).runnerName = runners[i].runnerName;
           }
-          await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
+          await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
         }
       }
 
@@ -666,7 +666,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         const bettingData = (await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json")) || [];
         if (Array.isArray(bettingData)) {
           bettingData.push(tournamentBetting);
-          await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType[type], JSON.stringify(bettingData));
+          await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType[type], JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
         }
       }
     }

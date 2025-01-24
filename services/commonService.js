@@ -822,7 +822,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
     let payload = {
       ...match,
       matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
-      tournament: [...match?.tournamentBettings||[]],
+      tournament: [...match?.tournamentBettings?.sort((a, b) => a.sNo - b.sNo) || []],
       marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
       marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
       marketTiedMatch: categorizedMatchBettings.apiTideMatch,
@@ -1074,7 +1074,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
       }
 
     });
-    match.tournament = [...(match.tournamentBettings || [])];
+    match.tournament = [...(match.tournamentBettings?.sort((a, b) => a.sNo - b.sNo) || [])];
     delete match.tournamentBettings;
     let payload = {
       ...match,

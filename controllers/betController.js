@@ -1957,22 +1957,6 @@ exports.declareTournamentMatchResult = async (req, res) => {
       profitLoss: fwProfitLoss,
       commission: response?.data?.totalCommission
     });
-
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultDeclared,
-      {
-        matchId: matchId,
-        result,
-        profitLoss: fwProfitLoss,
-        stopAt: match.stopAt,
-        activeStatus: betStatusType.result,
-        betId: matchOddBetting?.id,
-        betType: matchOddBetting?.type,
-        type: match?.matchType,
-        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
-      }
-    );
  
     if (!unDeclaredMatchBetting && !unDeclaredMatchBettingTournament) {
       deleteAllMatchRedis(matchId);
@@ -1991,6 +1975,21 @@ exports.declareTournamentMatchResult = async (req, res) => {
     }
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${betId}${redisKeys.profitLoss}_${matchId}`);
 
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchResultDeclared,
+      {
+        matchId: matchId,
+        result,
+        profitLoss: fwProfitLoss,
+        stopAt: match.stopAt,
+        activeStatus: betStatusType.result,
+        betId: matchOddBetting?.id,
+        betType: matchOddBetting?.type,
+        type: match?.matchType,
+        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
+      }
+    );
     return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } }, data: { result, profitLoss: fwProfitLoss } }, req, res);
   } catch (err) {
     logger.error({

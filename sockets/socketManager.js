@@ -221,6 +221,7 @@ exports.socketManager = (server) => {
         matchBettingData.runners.find((item) => item.id == items.id).layRate = items.lay;
         matchBettingData.runners.find((item) => item.id == items.id).status = items.status;
       })
+      matchBettingData.runners=matchBettingData?.runners?.sort((a,b)=> a.sortPriority - b.sortPriority)
       if (redisMatchTournament) {
         const currRunnerIndex=redisMatchTournament.findIndex((item)=>item.id==id);
         redisMatchTournament[currRunnerIndex]=matchBettingData;

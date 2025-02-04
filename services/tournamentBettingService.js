@@ -46,6 +46,16 @@ exports.getTournamentBettings = async (where, select) => {
   });
 };
 
+exports.getSingleTournamentBetting = async (where, select) => {
+  return await TournamentBetting.findOne({
+      where: where,
+      select: select,
+      relations: {
+          runners: true
+      }
+  });
+};
+
 exports.getTournamentBettingById = async (id, select) => {
   return await TournamentBetting.findOne({
     where: { id: id },
@@ -63,4 +73,8 @@ exports.getTournamentRunners = async (where, select) => {
       where: where,
       select: select,
   });
+};
+
+exports.addTournamentRunners = async (body) => {
+  return await TournamentRunner.save(body);
 };

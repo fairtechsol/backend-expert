@@ -10,6 +10,8 @@ const {
   updateSessionMatchRedis,
   addAllsessionInRedis,
   addAllMatchBetting,
+  getMatchTournamentFromCache,
+  updateMatchKeyInCache,
 } = require("../services/redis/commonfunction");
 const { updateMatchBettingById } = require("../services/matchBettingService");
 const {
@@ -19,6 +21,7 @@ const { jsonValidator } = require("../middleware/joi.validator");
 const { updateSessionBetting } = require("../services/sessionBettingService");
 const { UpdateSessionRateInSocket } = require("../validators/sessionValidator");
 const redis = require("socket.io-redis");
+const { getTournamentBetting, getSingleTournamentBetting, addTournamentRunners } = require("../services/tournamentBettingService");
 require("dotenv").config();
 let io;
 /**
@@ -81,7 +84,7 @@ const handleConnection = async (client) => {
     client.join(userId);
 
     // Handle additional logic based on the user's role
-   
+
     client.join(socketData.expertRoomSocket);
   } catch (err) {
     // Handle any errors by disconnecting the client
@@ -200,32 +203,31 @@ exports.socketManager = (server) => {
       if (error) {
         return;
       }
-      let { matchId, id, type } = body;
+      let { matchId, id, teams } = body;
 
       this.sendMessageToUser(
         socketData.expertRoomSocket,
         "updateMatchBettingRateClient",
         body
       );
-
+      const redisMatchTournament = await getMatchTournamentFromCache(matchId);
       let matchBettingData = {};
-      matchBettingData = await getBettingFromRedis(matchId, type);
+      matchBettingData = (redisMatchTournament).find((item) => item.id == id);
       if (!matchBettingData) {
-        await addAllMatchBetting(matchId);
-        matchBettingData = await getBettingFromRedis(matchId, type);
+        matchBettingData = await getSingleTournamentBetting({ id: id });
       }
-      matchBettingData["backTeamA"] = body.backTeamA ? body.backTeamA : 0;
-      matchBettingData["backTeamB"] = body.backTeamB ? body.backTeamB : 0;
-      matchBettingData["backTeamC"] = body.backTeamC ? body.backTeamC : 0;
-      matchBettingData["layTeamA"] = body.layTeamA ? body.layTeamA : 0;
-      matchBettingData["layTeamB"] = body.layTeamB ? body.layTeamB : 0;
-      matchBettingData["layTeamC"] = body.layTeamC ? body.layTeamC : 0;
-      matchBettingData["statusTeamA"] = body.statusTeamA;
-      matchBettingData["statusTeamB"] = body.statusTeamB;
-      matchBettingData["statusTeamC"] = body.statusTeamC;
-
-      updateMatchBettingById(id, matchBettingData);
-      updateBettingMatchRedis(matchId, type, matchBettingData);
+      teams.forEach((items) => {
+        matchBettingData.runners.find((item) => item.id == items.id).backRate = items.back;
+        matchBettingData.runners.find((item) => item.id == items.id).layRate = items.lay;
+        matchBettingData.runners.find((item) => item.id == items.id).status = items.status;
+      })
+      matchBettingData.runners=matchBettingData?.runners?.sort((a,b)=> a.sortPriority - b.sortPriority)
+      if (redisMatchTournament) {
+        const currRunnerIndex=redisMatchTournament.findIndex((item)=>item.id==id);
+        redisMatchTournament[currRunnerIndex]=matchBettingData;
+        updateMatchKeyInCache(matchId, "tournament", JSON.stringify(redisMatchTournament))
+      }
+      addTournamentRunners(matchBettingData.runners);
       return;
     });
 

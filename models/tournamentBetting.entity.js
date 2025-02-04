@@ -1,6 +1,6 @@
 const { EntitySchema } = require("typeorm");
 const { baseColumnsSchemaPart, betStatusType, matchBettingType, gameTypeMatchBetting } = require("../config/contants");
-const {ColumnNumericTransformer} = require('../services/dbService')
+const { ColumnNumericTransformer } = require('../services/dbService')
 const tournamentBettingSchema = new EntitySchema({
   name: "tournamentBetting",
   columns: {
@@ -8,6 +8,11 @@ const tournamentBettingSchema = new EntitySchema({
     matchId: {
       type: "uuid",
       nullable: false
+    },
+    sNo: {
+      type: "float",
+      nullable: false,
+      default: 0
     },
     type: {
       type: 'enum',
@@ -49,16 +54,16 @@ const tournamentBettingSchema = new EntitySchema({
       type: "varchar",
       nullable: true
     },
-    marketId : {
-      type : "varchar",
-      nullable : true
+    marketId: {
+      type: "varchar",
+      nullable: true
     },
-    apiType:{
+    apiType: {
       type: "int",
       nullable: false,
       default: 0
     },
-    gtype:{
+    gtype: {
       type: 'enum',
       enum: Object.values(gameTypeMatchBetting),
       nullable: false,
@@ -69,10 +74,21 @@ const tournamentBettingSchema = new EntitySchema({
       nullable: false,
       default: 0
     },
-    exposureLimit:{
+    exposureLimit: {
       type: "int",
       nullable: true,
+    },
+    isCommissionActive: {
+      type: "boolean",
+      default: false
+    },
+    isManual: {
+      type: "boolean",
+      default: false
     }
+  },
+  orderBy: {
+    sNo: "ASC",
   },
   relations: {
     match: {
@@ -84,10 +100,10 @@ const tournamentBettingSchema = new EntitySchema({
       },
     },
     runners: {
-        type: "one-to-many",
-        target: "tournamentRunner",
-        inverseSide: "betting",
-      }
+      type: "one-to-many",
+      target: "tournamentRunner",
+      inverseSide: "betting",
+    }
   },
   indices: [
     {

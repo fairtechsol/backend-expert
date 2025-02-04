@@ -15,6 +15,7 @@ const {
   redisKeysMarketWise,
   scoreBasedMarket,
   otherEventMatchBettingRedisKey,
+  matchOddName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { addResult, deleteResult, getResult } = require("../services/betService");
@@ -1882,20 +1883,20 @@ exports.declareTournamentMatchResult = async (req, res) => {
     const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
     const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
 
-
-    const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
-    if (sessions?.length > 0) {
-      logger.error({
-        error: `Sessions is not declared yet.`,
-      });
-      updateTournamentBetting({ id: betId}, { activeStatus: betStatus.save, result: null, stopAt: null});
-      return ErrorResponse(
-        { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
-        req,
-        res
-      );
+    if (!unDeclaredMatchBettingTournament && !unDeclaredMatchBetting) {
+      const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
+      if (sessions?.length > 0) {
+        logger.error({
+          error: `Sessions is not declared yet.`,
+        });
+        await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+        return ErrorResponse(
+          { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
+          req,
+          res
+        );
+      }
     }
-
     const resultValidate = await checkResult({
       betId: matchOddBetting.id,
       matchId: matchOddBetting.matchId,
@@ -1925,7 +1926,8 @@ exports.declareTournamentMatchResult = async (req, res) => {
         matchOddId: matchOddBetting.id,
         match,
         matchBettingType: matchOddBetting?.type,
-        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
+        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting,
+        isMatchOdd: matchOddBetting.name == matchOddName
       }
     )
       .then((data) => {
@@ -1952,24 +1954,9 @@ exports.declareTournamentMatchResult = async (req, res) => {
       betId: matchOddBetting?.id,
       matchId: matchId,
       result: result,
-      profitLoss: fwProfitLoss
+      profitLoss: fwProfitLoss,
+      commission: response?.data?.totalCommission
     });
-
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultDeclared,
-      {
-        matchId: matchId,
-        result,
-        profitLoss: fwProfitLoss,
-        stopAt: match.stopAt,
-        activeStatus: betStatusType.result,
-        betId: matchOddBetting?.id,
-        betType: matchOddBetting?.type,
-        type: match?.matchType,
-        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
-      }
-    );
  
     if (!unDeclaredMatchBetting && !unDeclaredMatchBettingTournament) {
       deleteAllMatchRedis(matchId);
@@ -1988,7 +1975,21 @@ exports.declareTournamentMatchResult = async (req, res) => {
     }
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${betId}${redisKeys.profitLoss}_${matchId}`);
 
-
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchResultDeclared,
+      {
+        matchId: matchId,
+        result,
+        profitLoss: fwProfitLoss,
+        stopAt: match.stopAt,
+        activeStatus: betStatusType.result,
+        betId: matchOddBetting?.id,
+        betType: matchOddBetting?.type,
+        type: match?.matchType,
+        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
+      }
+    );
     return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } }, data: { result, profitLoss: fwProfitLoss } }, req, res);
   } catch (err) {
     logger.error({
@@ -2095,7 +2096,8 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
         matchId,
         match,
         matchBetting: bet,
-        matchBettingType: matchOddBetting?.type
+        matchBettingType: matchOddBetting?.type,
+        isMatchOdd: matchOddBetting.name == matchOddName
       }
     )
       .then((data) => {

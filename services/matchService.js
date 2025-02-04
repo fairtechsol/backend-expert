@@ -3,7 +3,7 @@ const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
 const RaceSchema = require("../models/racingMatch.entity");
-const { matchBettingType, betStatusType, manualMatchBettingType, gameType } = require("../config/contants");
+const { matchBettingType, betStatusType, manualMatchBettingType, gameType, matchOddName } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
 const race = AppDataSource.getRepository(RaceSchema);
 
@@ -84,6 +84,21 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
             type: matchBettingType.matchOdd,
           }
         )
+        .leftJoinAndMapOne(
+          "match.matchOddTournament",
+          "tournamentBetting",
+          "tournamentBetting",
+          "tournamentBetting.name = :name and tournamentBetting.matchId = match.id",
+          {
+            name: matchOddName,
+          }
+        )
+        .leftJoinAndMapMany(
+          "tournamentBetting.runners",
+          "tournamentRunner",
+          "tournamentRunner",
+          "tournamentRunner.bettingId = tournamentBetting.id"
+        )
         .leftJoinAndMapMany(
           "match.isBookmaker",
           "match.matchBettings",
@@ -131,13 +146,11 @@ exports.getMatchWithBettingAndSession = async (
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
       matchQuery = matchQuery
         .leftJoinAndMapMany(
-          "match.bookmakers",
-          "match.matchBettings",
-          "bookmakers",
-          "bookmakers.type IN (:...types)",
-          {
-            types: manualMatchBettingType,
-          }
+          "match.tournaments",
+          "match.tournamentBettings",
+          "tournamentBetting",
+          "tournamentBetting.isManual = true",
+          
         );
     }
     if (sessionMatchPrivilege || allPrivilege || addMatchPrivilege) {
@@ -156,9 +169,9 @@ exports.getMatchWithBettingAndSession = async (
       matchQuery = matchQuery.addSelect(["sessions.id", "sessions.name"]);
     }
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
-      matchQuery = matchQuery.addSelect(["bookmakers.id", "bookmakers.name", "bookmakers.type"]);
+      matchQuery = matchQuery.addSelect(["tournamentBetting.id", "tournamentBetting.name"]);
     }
-    matchQuery = matchQuery.orderBy("match.startAt", "DESC").addOrderBy('bookmakers.type', 'ASC').getManyAndCount();
+    matchQuery = matchQuery.orderBy("match.startAt", "DESC").addOrderBy('tournamentBetting.createdAt', 'ASC').getManyAndCount();
 
     // Execute the query and get the result along with count
     const [matches, count] = await matchQuery;

@@ -1,11 +1,5 @@
 const Joi = require("joi");
-const { bettingType, matchBettingType, marketBettingTypeByBettingType, marketMatchBettingType } = require("../config/contants");
-
-const bookmakerSchema = Joi.object({
-  maxBet: Joi.number().required(),
-  marketName: Joi.string().required(),
-  betLimit: Joi.number().allow(null)
-});
+const { bettingType, matchBettingType, marketBettingTypeByBettingType } = require("../config/contants");
 
 let addMatchSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
@@ -58,32 +52,6 @@ let addMatchSchema = Joi.object({
   isFancy: Joi.boolean().allow(null),
   isBookmaker: Joi.boolean().allow(null),
   rateThan100: Joi.boolean().allow(null),
-  bookmakers: Joi.array().items(bookmakerSchema).required().messages({
-    "array.base": "Bookmakers must be an array",
-    "any.required": "Bookmakers are required",
-  }),
-  marketData: Joi.array().items(Joi.object({
-    type: Joi.string().valid(...Object.values(matchBettingType)).required(),
-    maxBet: Joi.number().required(),
-    betLimit: Joi.number().allow(null),
-    marketId: Joi.when('type', {
-      is: Joi.valid(...Object.keys(marketMatchBettingType)),
-      then: Joi.string().required(),
-      otherwise: Joi.string().forbidden()
-    })
-  })).when(Joi.ref('isManualMatch'), {
-    is: false,
-    then: Joi.array().min(1).custom((value, helpers) => {
-      const hasMatchOdd = value.some(obj => obj.type === matchBettingType.quickbookmaker1);
-      if (!hasMatchOdd) {
-        return helpers.error('any.custom', { message: 'Match must have a quick bookmaker.' });
-      }
-      return value;
-    })
-  }).required().messages({
-    "array.base": "Market data must be an array",
-    "any.custom": "Match must have a quick bookmaker."
-  }),
   isManualMatch: Joi.boolean()
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
@@ -98,12 +66,6 @@ module.exports.addMatchValidate = addMatchSchema.when(Joi.object({ isManualMatch
     eventId: Joi.string().optional().allow(""),
   }),
   otherwise: Joi.object().unknown(true) // Ensures that other validations are preserved
-}).when(Joi.object({ teamB: Joi.exist() }).unknown(),{
-  then: Joi.object().unknown(true),
-  otherwise: Joi.object({
-    bookmakers: Joi.array().forbidden(),
-    marketData: Joi.array().forbidden()
-  })
 });
 
 const updatebookmakerSchema = Joi.object({
@@ -128,14 +90,6 @@ module.exports.updateMatchValidate = Joi.object({
       "number.greater":
         "Maximum bet amount for BetFair session must be greater than minimum bet amount"
     }),
-  bookmakers: Joi.array().items(updatebookmakerSchema).messages({
-    "array.base": "Bookmakers must be an array",
-  }),
-  marketData: Joi.array().items(Joi.object({
-    type: Joi.string().valid(...Object.values(matchBettingType)).required(),
-    maxBet: Joi.number().required(),
-    betLimit: Joi.number().allow(null)
-  }))
 }).messages({
   "object.base": "Invalid input. Please provide a valid object.",
 });

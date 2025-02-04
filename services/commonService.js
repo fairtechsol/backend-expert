@@ -759,6 +759,10 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
         },
       }
     }
+    // sort the runner by the sort priority
+    match.tournamentBettings?.forEach(item =>{
+      item.runners.sort((a, b) => a.sortPriority - b.sortPriority);
+    })
 
     const categorizedMatchBettings = {
       [matchBettingType.matchOdd]: null,
@@ -818,7 +822,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
     let payload = {
       ...match,
       matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
-      tournament: [...match?.tournamentBettings||[]],
+      tournament: [...match?.tournamentBettings?.sort((a, b) => a.sNo - b.sNo) || []],
       marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
       marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
       marketTiedMatch: categorizedMatchBettings.apiTideMatch,
@@ -877,46 +881,46 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
     match.teamRates = teamRates;
   }
   if (userId) {
-  if (isSessionAllowed) {
+    if (isSessionAllowed) {
 
-    const redisIds = match.sessionBettings?.map((item, index) => {
-      const sessionBettingData = JSON.parse(item);
-      const currSessionExpertResult = expertResults.find((result) => result.betId == sessionBettingData?.id);
-      const sessionResultExpert = sessionExpertResult.filter((result) => result.betId == sessionBettingData?.id)
-      if (currSessionExpertResult && !(sessionBettingData.activeStatus == betStatus.result)) {
-        if (sessionResultExpert?.length == 1) {
-          sessionBettingData.selfDeclare = sessionResultExpert?.[0]?.userId == userId ? true : false;
-          sessionBettingData.resultStatus = currSessionExpertResult?.status;
-          match.sessionBettings[index] = JSON.stringify(sessionBettingData);
+      const redisIds = match.sessionBettings?.map((item, index) => {
+        const sessionBettingData = JSON.parse(item);
+        const currSessionExpertResult = expertResults.find((result) => result.betId == sessionBettingData?.id);
+        const sessionResultExpert = sessionExpertResult.filter((result) => result.betId == sessionBettingData?.id)
+        if (currSessionExpertResult && !(sessionBettingData.activeStatus == betStatus.result)) {
+          if (sessionResultExpert?.length == 1) {
+            sessionBettingData.selfDeclare = sessionResultExpert?.[0]?.userId == userId ? true : false;
+            sessionBettingData.resultStatus = currSessionExpertResult?.status;
+            match.sessionBettings[index] = JSON.stringify(sessionBettingData);
+          }
+          else {
+            sessionBettingData.resultStatus = currSessionExpertResult?.status;
+            match.sessionBettings[index] = JSON.stringify(sessionBettingData);
+          }
         }
-        else {
-          sessionBettingData.resultStatus = currSessionExpertResult?.status;
-          match.sessionBettings[index] = JSON.stringify(sessionBettingData);
-        }
+
+        return (sessionBettingData?.id + redisKeys.profitLoss)
+      });
+      if (redisIds?.length > 0) {
+        let sessionData = await getExpertsRedisSessionDataByKeys(redisIds);
+        match.sessionProfitLoss = sessionData;
       }
-
-      return (sessionBettingData?.id + redisKeys.profitLoss)
-    });
-    if (redisIds?.length > 0) {
-      let sessionData = await getExpertsRedisSessionDataByKeys(redisIds);
-      match.sessionProfitLoss = sessionData;
     }
-  }
     if (!(match.stopAt) && isMarketAllowed) {
       let qBookId = match.quickBookmaker?.filter(book => book.type == matchBettingType.quickbookmaker1);
       let matchResult = expertResults.find((result) => result.betId == qBookId[0]?.id);
       if (matchResult) {
-          match.resultStatus = matchResult.status;
+        match.resultStatus = matchResult.status;
       }
 
       for (let items of [...(match?.other || []), ...(match?.tournament || [])]) {
         let matchResult = expertResults.find((result) => result.betId == items?.id);
         if (matchResult) {
-            match.otherBettings = match.otherBettings || {};
-            match.otherBettings[items?.id] = matchResult.status;
+          match.otherBettings = match.otherBettings || {};
+          match.otherBettings[items?.id] = matchResult.status;
         }
       }
-      
+
     }
   }
   return match;
@@ -1070,7 +1074,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
       }
 
     });
-    match.tournament = [...(match.tournamentBettings || [])];
+    match.tournament = [...(match.tournamentBettings?.sort((a, b) => a.sNo - b.sNo) || [])];
     delete match.tournamentBettings;
     let payload = {
       ...match,

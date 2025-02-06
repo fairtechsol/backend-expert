@@ -179,3 +179,15 @@ exports.updateDeleteReason = Joi.object({
     'any.required': 'Match id is required',
   })
 });
+
+exports.verifyBetValidator = Joi.object({
+  domain: Joi.string().required().messages({
+    'any.required': 'Domain is required',
+  }),
+  isVerified: Joi.boolean().required().messages({
+    'any.required': 'Is verified is required',
+  }),
+  id: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+    'any.required': 'Bet id is required',
+  })
+});

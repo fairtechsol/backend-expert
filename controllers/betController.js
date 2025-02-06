@@ -179,7 +179,7 @@ exports.declareSessionResult = async (req, res) => {
       match: match
     })
 
-    if (resultValidate&&false) {
+    if (resultValidate) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       updateSessionBetting({ id: betId },
         { activeStatus: betStatus.save, result: null }
@@ -2498,5 +2498,33 @@ exports.sendUpdateDeleteReason = async (req, res, next) => {
       req,
       res
     );
+  }
+}
+
+exports.verifyBet = async (req, res) => {
+  try {
+    let { isVerified, id, domain } = req.body;
+    let response = await apiCall(
+      apiMethod.post,
+      domain + allApiRoutes.user.verifyBet,
+      {
+        isVerified, id
+      }
+    )
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: response?.message
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at verify bet.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res)
   }
 }

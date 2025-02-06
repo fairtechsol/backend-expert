@@ -60,6 +60,9 @@ exports.allApiRoutes = {
     addMatch: "/match/add",
     addRaceMatch: "/match/raceAdd"
   },
+  user:{
+    verifyBet: "/fairgameWallet/verifyBet"
+  },
   thirdParty:{
     extraMarket:"/extraMarketList/"
   }

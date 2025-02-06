@@ -279,7 +279,8 @@ module.exports.betType = {
 module.exports.bettingType = {
   session: "session",
   match: "match",
-  racing: "racing"
+  racing: "racing",
+  tournament:"tournament"
 };
 
 module.exports.socketData = {

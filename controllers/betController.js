@@ -179,7 +179,7 @@ exports.declareSessionResult = async (req, res) => {
       match: match
     })
 
-    if (resultValidate) {
+    if (resultValidate&&false) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       updateSessionBetting({ id: betId },
         { activeStatus: betStatus.save, result: null }

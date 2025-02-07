@@ -2508,7 +2508,7 @@ exports.verifyBet = async (req, res) => {
       apiMethod.post,
       domain + allApiRoutes.user.verifyBet,
       {
-        isVerified, id
+        isVerified, id, verifyBy: req?.user?.userName
       }
     )
     return SuccessResponse(

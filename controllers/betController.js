@@ -27,7 +27,7 @@ const {
   deleteAllExpertResult,
 } = require("../services/expertResultService");
 const { getMatchBattingByMatchId, updateMatchBetting, getMatchBettingById, getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
-const { getMatchById, addMatch } = require("../services/matchService");
+const { getMatchById, addMatch, updateMatch } = require("../services/matchService");
 const {
   getSessionFromRedis,
   updateSessionMatchRedis,
@@ -57,7 +57,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { extractNumbersFromString } = require("../services/commonService");
 const { getRacingMatchById, raceAddMatch } = require("../services/racingMatchService");
 const { getRaceBettingWithRunners, updateRaceBetting } = require("../services/raceBettingService");
-const { getTournamentBettingWithRunners, updateTournamentBetting, getTournamentBetting, getTournamentBettings } = require("../services/tournamentBettingService");
+const { getTournamentBettingWithRunners, updateTournamentBetting, getTournamentBetting, getTournamentBettings, getSingleTournamentBetting } = require("../services/tournamentBettingService");
 const { removeBlinkingTabs } = require("../services/blinkingTabsService");
 
 
@@ -1880,23 +1880,23 @@ exports.declareTournamentMatchResult = async (req, res) => {
     await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
     isResultChange = true;
 
-    const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+    // const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+    // const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
 
-    if (!unDeclaredMatchBettingTournament && !unDeclaredMatchBetting) {
-      const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
-      if (sessions?.length > 0) {
-        logger.error({
-          error: `Sessions is not declared yet.`,
-        });
-        await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
-        return ErrorResponse(
-          { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
-          req,
-          res
-        );
-      }
-    }
+    // if (!unDeclaredMatchBettingTournament && !unDeclaredMatchBetting) {
+    //   const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
+    //   if (sessions?.length > 0) {
+    //     logger.error({
+    //       error: `Sessions is not declared yet.`,
+    //     });
+    //     await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+    //     return ErrorResponse(
+    //       { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
+    //       req,
+    //       res
+    //     );
+    //   }
+    // }
     const resultValidate = await checkResult({
       betId: matchOddBetting.id,
       matchId: matchOddBetting.matchId,
@@ -1926,7 +1926,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
         matchOddId: matchOddBetting.id,
         match,
         matchBettingType: matchOddBetting?.type,
-        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting,
+        // isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting,
         isMatchOdd: matchOddBetting.name == matchOddName
       }
     )
@@ -1958,13 +1958,13 @@ exports.declareTournamentMatchResult = async (req, res) => {
       commission: response?.data?.totalCommission
     });
  
-    if (!unDeclaredMatchBetting && !unDeclaredMatchBettingTournament) {
-      deleteAllMatchRedis(matchId);
-      match.stopAt = new Date();
-      await removeBlinkingTabs({ matchId: matchId });
-      await addMatch(match);
-    }
-    else{
+    // if (!unDeclaredMatchBetting && !unDeclaredMatchBettingTournament) {
+    //   deleteAllMatchRedis(matchId);
+    //   match.stopAt = new Date();
+    //   await removeBlinkingTabs({ matchId: matchId });
+    //   await addMatch(match);
+    // }
+    // else{
       const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
 
       matchData.find((item) => item.id == betId).activeStatus = betStatus.result;
@@ -1972,7 +1972,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       matchData.find((item) => item.id == betId).stopAt = new Date();
       matchData.find((item) => item.id == betId).updatedAt = new Date();
       await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
-    }
+    // }
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${betId}${redisKeys.profitLoss}_${matchId}`);
 
     sendMessageToUser(
@@ -1987,7 +1987,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
         betId: matchOddBetting?.id,
         betType: matchOddBetting?.type,
         type: match?.matchType,
-        isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
+        // isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
       }
     );
     return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } }, data: { result, profitLoss: fwProfitLoss } }, req, res);
@@ -2029,10 +2029,12 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       );
     }
 
-    const matchBettingsUndec = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-    const tournamentBettingsUndec = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+    // const matchBettingsUndec = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+    // const tournamentBettingsUndec = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
 
-    if (!match.stopAt && !matchBettingsUndec && !tournamentBettingsUndec) {
+    if (!match.stopAt 
+      // && !matchBettingsUndec && !tournamentBettingsUndec
+    ) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -2139,14 +2141,14 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       }
     );
 
-    const unDeclaredMatchBetting = await getMatchBetting({ type: matchBettingType.quickbookmaker1, matchId: matchId }, ["id"]);
-    const declaredMatchBetting = await getTournamentBettings({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-    if (declaredMatchBetting?.length == 1 && !unDeclaredMatchBetting) {
-      await deleteAllMatchRedis(matchId);
-      match.stopAt = null;
-      await addMatch(match);
-    }
-    else{
+    // const unDeclaredMatchBetting = await getMatchBetting({ type: matchBettingType.quickbookmaker1, matchId: matchId }, ["id"]);
+    // const declaredMatchBetting = await getTournamentBettings({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+    // if (declaredMatchBetting?.length == 1 && !unDeclaredMatchBetting) {
+    //   await deleteAllMatchRedis(matchId);
+    //   match.stopAt = null;
+    //   await addMatch(match);
+    // }
+    // else{
       const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
       matchData.find((item) => item.id == matchOddBetting?.id).activeStatus = betStatus.save;
       matchData.find((item) => item.id == matchOddBetting?.id).result = null;
@@ -2154,7 +2156,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       matchData.find((item) => item.id == matchOddBetting?.id).updatedAt = new Date();
       await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
 
-    }
+    // }
     return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match result undeclared" } }, data: { matchId } }, req, res);
   } catch (err) {
     logger.error({
@@ -2165,6 +2167,128 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
     if (isResultChange) {
       updateTournamentBetting({ id: betId }, { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
     }
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.declareFinalMatchResult = async (req, res) => {
+  const { matchId } = req.body;
+  try {
+    const match = await getMatchById(matchId,["id","stopAt","matchType"]);
+
+    if (!match) {
+      return ErrorResponse({
+        statusCode: 403,
+        message: { msg: "notFound", keys: { name: "Match" } },
+      }, req, res
+      );
+    }
+
+    if (match?.stopAt) {
+      return ErrorResponse({
+        statusCode: 403,
+        message: { msg: "bet.matchDeclare" },
+      }, req, res
+      );
+    }
+
+    // check result already declare
+    let matchTournamentsDetails = await getSingleTournamentBetting({ activeStatus: Not(betStatus.result), matchId: matchId }, ["id"]);
+    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
+
+    if (matchTournamentsDetails || unDeclaredMatchBetting) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "bet.matchDeclare" },
+        },
+        req,
+        res
+      );
+    }
+
+    const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
+    if (sessions?.length > 0) {
+      logger.error({
+        error: `Sessions is not declared yet.`,
+      });
+      await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+      return ErrorResponse(
+        { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
+        req,
+        res
+      );
+    }
+
+    deleteAllMatchRedis(matchId);
+    await updateMatch({id:matchId},{stopAt:new Date()})
+    await removeBlinkingTabs({ matchId: matchId });
+
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchResultDeclared,
+      {
+        matchId: matchId,
+        stopAt: match.stopAt,
+        activeStatus: betStatusType.result,
+        type: match?.matchType,
+        isMatchDeclare: true
+      }
+    );
+    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } } }, req, res);
+  } catch (err) {
+    logger.error({
+      error: `Error at final result declare match`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.unDeclareFinalMatchResult = async (req, res) => {
+  const { matchId } = req.body;
+  try {
+    const match = await getMatchById(matchId, ["id", "matchType"]);
+
+    if (!match) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "notFound", keys: {
+              name: "Match"
+            }
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchResultUnDeclared,
+      {
+        matchId: matchId,
+        activeStatus: betStatusType.live,
+        type: match?.matchType
+      }
+    );
+
+    await deleteAllMatchRedis(matchId);
+    await updateMatch({ id: matchId }, { stopAt: null })
+
+
+    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match result undeclared" } }, data: { matchId } }, req, res);
+  } catch (err) {
+    logger.error({
+      error: `Error at final result undeclare match`,
+      stack: err.stack,
+      message: err.message,
+    });
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -2510,11 +2634,22 @@ exports.verifyBet = async (req, res) => {
       {
         isVerified, id, verifyBy: req?.user?.userName
       }
-    )
+    );
+
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.verifyBet,
+      {
+        matchId: matchId,
+        id:id,
+        isVerified:isVerified,
+        verifyBy: req?.user?.userName
+      }
+    );
     return SuccessResponse(
       {
         statusCode: 200,
-        message: response?.message
+        message: { msg: "bet.isVerified" }
       },
       req,
       res

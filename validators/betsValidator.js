@@ -207,5 +207,8 @@ exports.verifyBetValidator = Joi.object({
   }),
   id: Joi.string().guid({ version: 'uuidv4' }).required().messages({
     'any.required': 'Bet id is required',
+  }),
+  matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+    'any.required': 'Match id is required',
   })
 });

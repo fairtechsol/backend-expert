@@ -2627,8 +2627,8 @@ exports.sendUpdateDeleteReason = async (req, res, next) => {
 
 exports.verifyBet = async (req, res) => {
   try {
-    let { isVerified, id, domain } = req.body;
-    let response = await apiCall(
+    let { isVerified, id, domain, matchId } = req.body;
+   await apiCall(
       apiMethod.post,
       domain + allApiRoutes.user.verifyBet,
       {
@@ -2641,8 +2641,8 @@ exports.verifyBet = async (req, res) => {
       socketData.verifyBet,
       {
         matchId: matchId,
-        id:id,
-        isVerified:isVerified,
+        id: id,
+        isVerified: isVerified,
         verifyBy: req?.user?.userName
       }
     );

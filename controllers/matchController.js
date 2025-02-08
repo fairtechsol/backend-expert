@@ -17,7 +17,7 @@ const {
   getMatchWithBettingAndSession,
   getOneMatchByCondition,
 } = require("../services/matchService");
-const { addRaceInCache, addRaceBetttingInCache, addMatchInCache, updateMatchInCache, updateRaceInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, updateMatchExpiry, hasMatchInCache } = require("../services/redis/commonfunction");
+const { addRaceInCache, addMatchInCache, updateMatchInCache, updateRaceInCache, settingAllBettingMatchRedis, getMatchFromCache, updateMatchKeyInCache, updateBettingMatchRedis, getKeyFromMatchRedis, hasBettingInCache, updateMatchExpiry, hasMatchInCache, getSingleMatchKey } = require("../services/redis/commonfunction");
 const { In } = require("typeorm");
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
@@ -26,6 +26,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { commonGetMatchDetails, commonGetMatchDetailsForFootball, commonGetRaceDetails } = require("../services/commonService");
 const { getRacingMatchCountryList, getRacingMatchDateList, getRacingMatch } = require("../services/racingMatchService");
 const { getCardMatch } = require("../services/cardMatchService");
+const { updateTournamentBetting } = require("../services/tournamentBettingService");
 /**
  * Create or update a match.
  *
@@ -445,8 +446,20 @@ exports.matchActiveInActive = async (req, res) => {
       );
     }
 
+    if (type == bettingType.tournament) {
+      await updateTournamentBetting({ id: bettingId }, { isActive: isActive });
+      const isMatchExist = await hasMatchInCache(matchId);
+      if (isMatchExist) {
+        const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json");
+        if (Array.isArray(bettingData)) {
+          bettingData.find((item) => item?.id == bettingId).isActive = isActive;
+          await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
+        }
+      }
+    }
+
     // Update the active status based on the matchBettingType
-    if (type == bettingType.session) {
+    else if (type == bettingType.session) {
       const sessionBetType = isManualBet
         ? {
           manualSessionActive: isActive,

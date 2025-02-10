@@ -585,7 +585,7 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
 
 exports.addAndUpdateMatchBetting = async (req, res) => {
   try {
-    const { matchId, type, name, maxBet, minBet, marketId, id, gtype, sNo, runners, betLimit = 0, exposureLimit, isCommissionActive, isManual } = req.body;
+    const { matchId, type, name, maxBet, minBet, marketId, mid, id, gtype, sNo, runners, betLimit = 0, exposureLimit, isCommissionActive, isManual } = req.body;
     const match = await getMatchById(matchId, ["id", "betFairSessionMinBet", "stopAt"]);
     if (match.stopAt) {
       return ErrorResponse({
@@ -652,7 +652,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         exposureLimit: exposureLimit,
         isCommissionActive: isCommissionActive,
         isManual: isManual,
-        sNo: sNo
+        sNo: sNo,
+        mid: mid
       };
 
       const tournamentBetting = await addTournamentBetting(tournamentBettingData);
@@ -723,7 +724,7 @@ exports.cloneMatchBetting = async (req, res) => {
       type: currTournament?.type,
       name: currTournament?.name,
       maxBet: currTournament?.maxBet,
-      marketId: currTournament?.marketId,
+      marketId: new Date().getTime(),
       activeStatus: betStatusType.save,
       gtype: "match1",
       isActive: true,
@@ -732,13 +733,13 @@ exports.cloneMatchBetting = async (req, res) => {
       isCommissionActive: currTournament?.isCommissionActive,
       isManual: true,
       sNo: currTournament?.sNo,
-      parentBetId: currTournament?.parentBetId || currTournament?.id
+      parentBetId: currTournament?.parentBetId || currTournament?.id,
     };
 
     const tournamentBetting = await addTournamentBetting(currTournamentBettingData);
     await insertTournamentRunners(currTournament?.runners?.map((item) => {
       const { id, createdAt, updatedAt, ...data } = item;
-      return ({ ...data, bettingId: tournamentBetting?.id })
+      return ({ ...data, bettingId: tournamentBetting?.id, parentRunnerId: id })
     }));
     tournamentBetting.runners = await getTournamentRunners({ bettingId: tournamentBetting?.id });
     // sort the runner by the sort priority
@@ -746,10 +747,10 @@ exports.cloneMatchBetting = async (req, res) => {
 
     const isMatchExist = await hasMatchInCache(match?.id);
     if (isMatchExist) {
-      const bettingData = (await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json")) || [];
+      const bettingData = (await getSingleMatchKey(matchId, marketBettingTypeByBettingType.tournament, "json")) || [];
       if (Array.isArray(bettingData)) {
         bettingData.push(tournamentBetting);
-        await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType[type], JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
+        await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType.tournament, JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
       }
     }
 

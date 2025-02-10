@@ -146,6 +146,7 @@ exports.addMatchBettingDataValidator = Joi.object({
     }).messages({
         "string.base": "Market ID must be a string"
     }),
+    mid: Joi.string().allow(null),
     gtype: Joi.string().required().valid(...Object.values(gameTypeMatchBetting)).messages({
         "any.required": "Game type is required",
     }),

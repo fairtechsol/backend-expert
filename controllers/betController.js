@@ -679,7 +679,12 @@ const checkResult = async (body) => {
   else if (betType) {
     const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[betType], 'json');
     if (betType == matchBettingType.other || betType == matchBettingType.tournament) {
-      matchData.find((item) => item?.id == betId).activeStatus = betStatus.save;
+      // matchData.find((item) => item?.id == betId).activeStatus = betStatus.save;
+      for (let item of matchData) {
+        if (item.id == betId || item.parentBetId == betId) {
+          item.activeStatus = betStatus.save;
+        }
+      }
     }
     else {
       matchData.activeStatus = betStatus.save;
@@ -1877,7 +1882,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
         message: { msg: "bet.matchDeclare" },
       }, req, res);
     }
-    await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
+    await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.result, result: result, stopAt: new Date() });
     isResultChange = true;
 
     // const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
@@ -1908,7 +1913,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
     });
 
     if (resultValidate) {
-      await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+      await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.save, result: null, stopAt: null });
       return SuccessResponse({ statusCode: 200, message: { msg: "bet.resultApprove" }, }, req, res);
     }
 
@@ -1939,7 +1944,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
-        await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+        await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.save, result: null, stopAt: null });
         await deleteExpertResult(matchOddBetting.id, userId);
         throw err;
       });
@@ -1966,11 +1971,14 @@ exports.declareTournamentMatchResult = async (req, res) => {
     // }
     // else{
     const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
-
-    matchData.find((item) => item.id == betId).activeStatus = betStatus.result;
-    matchData.find((item) => item.id == betId).result = result;
-    matchData.find((item) => item.id == betId).stopAt = new Date();
-    matchData.find((item) => item.id == betId).updatedAt = new Date();
+    for (let item of matchData) {
+      if (item.id == betId || item.parentBetId == betId) {
+        item.activeStatus = betStatus.result;
+        item.result = result;
+        item.stopAt = new Date();
+        item.updatedAt = new Date();
+      }
+    }
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
     // }
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${betId}${redisKeys.profitLoss}_${matchId}`);
@@ -1998,7 +2006,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       message: err.message,
     });
     if (isResultChange) {
-      await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+      await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.save, result: null, stopAt: null });
     }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
@@ -2084,7 +2092,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       );
     }
 
-    await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.live, result: null, stopAt: null });
+    await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.live, result: null, stopAt: null });
     isResultChange = true;
     oldResult = matchOddBetting.result;
     oldStopAt = match?.stopAt;
@@ -2111,7 +2119,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
-        await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: matchOddBetting?.stopAt });
+        await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: matchOddBetting?.stopAt });
         throw err;
       });
 
@@ -2150,10 +2158,20 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
     // }
     // else{
     const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
-    matchData.find((item) => item.id == matchOddBetting?.id).activeStatus = betStatus.save;
-    matchData.find((item) => item.id == matchOddBetting?.id).result = null;
-    matchData.find((item) => item.id == matchOddBetting?.id).stopAt = null;
-    matchData.find((item) => item.id == matchOddBetting?.id).updatedAt = new Date();
+    // matchData.find((item) => item.id == matchOddBetting?.id).activeStatus = betStatus.save;
+    // matchData.find((item) => item.id == matchOddBetting?.id).result = null;
+    // matchData.find((item) => item.id == matchOddBetting?.id).stopAt = null;
+    // matchData.find((item) => item.id == matchOddBetting?.id).updatedAt = new Date();
+
+    for (let item of matchData) {
+      if (item.id == betId || item.parentBetId == betId) {
+        item.activeStatus = betStatus.save;
+        item.result = null;
+        item.stopAt = null;
+        item.updatedAt = new Date();
+      }
+    }
+
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
 
     // }
@@ -2165,7 +2183,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       message: err.message,
     });
     if (isResultChange) {
-      updateTournamentBetting({ id: betId }, { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
+      updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
     }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);

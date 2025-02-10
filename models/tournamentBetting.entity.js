@@ -89,6 +89,10 @@ const tournamentBettingSchema = new EntitySchema({
     parentBetId: {
       type: "uuid",
       nullable: true
+    },
+    mid:{
+      type: "varchar",
+      nullable: true
     }
   },
   orderBy: {

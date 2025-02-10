@@ -187,3 +187,19 @@ exports.addMatchBettingDataValidator = Joi.object({
     isCommissionActive: Joi.boolean().allow(null),
     isManual: Joi.boolean().allow(null),
 });
+
+exports.cloneMatchBettingDataValidator = Joi.object({
+    betId: Joi.string().guid({ version: 'uuidv4' }).allow(null).messages({
+        'string.base': `betId should be a type of 'text'`,
+        'string.empty': `betId cannot be an empty field`,
+        'string.guid': `betId must be a valid GUID`,
+        'any.required': `betId is a required field`
+    }),
+    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+        'string.base': `matchId should be a type of 'text'`,
+        'string.empty': `matchId cannot be an empty field`,
+        'string.guid': `matchId must be a valid GUID`,
+        'any.required': `matchId is a required field`
+    }),
+    
+});

@@ -10,7 +10,7 @@ const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFro
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
-const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById, getTournamentBetting, getTournamentRunners, getTournamentBettings, addTournamentRunners } = require("../services/tournamentBettingService");
+const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById, getTournamentBetting, getTournamentRunners, getTournamentBettings, addTournamentRunners, getSingleTournamentBetting } = require("../services/tournamentBettingService");
 
 exports.getMatchBetting = async (req, res) => {
   try {
@@ -681,6 +681,88 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         statusCode: 200,
         message: { msg: "updated", keys: { name: "Match betting" } },
         data: { id: tournamentBettingData?.id || id }
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at adding match betting api type.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.cloneMatchBetting = async (req, res) => {
+  try {
+    const { betId, matchId } = req.body;
+    const match = await getMatchById(matchId, ["id", "stopAt"]);
+    if (match.stopAt) {
+      return ErrorResponse({
+        statusCode: 400,
+        message: {
+          msg: "bet.canNotAddTournament",
+        },
+      }, req, res);
+    }
+    const currTournament = await getSingleTournamentBetting({ id: betId });
+    if (!currTournament) {
+      return ErrorResponse({
+        statusCode: 400,
+        message: {
+          msg: "bet.canNotClone",
+        },
+      }, req, res);
+    }
+    const currTournamentBettingData = {
+      matchId: match.id,
+      minBet: currTournament.betFairSessionMinBet,
+      createBy: req.user.id,
+      type: currTournament?.type,
+      name: currTournament?.name,
+      maxBet: currTournament?.maxBet,
+      marketId: currTournament?.marketId,
+      activeStatus: betStatusType.save,
+      gtype: "match1",
+      isActive: true,
+      betLimit: currTournament?.betLimit,
+      exposureLimit: currTournament?.exposureLimit,
+      isCommissionActive: currTournament?.isCommissionActive,
+      isManual: true,
+      sNo: currTournament?.sNo,
+      parentBetId: currTournament?.parentBetId || currTournament?.id
+    };
+
+    const tournamentBetting = await addTournamentBetting(currTournamentBettingData);
+    await insertTournamentRunners(currTournament?.runners?.map((item) => {
+      const { id, createdAt, updatedAt, ...data } = item;
+      return ({ ...data, bettingId: tournamentBetting?.id })
+    }));
+    tournamentBetting.runners = await getTournamentRunners({ bettingId: tournamentBetting?.id });
+    // sort the runner by the sort priority
+    tournamentBetting.runners.sort((a, b) => a.sortPriority - b.sortPriority);
+
+    const isMatchExist = await hasMatchInCache(match?.id);
+    if (isMatchExist) {
+      const bettingData = (await getSingleMatchKey(matchId, marketBettingTypeByBettingType[type], "json")) || [];
+      if (Array.isArray(bettingData)) {
+        bettingData.push(tournamentBetting);
+        await updateMatchKeyInCache(match?.id, marketBettingTypeByBettingType[type], JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
+      }
+    }
+
+    sendMessageToUser(
+      socketData.expertRoomSocket,
+      socketData.matchBettingMinMaxChange,
+      { matchId, betId: tournamentBetting?.id }
+    );
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "updated", keys: { name: "Match betting" } },
+        data: { id: tournamentBetting?.id }
       },
       req,
       res

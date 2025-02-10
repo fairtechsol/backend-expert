@@ -85,6 +85,10 @@ const tournamentBettingSchema = new EntitySchema({
     isManual: {
       type: "boolean",
       default: false
+    },
+    parentBetId: {
+      type: "uuid",
+      nullable: true
     }
   },
   orderBy: {

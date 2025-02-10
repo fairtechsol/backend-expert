@@ -2669,7 +2669,7 @@ exports.verifyBet = async (req, res) => {
       apiMethod.post,
       domain + allApiRoutes.user.verifyBet,
       {
-        isVerified, id, verifyBy: req?.user?.userName
+        isVerified, id, verifyBy: !isVerified ? null : req?.user?.userName
       }
     );
 

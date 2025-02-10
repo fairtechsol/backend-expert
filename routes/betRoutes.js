@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getPlacedBets, declareMatchResult, unDeclareMatchResult, declareOtherMatchResult, unDeclareOtherMatchResult, declareRacingMatchResult, unDeclareRacingMatchResult, declareMatchOtherMarketResult, unDeclareMatchOtherMarketResult, declareTournamentMatchResult, unDeclareTournamentMatchResult, verifyBet, declareFinalMatchResult } = require("../controllers/betController");
+const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getPlacedBets, declareMatchResult, unDeclareMatchResult, declareOtherMatchResult, unDeclareOtherMatchResult, declareRacingMatchResult, unDeclareRacingMatchResult, declareMatchOtherMarketResult, unDeclareMatchOtherMarketResult, declareTournamentMatchResult, unDeclareTournamentMatchResult, verifyBet, declareFinalMatchResult, unDeclareFinalMatchResult } = require("../controllers/betController");
 const { isAuthenticate } = require("../middleware/auth");
 const validator = require('../middleware/joi.validator');
 const { sessionDeclareValidator, sessionDeclareNoResultValidator, sessionUnDeclareValidator, matchDeclareValidator, matchUnDeclareValidator, otherMatchDeclareValidator, otherMatchUnDeclareValidator, raceMatchUnDeclareValidator, raceMatchDeclareValidator, tournamentMatchDeclareValidator, tournamentMatchUnDeclareValidator, verifyBetValidator, finalMatchDeclareValidator, finalMatchUnDeclareValidator } = require("../validators/betsValidator");
@@ -22,7 +22,7 @@ router.post("/unDeclare/result/other/match", apiLimiter, isAuthenticate, validat
 router.post("/unDeclare/result/other/market", apiLimiter, isAuthenticate, validator(otherMatchUnDeclareValidator), unDeclareMatchOtherMarketResult);
 router.post("/unDeclare/result/race/match", apiLimiter, isAuthenticate, validator(raceMatchUnDeclareValidator), unDeclareRacingMatchResult);
 router.post("/unDeclare/result/tournament/match", apiLimiter, isAuthenticate, validator(tournamentMatchUnDeclareValidator), unDeclareTournamentMatchResult);
-router.post("/unDeclare/result/final/match", apiLimiter, isAuthenticate, validator(finalMatchUnDeclareValidator), unDeclareTournamentMatchResult);
+router.post("/unDeclare/result/final/match", apiLimiter, isAuthenticate, validator(finalMatchUnDeclareValidator), unDeclareFinalMatchResult);
 
 router.get("/", isAuthenticate, getPlacedBets);
 router.post("/verify", isAuthenticate, validator(verifyBetValidator), verifyBet);

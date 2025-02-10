@@ -2680,7 +2680,7 @@ exports.verifyBet = async (req, res) => {
         matchId: matchId,
         id: id,
         isVerified: isVerified,
-        verifyBy: req?.user?.userName
+        verifyBy: !isVerified ? null : req?.user?.userName
       }
     );
     return SuccessResponse(

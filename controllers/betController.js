@@ -1941,7 +1941,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
         });
         await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
         await deleteExpertResult(matchOddBetting.id, userId);
-        throw err;
+        throw err?.response?.data || err;
       });
     isResultChange = false;
 

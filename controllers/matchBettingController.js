@@ -303,7 +303,7 @@ exports.getTournamentBettingDetails = async (req, res) => {
         runners: runners?.sort((a, b) => a.sortPriority - b.sortPriority)
       };
       if (isRate) {
-        response.teamRates = JSON.parse((await getExpertsRedisKeyData(`${id}_profitLoss_${matchId}`)) || "{}")
+        response.teamRates = JSON.parse((await getExpertsRedisKeyData(`${matchBetting?.parentBetId || id}_profitLoss_${matchId}`)) || "{}")
       }
 
       if (matchBetting.activeStatus != betStatus.result) {
@@ -729,7 +729,7 @@ exports.cloneMatchBetting = async (req, res) => {
     }
     const currTournamentBettingData = {
       matchId: match.id,
-      minBet: currTournament.betFairSessionMinBet,
+      minBet: currTournament.minBet,
       createBy: req.user.id,
       type: currTournament?.type,
       name: currTournament?.name,

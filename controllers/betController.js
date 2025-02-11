@@ -1946,7 +1946,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
         });
         await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.save, result: null, stopAt: null });
         await deleteExpertResult(matchOddBetting.id, userId);
-        throw err;
+        throw err?.response?.data || err;
       });
     isResultChange = false;
 
@@ -2691,7 +2691,7 @@ exports.verifyBet = async (req, res) => {
       apiMethod.post,
       domain + allApiRoutes.user.verifyBet,
       {
-        isVerified, id, verifyBy: req?.user?.userName
+        isVerified, id, verifyBy: !isVerified ? null : req?.user?.userName
       }
     );
 
@@ -2702,7 +2702,7 @@ exports.verifyBet = async (req, res) => {
         matchId: matchId,
         id: id,
         isVerified: isVerified,
-        verifyBy: req?.user?.userName
+        verifyBy: !isVerified ? null : req?.user?.userName
       }
     );
     return SuccessResponse(

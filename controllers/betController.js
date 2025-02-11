@@ -57,7 +57,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { extractNumbersFromString } = require("../services/commonService");
 const { getRacingMatchById, raceAddMatch } = require("../services/racingMatchService");
 const { getRaceBettingWithRunners, updateRaceBetting } = require("../services/raceBettingService");
-const { getTournamentBettingWithRunners, updateTournamentBetting, getTournamentBetting, getTournamentBettings, getSingleTournamentBetting } = require("../services/tournamentBettingService");
+const { getTournamentBettingWithRunners, updateTournamentBetting, getTournamentBetting, getTournamentBettings, getSingleTournamentBetting, updateTournamentBettingStatus } = require("../services/tournamentBettingService");
 const { removeBlinkingTabs } = require("../services/blinkingTabsService");
 
 
@@ -1882,7 +1882,9 @@ exports.declareTournamentMatchResult = async (req, res) => {
         message: { msg: "bet.matchDeclare" },
       }, req, res);
     }
-    await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.result, result: result, stopAt: new Date() });
+    await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+      id: betId,
+    }], { activeStatus: betStatus.result, result: result, stopAt: new Date() });
     isResultChange = true;
 
     // const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
@@ -1913,7 +1915,9 @@ exports.declareTournamentMatchResult = async (req, res) => {
     });
 
     if (resultValidate) {
-      await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.save, result: null, stopAt: null });
+      await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+        id: betId,
+      }], { activeStatus: betStatus.save, result: null, stopAt: null });
       return SuccessResponse({ statusCode: 200, message: { msg: "bet.resultApprove" }, }, req, res);
     }
 
@@ -1944,7 +1948,9 @@ exports.declareTournamentMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
-        await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.save, result: null, stopAt: null });
+        await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+          id: betId,
+        }], { activeStatus: betStatus.save, result: null, stopAt: null });
         await deleteExpertResult(matchOddBetting.id, userId);
         throw err?.response?.data || err;
       });
@@ -2008,7 +2014,9 @@ exports.declareTournamentMatchResult = async (req, res) => {
       message: err.message,
     });
     if (isResultChange) {
-      await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.save, result: null, stopAt: null });
+      await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+        id: betId,
+      }], { activeStatus: betStatus.save, result: null, stopAt: null });
     }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
@@ -2094,7 +2102,9 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       );
     }
 
-    await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.live, result: null, stopAt: null });
+    await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+      id: betId,
+    }], { activeStatus: betStatus.live, result: null, stopAt: null });
     isResultChange = true;
     oldResult = matchOddBetting.result;
     oldStopAt = match?.stopAt;
@@ -2121,7 +2131,9 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
-        await updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: matchOddBetting?.stopAt });
+        await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+          id: betId,
+        }], { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: matchOddBetting?.stopAt });
         throw err;
       });
 
@@ -2187,7 +2199,9 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       message: err.message,
     });
     if (isResultChange) {
-      updateTournamentBetting([{ id: betId }, { parentBetId: betId }], { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
+      updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+        id: betId,
+      }], { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
     }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);

@@ -10,7 +10,7 @@ const { getAllBettingRedis, getBettingFromRedis, addAllMatchBetting, getMatchFro
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
-const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById, getTournamentBetting, getTournamentRunners, getTournamentBettings, addTournamentRunners, getSingleTournamentBetting } = require("../services/tournamentBettingService");
+const { updateTournamentBetting, addTournamentBetting, insertTournamentRunners, getTournamentBettingById, getTournamentBetting, getTournamentRunners, getTournamentBettings, addTournamentRunners, getSingleTournamentBetting, updateTournamentBettingStatus } = require("../services/tournamentBettingService");
 
 exports.getMatchBetting = async (req, res) => {
   try {
@@ -606,7 +606,9 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
     }
     let tournamentBettingData;
     if (id) {
-      await updateTournamentBetting([{ id: id }, { parentBetId: id }], { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit, isCommissionActive: isCommissionActive, name: name });
+      await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+        id: id,
+      }], { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit, isCommissionActive: isCommissionActive, name: name });
       await addTournamentRunners(runners?.map((item) => ({ runnerName: item.runnerName, id: item.id })));
       const isMatchExist = await hasMatchInCache(matchId);
       if (isMatchExist) {

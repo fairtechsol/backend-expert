@@ -606,7 +606,7 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
     }
     let tournamentBettingData;
     if (id) {
-      await updateTournamentBetting({ id: id }, { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit, isCommissionActive: isCommissionActive, name: name });
+      await updateTournamentBetting([{ id: id }, { parentBetId: id }], { maxBet: maxBet, betLimit: betLimit, minBet: minBet ?? match.betFairSessionMinBet, exposureLimit: exposureLimit, isCommissionActive: isCommissionActive, name: name });
       await addTournamentRunners(runners?.map((item) => ({ runnerName: item.runnerName, id: item.id })));
       const isMatchExist = await hasMatchInCache(matchId);
       if (isMatchExist) {
@@ -619,13 +619,21 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
           bettingData.find((item) => item?.id == id).exposureLimit = exposureLimit;
           bettingData.find((item) => item?.id == id).isCommissionActive = isCommissionActive;
 
+          bettingData.forEach(item => {
+            if (item.id === id || item.parentBetId === id) {
+              Object.assign(item, {
+                exposureLimit: exposureLimit,
+                betLimit: betLimit
+              });
+            }
+          });
+
           for (let i = 0; i < runners.length; i++) {
             bettingData.find((item) => item?.id == id).runners.find((item) => item.id == runners[i].id).runnerName = runners[i].runnerName;
           }
           await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType[type], JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
         }
       }
-
     }
     else {
       const hasTournamentBetting = await getTournamentBetting({ marketId: marketId, matchId: matchId }, ["id"]);

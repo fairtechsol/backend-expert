@@ -1971,14 +1971,16 @@ exports.declareTournamentMatchResult = async (req, res) => {
     // }
     // else{
     const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
-    for (let item of matchData) {
-      if (item.id == betId || item.parentBetId == betId) {
-        item.activeStatus = betStatus.result;
-        item.result = result;
-        item.stopAt = new Date();
-        item.updatedAt = new Date();
+    matchData.forEach(item => {
+      if (item.id === betId || item.parentBetId === betId) {
+        Object.assign(item, {
+          activeStatus: betStatus.result,
+          result: result,
+          stopAt: new Date(),
+          updatedAt: new Date()
+        });
       }
-    }
+    });
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
     // }
     await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${betId}${redisKeys.profitLoss}_${matchId}`);
@@ -2163,14 +2165,16 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
     // matchData.find((item) => item.id == matchOddBetting?.id).stopAt = null;
     // matchData.find((item) => item.id == matchOddBetting?.id).updatedAt = new Date();
 
-    for (let item of matchData) {
-      if (item.id == betId || item.parentBetId == betId) {
-        item.activeStatus = betStatus.save;
-        item.result = null;
-        item.stopAt = null;
-        item.updatedAt = new Date();
+    matchData.forEach(item => {
+      if (item.id === betId || item.parentBetId === betId) {
+        Object.assign(item, {
+          activeStatus: betStatus.save,
+          result: null,
+          stopAt: null,
+          updatedAt: new Date()
+        });
       }
-    }
+    });
 
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
 
@@ -2718,3 +2722,4 @@ exports.verifyBet = async (req, res) => {
     return ErrorResponse(error, req, res)
   }
 }
+  

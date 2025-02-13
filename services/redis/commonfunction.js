@@ -343,6 +343,22 @@ exports.getBettingFromRedis = async (matchId, bettingType) => {
 };
 
 /**
+ * Retrieves betting data from Redis based on match and betting type.
+ *
+ * @param {string} matchId - The ID of the match.
+ * @param {string} bettingType - The betting type of match.
+ * @returns {Promise<Object|null>} - A Promise that resolves with the betting data
+ *                                   or null if no data is found for the given IDs.
+ */
+exports.getBettingFromRedis = async (matchId, bettingType) => {
+  // Retrieve betting data from Redis
+  const bettingData = await internalRedis.hget(`${matchId}_manualBetting`, bettingType);
+
+  // Parse and return the betting data or null if it doesn't exist
+  return bettingData ? JSON.parse(bettingData) : null;
+};
+
+/**
  * Retrieves all betting data for a given match from Redis.
  *
  * @param {string} matchId - The ID of the match.
@@ -355,6 +371,19 @@ exports.getAllBettingRedis = async (matchId) => {
 
   // Return the betting data as an object or null if no data is found
   return Object.keys(bettingData)?.length == 0 ? null : bettingData;
+};
+
+/**
+ * Retrieves all betting data for a given match from Redis.
+ *
+ * @param {string} matchId - The ID of the match.
+ * @returns {Promise<Object|null>} - A Promise that resolves with an object containing
+ *                                   all betting data for the match or null if no data is found.
+ */
+exports.getMatchTournamentFromCache = async (matchId) => {
+  // Retrieve all betting data for the match from Redis
+  const bettingData = await internalRedis.hget(`${matchId}_match`, "tournament");
+  return JSON.parse(bettingData || "[]")
 };
 
 exports.updateExpiryTimeBetting = async (matchId) => {

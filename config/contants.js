@@ -279,7 +279,8 @@ module.exports.betType = {
 module.exports.bettingType = {
   session: "session",
   match: "match",
-  racing: "racing"
+  racing: "racing",
+  tournament:"tournament"
 };
 
 module.exports.socketData = {
@@ -297,6 +298,7 @@ module.exports.socketData = {
   sessionResultDeclared: "sessionResultDeclared",
   matchResultDeclared: "matchResultDeclared",
   matchResultUnDeclared: "matchResultUnDeclared",
+  verifyBet: "verifyBet",
   matchBettingStatusChange: "matchBettingStatusChange",
   matchBettingMinMaxChange: "matchBettingMinMaxChange",
   matchBettingApiChange: "matchBettingApiChange",
@@ -643,3 +645,5 @@ exports.cardGames = [
     id: "7a5e7d3e-7a5e-4a5e-9a7e-7a5e7d3e8c63"
   }
 ];
+
+exports.matchOddName="MATCH_ODDS"

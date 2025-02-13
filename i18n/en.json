@@ -60,7 +60,9 @@
     "matchAlreadyDeclared":"You can not undeclare this market as match result is already declared.",
     "alreadyExist":"Market already added.",
     "canNotAddTournament":"Match is already declare so you can not add new markets.",
-    "isVerified": "Bet verified successfully."
+    "isVerified": "Bet verified successfully.",
+    "canNotClone": "You can not clone this market as this market is not exist.",
+    "marketAlreadyDeclare": "Market result already declared."
   }
   
 }

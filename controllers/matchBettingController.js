@@ -727,6 +727,14 @@ exports.cloneMatchBetting = async (req, res) => {
         },
       }, req, res);
     }
+    if (currTournament.activeStatus == betStatusType.result) {
+      return ErrorResponse({
+        statusCode: 400,
+        message: {
+          msg: "bet.marketAlreadyDeclare",
+        },
+      }, req, res);
+    }
     const currTournamentBettingData = {
       matchId: match.id,
       minBet: currTournament.minBet,

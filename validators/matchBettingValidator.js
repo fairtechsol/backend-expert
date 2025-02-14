@@ -115,9 +115,6 @@ exports.addMatchBettingDataValidator = Joi.object({
         'string.guid': `matchId must be a valid GUID`,
         'any.required': `matchId is a required field`
     }),
-    mid:Joi.string().allow(null).messages({
-        "string.base": "Market ID must be a string"
-    }),
     type: Joi.string().valid(...Object.values(matchBettingType)).required().messages({
         'string.base': `type should be a type of 'text'`,
         'string.empty': `type cannot be an empty field`,

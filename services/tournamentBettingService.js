@@ -29,6 +29,16 @@ exports.updateTournamentBetting = async (where, data) => {
   await TournamentBetting.update(where, data);
 };
 
+exports.updateTournamentBettingStatus = async (where, data) => {
+  await TournamentBetting
+    .createQueryBuilder()
+    .update("tournamentBetting")
+    .set(data)
+    .where(...where)
+    .execute()
+};
+
+
 exports.getTournamentBetting = async (where, select) => {
   return await TournamentBetting.findOne({
       where: where,

@@ -46,7 +46,10 @@ const tournamentRunnerSchema = new EntitySchema({
             type: "timestamp with time zone",
             nullable: true,
         },
-
+        parentRunnerId:{
+            type: "uuid",
+            nullable: true
+        }
     },
     relations: {
         match: {

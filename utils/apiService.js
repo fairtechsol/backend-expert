@@ -60,7 +60,9 @@ exports.allApiRoutes = {
     bets: "/expert/bets",
     loginData: "/expert/login/bet/data",
     addMatch: "/match/add",
-    addRaceMatch: "/match/raceAdd"
+    addRaceMatch: "/match/raceAdd",
+    sessionUserWieProfitLossExpert: "/expert/userwise/session/profitLoss/expert",
+    sessionBetsExpert: "/expert/total/bet/profitLoss"
   },
   user:{
     verifyBet: "/fairgameWallet/verifyBet"

@@ -1,13 +1,14 @@
 const { addSessionBetting, getSessionBettingById, updateSessionBetting, getSessionBettings, getSessionBetting } = require("../services/sessionBettingService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { getUserById } = require("../services/userService");
-const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus, gameType, gameTypeMatchBetting } = require("../config/contants");
+const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus, gameType, gameTypeMatchBetting, walletDomain } = require("../config/contants");
 const { getMatchById, updateMatch } = require("../services/matchService");
 const { logger } = require("../config/logger");
 const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, getExpertsRedisSessionData, addDataInRedis, updateMultipleMarketSessionIdRedis, updateMatchInCache, updateMatchKeyInCache } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getSpecificResultsSession } = require("../services/betService");
 const { getExpertResult } = require("../services/expertResultService");
+const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 
 exports.addSession = async (req, res) => {
   try {
@@ -585,3 +586,80 @@ exports.updateSessionMaxBet = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 }
+
+exports.sessionProfitLossUserWise = async (req, res) => {
+  try {
+    const { betId } = req.query;
+
+    const response = await apiCall(
+      apiMethod.post,
+      walletDomain + allApiRoutes.wallet.sessionUserWieProfitLossExpert,
+      {
+        betId: betId
+      }
+    )
+      .then((data) => {
+        return data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at get sessions users`,
+          stack: err.stack,
+          message: err.message,
+        });
+        throw err?.response?.data || err;
+      });
+
+    return SuccessResponse({ statusCode: 200, data: response?.data }, req, res);
+  } catch (err) {
+    logger.error({
+      error: `Error at get sessions user`,
+      stack: err.stack,
+      message: err.message,
+    });
+
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.sessionProfitLossBets = async (req, res) => {
+  try {
+    const { betId, matchId, url, userId } = req.query;
+
+    const response = await apiCall(
+      apiMethod.get,
+      walletDomain + allApiRoutes.wallet.sessionBetsExpert,
+      null,
+      null,
+      {
+        betId: betId,
+        matchId:matchId,
+        isSession:true,
+        url:url,
+        userId:userId,
+        roleName: "user"
+      }
+    )
+      .then((data) => {
+        return data;
+      })
+      .catch(async (err) => {
+        logger.error({
+          error: `Error at get sessions users`,
+          stack: err.stack,
+          message: err.message,
+        });
+        throw err?.response?.data || err;
+      });
+
+    return SuccessResponse({ statusCode: 200, data: response?.data }, req, res);
+  } catch (err) {
+    logger.error({
+      error: `Error at get sessions user`,
+      stack: err.stack,
+      message: err.message,
+    });
+
+    return ErrorResponse(err, req, res);
+  }
+};

@@ -585,7 +585,7 @@ exports.raceBettingRateApiProviderChange = async (req, res) => {
 
 exports.addAndUpdateMatchBetting = async (req, res) => {
   try {
-    const { matchId, type, name, maxBet, minBet, marketId, id, gtype, sNo, runners, betLimit = 0, exposureLimit, isCommissionActive, isManual } = req.body;
+    const { matchId, type, name,mid, maxBet, minBet, marketId, id, gtype, sNo, runners, betLimit = 0, exposureLimit, isCommissionActive, isManual } = req.body;
     const match = await getMatchById(matchId, ["id", "betFairSessionMinBet", "stopAt"]);
     if (match.stopAt) {
       return ErrorResponse({
@@ -652,7 +652,8 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
         exposureLimit: exposureLimit,
         isCommissionActive: isCommissionActive,
         isManual: isManual,
-        sNo: sNo
+        sNo: sNo,
+        mid: mid
       };
 
       const tournamentBetting = await addTournamentBetting(tournamentBettingData);

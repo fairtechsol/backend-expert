@@ -292,7 +292,7 @@ exports.getTournamentBettingDetails = async (req, res) => {
 
       if (!runners) {
         runners = await getTournamentRunners({
-          bettingId: matchBetting.id
+          bettingId: matchBetting?.id
         });
       }
 

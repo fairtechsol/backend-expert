@@ -719,7 +719,7 @@ exports.cloneMatchBetting = async (req, res) => {
       if (isMatchExist) {
         const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType.tournament, "json");
         if (Array.isArray(bettingData)) {
-          bettingData.find((item) => item?.id == betId).activeStatus = tournamentStatus;
+          bettingData.find((item) => item?.id == childBetting.id).activeStatus = tournamentStatus;
           await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType.tournament, JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
         }
       }

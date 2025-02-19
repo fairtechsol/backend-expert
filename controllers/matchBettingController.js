@@ -712,10 +712,16 @@ exports.cloneMatchBetting = async (req, res) => {
 
     const childBetting = await getTournamentBetting({ parentBetId: betId, matchId: matchId }, ["id", "activeStatus"]);
     if (childBetting) {
-      if (childBetting.activeStatus == betStatusType.close) {
-        await updateTournamentBetting({ id: childBetting.id }, { activeStatus: betStatus.save });
-      } else {
-        await updateTournamentBetting({ id: childBetting.id }, { activeStatus: betStatus.close });
+      const tournamentStatus=childBetting.activeStatus == betStatusType.close?betStatus.save:betStatus.close
+      await updateTournamentBetting({ id: childBetting.id }, { activeStatus: tournamentStatus });
+
+      const isMatchExist = await hasMatchInCache(matchId);
+      if (isMatchExist) {
+        const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType.tournament, "json");
+        if (Array.isArray(bettingData)) {
+          bettingData.find((item) => item?.id == id).activeStatus = tournamentStatus;
+          await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType.tournament, JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
+        }
       }
       return SuccessResponse(
         {

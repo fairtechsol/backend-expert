@@ -710,7 +710,7 @@ exports.cloneMatchBetting = async (req, res) => {
   try {
     const { betId, matchId } = req.body;
 
-    const childBetting = await getTournamentBetting({ parentBetId: betId }, ["id", "activeStatus"]);
+    const childBetting = await getTournamentBetting({ parentBetId: betId, matchId: matchId }, ["id", "activeStatus"]);
     if (childBetting) {
       if (childBetting.activeStatus == betStatusType.close) {
         await updateTournamentBetting({ id: childBetting.id }, { activeStatus: betStatus.save });

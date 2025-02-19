@@ -709,6 +709,31 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
 exports.cloneMatchBetting = async (req, res) => {
   try {
     const { betId, matchId } = req.body;
+
+    const childBetting = await getTournamentBetting({ parentBetId: betId, matchId: matchId }, ["id", "activeStatus"]);
+    if (childBetting) {
+      const tournamentStatus=childBetting.activeStatus == betStatusType.close?betStatus.save:betStatus.close
+      await updateTournamentBetting({ id: childBetting.id }, { activeStatus: tournamentStatus });
+
+      const isMatchExist = await hasMatchInCache(matchId);
+      if (isMatchExist) {
+        const bettingData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType.tournament, "json");
+        if (Array.isArray(bettingData)) {
+          bettingData.find((item) => item?.id == childBetting.id).activeStatus = tournamentStatus;
+          await updateMatchKeyInCache(matchId, marketBettingTypeByBettingType.tournament, JSON.stringify(bettingData?.sort((a, b) => a.sNo - b.sNo)));
+        }
+      }
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "updated", keys: { name: "Match betting" } },
+          data: { id: childBetting?.id }
+        },
+        req,
+        res
+      );
+    }
+
     const match = await getMatchById(matchId, ["id", "stopAt"]);
     if (match.stopAt) {
       return ErrorResponse({

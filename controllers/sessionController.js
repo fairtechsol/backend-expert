@@ -360,7 +360,12 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
     if (stopAllSessions) {
       let conditionObj = { matchId: matchId, isManual: false, activeStatus: betStatusType.live };
       if(type) {
-        conditionObj.type = type;
+        if (type == sessionBettingType.manualSession) {
+          conditionObj.isManual = true;
+        }
+        else {
+          conditionObj.type = type;
+        }
       }
       let sessionData = await getSessionBettings(conditionObj);
       if (!sessionData?.length) {
@@ -537,7 +542,7 @@ exports.updateSessionMaxBet = async (req, res) => {
       minBet: minBet ?? match.betFairSessionMinBet,
       ...(exposureLimit != null ? { exposureLimit: exposureLimit } : {})
     }
-    let updatedSession = await updateSessionBetting({ matchId: matchId, type: type }, sessionData);
+    let updatedSession = await updateSessionBetting({ matchId: matchId, ...(type == sessionBettingType.manualSession ? { isManual: true } : { type: type }) }, sessionData);
     if (!updatedSession) {
       logger.error({
         error: `Error at update session betting in match :${matchId}`,
@@ -549,7 +554,7 @@ exports.updateSessionMaxBet = async (req, res) => {
     const isSessionExist = await hasSessionInCache(matchId);
 
     if (isSessionExist) {
-      let sessions = await getSessionBettings({ matchId: matchId , type: type});
+      let sessions = await getSessionBettings({ matchId: matchId, ...(type == sessionBettingType.manualSession ? { isManual: true } : { type: type }) });
       sessions = sessions.reduce((prev, curr) => {
         prev[curr.id] = JSON.stringify(curr);
         return prev;

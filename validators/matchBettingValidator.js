@@ -202,5 +202,5 @@ exports.cloneMatchBettingDataValidator = Joi.object({
         'string.guid': `matchId must be a valid GUID`,
         'any.required': `matchId is a required field`
     }),
-    
+    disabled: Joi.boolean().optional(),
 });

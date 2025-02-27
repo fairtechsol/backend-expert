@@ -708,11 +708,19 @@ exports.addAndUpdateMatchBetting = async (req, res) => {
 
 exports.cloneMatchBetting = async (req, res) => {
   try {
-    const { betId, matchId } = req.body;
+    const { betId, matchId, disabled } = req.body;
 
     const childBetting = await getTournamentBetting({ parentBetId: betId, matchId: matchId }, ["id", "activeStatus"]);
-    if (childBetting) {
-      const tournamentStatus=childBetting.activeStatus == betStatusType.close?betStatus.save:betStatus.close
+    if (childBetting && (!disabled && childBetting.activeStatus != betStatusType.close)) {
+      return ErrorResponse({
+        statusCode: 400,
+        message: {
+          msg: "bet.canNotCloneAgain",
+        },
+      }, req, res);
+    }
+    else if (childBetting && (disabled || childBetting.activeStatus == betStatusType.close)) {
+      const tournamentStatus = childBetting.activeStatus == betStatusType.close ? betStatus.save : betStatus.close
       await updateTournamentBetting({ id: childBetting.id }, { activeStatus: tournamentStatus });
 
       const isMatchExist = await hasMatchInCache(matchId);

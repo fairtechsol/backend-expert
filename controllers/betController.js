@@ -227,9 +227,7 @@ exports.declareSessionResult = async (req, res) => {
       });
     isResultChange = false;
 
-    fwProfitLoss = response?.data?.profitLoss
-      ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
-      : 0;
+    fwProfitLoss = response?.data?.profitLoss ? Number(parseFloat(response?.data?.profitLoss).toFixed(2)) : 0;
 
     await addResult({
       betType: bettingType.session,

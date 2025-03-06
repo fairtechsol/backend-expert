@@ -16,6 +16,7 @@ const ExpertMatchQueue = require("./queue/consumer.js");
 const internalRedis = require("./config/internalRedisConnection.js");
 const helmet = require('helmet');
 const encryptDecryptData = require("./middleware/encryptDecryptData.js");
+const compression = require('compression');
 
 
 const allowSubdomainsAndLocalhost = (origin, callback) => {
@@ -33,6 +34,14 @@ if (process.env.NODE_ENV == 'production') {
 } else {
   app.use(cors({ origin: "*" }));
 }
+// Configure compression for ALL HTTP traffic
+app.use(compression({
+  brotli: {
+    quality: 4, // 4-6 is ideal for APIs (balance speed/size)
+  },
+  level: 6, // gzip level 6 (optimal balance)
+  threshold: '1kb', // Skip compressing tiny responses
+}));
 
 app.enable('trust proxy');
 app.use(helmet());

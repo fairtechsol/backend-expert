@@ -251,6 +251,7 @@ module.exports.sessionBettingType = {
   cricketCasino: "cricketCasino",
   khado: "khado",
   meter: "meter",
+  manualSession: "manualSession"
 };
 module.exports.teamStatus = {
   suspended: "suspended",

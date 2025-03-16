@@ -1,4 +1,6 @@
 const socketIO = require("socket.io");
+const { createAdapter } = require("@socket.io/redis-adapter");
+const Redis = require("ioredis");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
@@ -14,54 +16,46 @@ const {
   updateMatchKeyInCache,
 } = require("../services/redis/commonfunction");
 const { updateMatchBettingById } = require("../services/matchBettingService");
-const {
-  UpdateMatchBettingRateInSocket,
-} = require("../validators/matchBettingValidator");
+const { UpdateMatchBettingRateInSocket } = require("../validators/matchBettingValidator");
 const { jsonValidator } = require("../middleware/joi.validator");
 const { updateSessionBetting } = require("../services/sessionBettingService");
 const { UpdateSessionRateInSocket } = require("../validators/sessionValidator");
-const redis = require("socket.io-redis");
 const { getTournamentBetting, getSingleTournamentBetting, addTournamentRunners } = require("../services/tournamentBettingService");
 require("dotenv").config();
+
 let io;
+
 /**
  * Handles a new socket connection.
  * @param {object} client - The socket client object representing the connection.
  */
 const handleConnection = async (client) => {
   try {
-    // Extract the token from the client's handshake headers or auth object
-    const token =
-      client.handshake.headers.authorization || client.handshake.auth.token;
-
-    // If no token is provided, disconnect the client
+    // Extract token from handshake headers or auth object
+    const token = client.handshake.headers.authorization || client.handshake.auth.token;
     if (!token) {
       client.disconnect();
       return;
     }
 
-    // Verify the token to get user information
+    // Verify token and get user details
     const decodedUser = verifyToken(token);
-
-    // If the token is invalid, disconnect the client
     if (!decodedUser) {
       client.disconnect();
       return;
     }
 
-    // Extract user ID and role from the decoded user object
+    // Extract user ID, role, and demo flag from the decoded user object
     const { id: userId, roleName, isDemo } = decodedUser;
 
+    // For regular (non-demo) users, manage login count
     if (roleName == userRoleConstant.user && !isDemo) {
       const userCount = parseInt(await internalRedis.get("loginUserCount"));
-
-      // If the user is a regular user, manage user login count
       const incrementCount = async () => {
         const count = await internalRedis.incr("loginUserCount");
         io.to(socketData.expertRoomSocket).emit("loginUserCount", { count });
       };
 
-      // Increment and emit the login user count if greater than 0; otherwise, set it to 1
       if (userCount > 0) {
         await incrementCount();
       } else {
@@ -71,25 +65,19 @@ const handleConnection = async (client) => {
       return;
     }
 
-    // Retrieve the user's token from Redis
+    // Retrieve and verify the token stored in Redis
     const userTokenRedis = await getUserTokenFromRedis(userId);
-
-    // If the token doesn't match the one stored in Redis, disconnect the client
     if (userTokenRedis !== token) {
       client.disconnect();
       return;
     }
 
-    // Join the room with the user's ID
+    // Join the room for the user and the expert room
     client.join(userId);
-
-    // Handle additional logic based on the user's role
-
     client.join(socketData.expertRoomSocket);
   } catch (err) {
-    // Handle any errors by disconnecting the client
     logger.error({
-      error: `Error at socket connection.`,
+      error: "Error at socket connection.",
       stack: err.stack,
       message: err.message,
     });
@@ -98,54 +86,42 @@ const handleConnection = async (client) => {
 };
 
 /**
- * Handles a disconnect socket connection.
- * @param {object} client - The socket client object representing the connection.
+ * Handles socket disconnection.
+ * @param {object} client - The socket client object.
  */
 const handleDisconnect = async (client) => {
   try {
-    // Extract the token from the client's handshake headers or auth object
-    const token =
-      client.handshake.headers.authorization || client.handshake.auth.token;
-
-    // If no token is provided, disconnect the client
+    // Extract token from handshake headers or auth object
+    const token = client.handshake.headers.authorization || client.handshake.auth.token;
     if (!token) {
       return;
     }
 
-    // Verify the token to get user information
+    // Verify the token to retrieve user details
     const decodedUser = verifyToken(token);
-
-    // If the token is invalid, disconnect the client
     if (!decodedUser) {
       return;
     }
 
-    // Extract user ID and role from the decoded user object
     const { id: userId, roleName, isDemo } = decodedUser;
 
+    // For regular (non-demo) users, decrement the login count
     if (roleName == userRoleConstant.user && !isDemo) {
       const userCount = parseInt(await internalRedis.get("loginUserCount"));
-      // If the user is a regular user, manage user login count
       const decrementCount = async () => {
-        const userCount = await internalRedis.decr("loginUserCount");
-        io.to(socketData.expertRoomSocket).emit("loginUserCount", {
-          count: userCount,
-        });
+        const count = await internalRedis.decr("loginUserCount");
+        io.to(socketData.expertRoomSocket).emit("loginUserCount", { count });
       };
 
-      // Decrement and emit the login user count if greater than 0; otherwise, set it to 0
       userCount > 0 ? await decrementCount() : await internalRedis.set("loginUserCount", 0);
-
       return;
     }
 
-    // Leave the room with the user's ID
+    // Leave all rooms associated with the client
     client.leaveAll();
-
   } catch (err) {
-    // Handle any errors by disconnecting the client
     logger.error({
-      error: `Error at socket disconnect.`,
+      error: "Error at socket disconnect.",
       stack: err.stack,
       message: err.message,
     });
@@ -158,29 +134,38 @@ const handleDisconnect = async (client) => {
  * @param {object} server - The HTTP server instance.
  */
 exports.socketManager = (server) => {
-  // Ensure server.app is initialized
   if (!server.app) server.app = {};
-  // Create a storage for socket connections
   server.app.socketConnections = {};
 
-  // Create a Socket.io instance attached to the server
   io = socketIO(server, {
     cors: {
       origin: "*",
-      methods: ["GET", "POST"]
+      methods: ["GET", "POST"],
+    },
+    transports: ["websocket", "polling"], // Enable both WebSocket and polling
+    perMessageDeflate: {
+      threshold: 1024,  // Only compress messages larger than 1024 bytes
+      zlibDeflateOptions: { level: 6 }, // Maximum compression
+      zlibInflateOptions: { chunkSize: 64 * 1024 }, // Efficient decompression
+      clientNoContextTakeover: true, // Reduce memory usage
+      serverNoContextTakeover: true, // Reduce memory usage
+      serverMaxWindowBits: 10, // Low memory usage
     }
   });
-  // Use the Redis adapter
-  io.adapter(
-    redis({
-      host: process.env.INTERNAL_REDIS_HOST || "localhost",
-      port: process.env.INTERNAL_REDIS_PORT || 6379,
-    })
-  );
 
-  // Event listener for a new socket connection
+  // Create Redis clients using ioredis
+  const pubClient = new Redis({
+    host: process.env.INTERNAL_REDIS_HOST || "localhost",
+    port: process.env.INTERNAL_REDIS_PORT || 6379,
+    password: process.env.INTERNAL_REDIS_PASSWORD,
+  });
+  const subClient = pubClient.duplicate();
+
+  // Use the Redis adapter with the ioredis clients
+  io.adapter(createAdapter(pubClient, subClient));
+
+  // Set up socket event listeners
   io.on("connect", (client) => {
-    // Delegate connection handling to a separate function
     handleConnection(client);
 
     client.on("matchRoom", (match) => {
@@ -196,23 +181,15 @@ exports.socketManager = (server) => {
     });
 
     client.on("updateMatchBettingRate", async (body) => {
-      let { error, validated } = await jsonValidator(
-        UpdateMatchBettingRateInSocket,
-        body
-      );
+      const { error, validated } = await jsonValidator(UpdateMatchBettingRateInSocket, body);
       if (error) {
         return;
       }
-      let { matchId, id, teams } = body;
+      const { matchId, id, teams } = body;
+      exports.sendMessageToUser(socketData.expertRoomSocket, "updateMatchBettingRateClient", body);
 
-      this.sendMessageToUser(
-        socketData.expertRoomSocket,
-        "updateMatchBettingRateClient",
-        body
-      );
       const redisMatchTournament = await getMatchTournamentFromCache(matchId);
-      let matchBettingData = {};
-      matchBettingData = (redisMatchTournament).find((item) => item.id == id);
+      let matchBettingData = redisMatchTournament.find((item) => item.id == id);
       if (!matchBettingData) {
         matchBettingData = await getSingleTournamentBetting({ id: id });
       }
@@ -220,35 +197,25 @@ exports.socketManager = (server) => {
         matchBettingData.runners.find((item) => item.id == items.id).backRate = items.back;
         matchBettingData.runners.find((item) => item.id == items.id).layRate = items.lay;
         matchBettingData.runners.find((item) => item.id == items.id).status = items.status;
-      })
-      matchBettingData.runners=matchBettingData?.runners?.sort((a,b)=> a.sortPriority - b.sortPriority)
+      });
+      matchBettingData.runners = matchBettingData?.runners?.sort((a, b) => a.sortPriority - b.sortPriority);
       if (redisMatchTournament) {
-        const currRunnerIndex=redisMatchTournament.findIndex((item)=>item.id==id);
-        redisMatchTournament[currRunnerIndex]=matchBettingData;
-        updateMatchKeyInCache(matchId, "tournament", JSON.stringify(redisMatchTournament))
+        const currRunnerIndex = redisMatchTournament.findIndex((item) => item.id == id);
+        redisMatchTournament[currRunnerIndex] = matchBettingData;
+        updateMatchKeyInCache(matchId, "tournament", JSON.stringify(redisMatchTournament));
       }
       addTournamentRunners(matchBettingData.runners);
-      return;
     });
 
     client.on("updateSessionRate", async (body) => {
-      let { error, validated } = await jsonValidator(
-        UpdateSessionRateInSocket,
-        body
-      );
+      const { error, validated } = await jsonValidator(UpdateSessionRateInSocket, body);
       if (error) {
         return;
       }
-      let { matchId, id } = body;
+      const { matchId, id } = body;
+      exports.sendMessageToUser(socketData.expertRoomSocket, "updateSessionRateClient", body);
 
-      this.sendMessageToUser(
-        socketData.expertRoomSocket,
-        "updateSessionRateClient",
-        body
-      );
-
-      let sessionData = {};
-      sessionData = await getSessionFromRedis(matchId, id);
+      let sessionData = await getSessionFromRedis(matchId, id);
       if (!sessionData) {
         await addAllsessionInRedis(matchId);
         sessionData = await getSessionFromRedis(matchId, id);
@@ -261,32 +228,24 @@ exports.socketManager = (server) => {
       sessionData["status"] = body.status;
       updateSessionBetting({ id }, sessionData);
       updateSessionMatchRedis(matchId, id, sessionData);
-      return;
     });
 
-    // Event listener for socket disconnection
     client.on("disconnect", () => {
-      // Delegate disconnection handling to a separate function
       handleDisconnect(client);
     });
   });
 };
+
 /**
  * Sends a message to a specific user or room.
- *
  * @param {string} roomId - The ID of the user or room to send the message to.
- * @param {string} event - The name of the event to emit.
+ * @param {string} event - The event name to emit.
  * @param {any} data - The data to send with the message.
- *
- * @throws {Error} Throws an error if the Socket.IO instance (io) is not initialized.
- *
- * @example
- * // Sending a message to a user with ID '123'
- * sendMessageToUser('123', 'customEvent', { message: 'Hello, user!' });
  */
 exports.sendMessageToUser = (roomId, event, data) => {
   io.to(roomId).emit(event, data);
 };
+
 /**
  * Broadcasts an event to all connected clients.
  * @param {string} event - The event name to broadcast.

@@ -3,7 +3,7 @@ const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
 const RaceSchema = require("../models/racingMatch.entity");
-const { matchBettingType, betStatusType, manualMatchBettingType, gameType, matchOddName } = require("../config/contants");
+const {  betStatusType, gameType, matchOddName } = require("../config/contants");
 const match = AppDataSource.getRepository(matchSchema);
 const race = AppDataSource.getRepository(RaceSchema);
 
@@ -41,10 +41,6 @@ exports.getMatch = async (filters, select, query) => {
     let matchQuery = new ApiFeature(
       match
         .createQueryBuilder()
-        .leftJoinAndSelect(
-          "match.matchBettings",
-          "matchBetting"
-        )
         .where(filters)
         .select(select)
         .orderBy("match.startAt", "DESC"),
@@ -75,15 +71,6 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
         .andWhere({
           stopAt: IsNull(),
         })
-        .leftJoinAndMapMany(
-          "match.matchOdds",
-          "match.matchBettings",
-          "matchOdds",
-          "matchOdds.type = :type",
-          {
-            type: matchBettingType.matchOdd,
-          }
-        )
         .leftJoinAndMapOne(
           "match.matchOddTournament",
           "tournamentBetting",
@@ -98,21 +85,6 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
           "tournamentRunner",
           "tournamentRunner",
           "tournamentRunner.bettingId = tournamentBetting.id"
-        )
-        .leftJoinAndMapMany(
-          "match.isBookmaker",
-          "match.matchBettings",
-          "isBookmaker",
-          "isBookmaker.isActive = true AND isBookmaker.type IN (:...types)",
-          {
-            types: [
-              matchBettingType.bookmaker,
-              matchBettingType.bookmaker2,
-              matchBettingType.quickbookmaker1,
-              matchBettingType.quickbookmaker2,
-              matchBettingType.quickbookmaker3,
-            ]
-          }
         )
         .select(select)
         .orderBy("match.startAt", "DESC"),
@@ -238,9 +210,8 @@ exports.getMatchDates = async (type) => {
 
 exports.getMatchByCompetitionIdAndDates = async (type, date) => {
   return await match.createQueryBuilder()
-    .leftJoinAndMapMany('match.matchBetting', 'matchBetting', 'matchBetting', 'match.id = matchBetting.matchId AND matchBetting.isActive = true')
     .leftJoinAndMapMany('match.tournamentBetting', 'tournamentBetting', 'tournamentBetting', 'match.id = tournamentBetting.matchId AND tournamentBetting.isActive = true')
-    .select(["match.id", "match.title", "matchBetting.id", "matchBetting.name", "matchBetting.type", "tournamentBetting.id", "tournamentBetting.name", "tournamentBetting.type"])
+    .select(["match.id", "match.title", "tournamentBetting.id", "tournamentBetting.name", "tournamentBetting.type"])
     .where({ stopAt: IsNull() , matchType: type })
     .andWhere('DATE_TRUNC(\'day\',match."startAt") = :date')
     .setParameters({ "date": new Date(date) })

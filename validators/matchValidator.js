@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { bettingType, matchBettingType, marketBettingTypeByBettingType } = require("../config/contants");
+const { bettingType, marketBettingTypeByBettingType } = require("../config/contants");
 
 let addMatchSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),
@@ -110,18 +110,6 @@ module.exports.MatchActiveInactive = Joi.object({
   "object.base": "Invalid input. Please provide a valid object.",
 });
 
-module.exports.MultipleMatchActiveInactive = Joi.object({
-  matchId: Joi.string().guid({ version: "uuidv4" }).required(),
-  type: Joi.string()
-    .required()
-    .messages({
-      "string.base": "Match betting type must be a string",
-      "any.required": "Match betting type is required",
-    }),
-  isActive: Joi.boolean().required(),
-}).messages({
-  "object.base": "Invalid input. Please provide a valid object.",
-});
 
 module.exports.getMatchSchema = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }),

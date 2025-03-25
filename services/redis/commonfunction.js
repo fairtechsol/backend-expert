@@ -1,10 +1,9 @@
 
-const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatchWise, mainMatchMarketType, mainMatchRacingMarketType, raceTypeByBettingType } = require("../../config/contants");
+const { redisKeys, betStatusType, marketBettingTypeByBettingType, mainMatchRacingMarketType, raceTypeByBettingType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
 const { getMatchSchema } = require("../../validators/matchValidator");
-const { getMatchAllBettings } = require("../matchBettingService");
 const { getSessionBettings } = require("../sessionBettingService");
 const lodash = require('lodash')
 let expiry = 60 * 60 * 4;
@@ -476,23 +475,6 @@ exports.addAllsessionInRedis = async (matchId, result) => {
   await this.settingAllSessionMatchRedis(matchId, session);
 }
 
-exports.addAllMatchBetting = async (matchId, result) => {
-  if (!result)
-    result = await getMatchAllBettings({ matchId });
-  if (!result) {
-    throw {
-      error: true,
-      message: { msg: "notFound", keys: { name: "Match betting" } },
-      statusCode: 404,
-    };
-  }
-  let matchBetting = {};
-  for (let index = 0; index < result?.length; index++) {
-    matchBetting[result[index].type] = JSON.stringify(result[index]);
-  }
-  await this.settingAllBettingMatchRedis(matchId, matchBetting);
-}
-
 exports.hasMarketSessionIdsInCache = async (matchId) => {
   let Key = `${matchId}_selectionId`;
   return await internalRedis.exists(Key);
@@ -616,27 +598,6 @@ exports.getExpertsRedisMatchData = async (matchId) => {
 
 }
 
-exports.getExpertsRedisOtherMatchData = async (matchId, gameType) => {
-  // Retrieve match data from Redis
-  const redisIds = [];
-  redisIds.push(
-    ...redisKeysMatchWise[gameType].map(
-      (key) => key + matchId
-    )
-  );
-
-  const matchData = await internalRedis.hmget(redisKeys.expertRedisData, ...redisIds);
-  let teamRates = {};
-  matchData?.forEach((item, index) => {
-    if (item) {
-      teamRates[redisIds?.[index]?.split("_")[0]] = item;
-    }
-  });
-  // Parse and return the match data or null if it doesn't exist
-  return teamRates;
-
-}
-
 // create function for remove key from market session
 exports.deleteKeyFromExpertRedisData = async (...key) => {
   const deleteKey = await internalRedis.hdel(redisKeys.expertRedisData, key);
@@ -725,19 +686,6 @@ exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
     });
 
     redisPipeline = redisPipeline.hset(`${matchId}_manualBetting`, manualBettingData).expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
-  }
-
-  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
-
-  if (matchDetails) {
-    mainMatchMarketType?.forEach((item) => {
-      if (matchDetails[marketBettingTypeByBettingType[item]]) {
-        let data = JSON.parse(matchDetails[marketBettingTypeByBettingType[item]]);
-        data.activeStatus = status;
-        matchDetails[marketBettingTypeByBettingType[item]] = JSON.stringify(data);
-      }
-    });
-    redisPipeline = redisPipeline.hset(`${matchId}_match`, matchDetails).expire(`${matchId}_match`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
   }
 
   // Use a Redis pipeline for atomicity and efficiency

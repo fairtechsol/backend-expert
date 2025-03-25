@@ -7,20 +7,16 @@ const { logger } = require("../config/logger");
 const { userRoleConstant, socketData } = require("../config/contants");
 const {
   getSessionFromRedis,
-  getBettingFromRedis,
-  updateBettingMatchRedis,
   updateSessionMatchRedis,
   addAllsessionInRedis,
-  addAllMatchBetting,
   getMatchTournamentFromCache,
   updateMatchKeyInCache,
 } = require("../services/redis/commonfunction");
-const { updateMatchBettingById } = require("../services/matchBettingService");
 const { UpdateMatchBettingRateInSocket } = require("../validators/matchBettingValidator");
 const { jsonValidator } = require("../middleware/joi.validator");
 const { updateSessionBetting } = require("../services/sessionBettingService");
 const { UpdateSessionRateInSocket } = require("../validators/sessionValidator");
-const { getTournamentBetting, getSingleTournamentBetting, addTournamentRunners } = require("../services/tournamentBettingService");
+const {  getSingleTournamentBetting, addTournamentRunners } = require("../services/tournamentBettingService");
 require("dotenv").config();
 
 let io;

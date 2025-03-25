@@ -10,16 +10,6 @@ exports.getExpertResult=async (where,select)=>{
       });
 }
 
-exports.getExpertResultBetWise = async (where, select) => {
-    return await expertResultRepo.createQueryBuilder().innerJoinAndMapOne("expertResult.betId", "matchBetting", "matchBetting", "matchBetting.id = expertResult.betId")
-    .where(where)
-    .select(['expertResult.betId as "betId"','matchBetting.type as "type"','Count(expertResult.betId) as "totalResult"'])
-    .addSelect(`CASE WHEN COUNT(expertResult.betId) = 1 THEN '${resultStatus.pending}' ELSE '${resultStatus.missMatched}' END`, "status")
-    .groupBy("expertResult.betId")
-    .addGroupBy("matchBetting.type")
-    .getRawMany();
-}
-
 exports.getExpertResultSessionBetWise = async (where, select) => {
     return await expertResultRepo.createQueryBuilder().innerJoinAndMapOne("expertResult.betId", "sessionBetting", "sessionBetting", "sessionBetting.id = expertResult.betId")
     .where(where)

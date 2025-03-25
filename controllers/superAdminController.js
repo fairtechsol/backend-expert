@@ -1,8 +1,7 @@
 
 const { IsNull } = require("typeorm");
-const { gameType } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { commonGetMatchDetails, commonGetMatchDetailsForFootball } = require("../services/commonService");
+const { commonGetMatchDetails } = require("../services/commonService");
 const { getMatchSuperAdmin } = require("../services/matchService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { getRacingMatchCountryList, getRacingMatch } = require("../services/racingMatchService");
@@ -16,7 +15,7 @@ exports.listMatchSuperAdmin = async (req, res) => {
     const match = await getMatchSuperAdmin(filters, fields?.split(",") || null, query);
 
     for (let i = 0; i < match?.matches?.length; i++) {
-      match?.matches[i]?.matchType == gameType.cricket ? await commonGetMatchDetails(match.matches[i].id) : await commonGetMatchDetailsForFootball(match.matches[i].id);
+       await commonGetMatchDetails(match.matches[i].id);
     }
 
     if (!match) {

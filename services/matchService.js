@@ -156,7 +156,6 @@ exports.getMatchWithBettingAndSession = async (
 
 exports.getMatchDetails = async (id, select) => {
   const result = await match.createQueryBuilder('match')
-  .leftJoinAndSelect('match.matchBettings', 'matchBettings')
   .leftJoinAndSelect('match.sessionBettings', 'sessionBettings')
   .leftJoinAndMapOne("sessionBettings.resultData", "result", "resultData", "resultData.betId = sessionBettings.id")
   .leftJoinAndSelect('match.tournamentBettings', 'tournamentBettings')

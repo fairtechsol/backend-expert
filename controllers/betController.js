@@ -791,7 +791,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       return ErrorResponse(
         {
           statusCode: 403,
-          message: { msg: "bet.matchDeclare" },
+          message: { msg: "bet.marketAlreadyDeclare" },
         },
         req,
         res
@@ -802,7 +802,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
     if (isMatchDeclared) {
       return ErrorResponse({
         statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
+        message: { msg: "bet.marketAlreadyDeclare" },
       }, req, res);
     }
     await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {

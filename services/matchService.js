@@ -71,6 +71,21 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
         .andWhere({
           stopAt: IsNull(),
         })
+        .leftJoinAndMapOne(
+          "match.matchOddTournament",
+          "tournamentBetting",
+          "tournamentBetting",
+          "tournamentBetting.name = :name and tournamentBetting.matchId = match.id",
+          {
+            name: matchOddName,
+          }
+        )
+        .leftJoinAndMapMany(
+          "tournamentBetting.runners",
+          "tournamentRunner",
+          "tournamentRunner",
+          "tournamentRunner.bettingId = tournamentBetting.id"
+        )
         .select(select)
         .orderBy("match.startAt", "DESC"),
       query

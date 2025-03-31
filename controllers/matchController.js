@@ -18,7 +18,6 @@ const {
 } = require("../services/matchService");
 
 const { addRaceInCache, addMatchInCache, updateMatchInCache, updateRaceInCache,  getMatchFromCache, updateMatchKeyInCache, hasBettingInCache,  hasMatchInCache, getSingleMatchKey } = require("../services/redis/commonfunction");
-const { In } = require("typeorm");
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");

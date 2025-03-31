@@ -17,6 +17,7 @@ const internalRedis = require("./config/internalRedisConnection.js");
 const helmet = require('helmet');
 const encryptDecryptData = require("./middleware/encryptDecryptData.js");
 const compression = require('compression');
+require("./grpc/index");
 
 
 const allowSubdomainsAndLocalhost = (origin, callback) => {

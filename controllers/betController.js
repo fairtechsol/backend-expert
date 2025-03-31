@@ -51,6 +51,7 @@ const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { getTournamentBettingWithRunners, getSingleTournamentBetting, updateTournamentBettingStatus } = require("../services/tournamentBettingService");
 const { removeBlinkingTabs } = require("../services/blinkingTabsService");
+const { declareSessionHandler } = require("../grpc/grpcClient/handlers/wallet/declare");
 
 
 exports.getPlacedBets = async (req, res, next) => {
@@ -112,7 +113,7 @@ exports.declareSessionResult = async (req, res) => {
     }
     await setRedisKey(`${betId}${redisKeys.declare}`, true);
 
-    const match = await getMatchById(matchId);
+    const match = await getMatchById(matchId, ["id", "stopAt", "title", "startAt"]);
 
     if (match?.stopAt) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
@@ -143,7 +144,7 @@ exports.declareSessionResult = async (req, res) => {
       );
     }
     // check result already declare
-    let resultDeclare = await getSessionBettingById(betId);
+    let resultDeclare = await getSessionBettingById(betId,["activeStatus","id","matchId","selectionId","type"]);
     if (resultDeclare && resultDeclare.activeStatus == betStatus.result) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
@@ -168,7 +169,6 @@ exports.declareSessionResult = async (req, res) => {
       userId: userId,
       result: score,
       selectionId: resultDeclare.selectionId,
-      match: match
     })
 
     if (resultValidate) {
@@ -188,18 +188,14 @@ exports.declareSessionResult = async (req, res) => {
 
     let fwProfitLoss;
 
-    const response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareSessionResult,
-      {
-        betId,
-        score,
-        sessionDetails: resultDeclare,
-        userId,
-        matchId,
-        match
-      }
-    )
+    const response = await declareSessionHandler( {
+      betId,
+      score,
+      sessionDetails: resultDeclare,
+      userId,
+      matchId,
+      match
+    })
       .then((data) => {
         return data;
       })
@@ -301,7 +297,7 @@ exports.declareSessionNoResult = async (req, res) => {
     }
     await setRedisKey(`${betId}${redisKeys.declare}`, true);
 
-    const match = await getMatchById(matchId);
+    const match = await getMatchById(matchId, ["id", "stopAt", "title", "startAt"]);
     if (match?.stopAt) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
@@ -631,7 +627,7 @@ exports.unDeclareSessionResult = async (req, res) => {
 };
 
 const checkResult = async (body) => {
-  const { betId, matchId, isSessionBet, userId, result, betType, isOtherMatch, isRacingMatch } = body;
+  const { betId, matchId, isSessionBet, userId, result, betType } = body;
   let checkExistResult = await getExpertResult({
     betId: betId
   });
@@ -680,15 +676,7 @@ const checkResult = async (body) => {
     }
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[betType]]: JSON.stringify(matchData) });
   }
-  else if (isOtherMatch) {
-    await settingAllBettingOtherMatchRedisStatus(matchId, betStatus.save);
-  }
-  else if (isRacingMatch) {
-    await settingAllBettingRacingMatchRedisStatus(matchId, betStatus.save);
-  }
-  else {
-    await settingAllBettingMatchRedisStatus(matchId, betStatus.save);
-  }
+
 
 
   if (!checkExistResult?.length) {

@@ -22,7 +22,7 @@ exports.getTournamentBettingWithRunners = async (where, select) => {
       "tournamentRunner.bettingId = tournamentBetting.id",)
     .where(where)
     .select(select)
-    .getMany();
+    .getOne();
 };
 
 exports.updateTournamentBetting = async (where, data) => {

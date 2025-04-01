@@ -2,9 +2,14 @@ const GrpcClient = require("./grpcClient");
 
 const walletProtoOptionsArray = [
   {
-    path: `${__dirname}/proto/declare.proto`, //path to proto file
-    package: "declareProvider",//package in proto name
-    service: "DeclareProvider",//service name in proto file
+    path: `${__dirname}/proto/declareSession.proto`, //path to proto file
+    package: "declareSessionProvider",//package in proto name
+    service: "DeclareSessionProvider",//service name in proto file
+},
+{
+  path: `${__dirname}/proto/declareMatch.proto`, //path to proto file
+  package: "declareMatchProvider",//package in proto name
+  service: "DeclareMatchProvider",//service name in proto file
 }
 ];
 

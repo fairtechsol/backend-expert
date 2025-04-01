@@ -1,11 +1,11 @@
 const grpcReq = require("../../index");
 
-exports.declareSessionHandler = async (requestData) => {
+exports.declareMatchHandler = async (requestData) => {
   try {
     // Call the gRPC method and await the response
     const response = await grpcReq.wallet.callMethod(
-      "DeclareProvider",
-      "DeclareSession",
+      "declareMatchProvider",
+      "DeclareTournament",
       requestData
     );
 
@@ -15,16 +15,20 @@ exports.declareSessionHandler = async (requestData) => {
   }
 };
 
-exports.declareSessionNoResultHandler = async (requestData) => {
+exports.unDeclareMatchHandler = async (requestData) => {
   try {
     // Call the gRPC method and await the response
     const response = await grpcReq.wallet.callMethod(
-      "DeclareProvider",
-      "DeclareSessionNoResult",
+      "declareMatchProvider",
+      "UnDeclareTournament",
       requestData
     );
 
-    return response;
+    return {
+      data: {
+        profitLoss: response?.data?.profitLoss, profitLossWallet: JSON.parse(response?.data?.profitLossWallet),
+      }
+    };
   } catch (error) {
     throw error;
   }

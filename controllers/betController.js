@@ -31,11 +31,8 @@ const {
   updateMarketSessionIdRedis,
   setExpertsRedisData,
   deleteAllMatchRedis,
-  settingAllBettingMatchRedisStatus,
   getSingleMatchKey,
   settingMatchKeyInCache,
-  settingAllBettingOtherMatchRedisStatus,
-  settingAllBettingRacingMatchRedisStatus,
   getRedisKey,
   setRedisKey,
   deleteRedisKey,
@@ -52,7 +49,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { getTournamentBettingWithRunners, getSingleTournamentBetting, updateTournamentBettingStatus } = require("../services/tournamentBettingService");
 const { removeBlinkingTabs } = require("../services/blinkingTabsService");
 const { declareSessionHandler, declareSessionNoResultHandler, unDeclareSessionHandler } = require("../grpc/grpcClient/handlers/wallet/declareSession");
-const { declareMatchHandler, unDeclareMatchHandler } = require("../grpc/grpcClient/handlers/wallet/declareMatch");
+const { declareMatchHandler, unDeclareMatchHandler, declareFinalMatchHandler, unDeclareFinalMatchHandler } = require("../grpc/grpcClient/handlers/wallet/declareMatch");
 
 
 exports.getPlacedBets = async (req, res, next) => {
@@ -1101,9 +1098,7 @@ exports.declareFinalMatchResult = async (req, res) => {
       );
     }
 
-    await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareFinalMatchResult,
+    await declareFinalMatchHandler(
       {
         matchId,
         matchType: match.matchType
@@ -1167,10 +1162,7 @@ exports.unDeclareFinalMatchResult = async (req, res) => {
       );
     }
 
-    await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.unDeclareFinalMatchResult,
-      {
+    await unDeclareFinalMatchHandler({
         matchId,
         matchType: match.matchType
       }

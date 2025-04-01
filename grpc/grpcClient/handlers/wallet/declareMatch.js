@@ -33,3 +33,34 @@ exports.unDeclareMatchHandler = async (requestData) => {
     throw error;
   }
 };
+
+exports.declareFinalMatchHandler = async (requestData) => {
+  try {
+    // Call the gRPC method and await the response
+    await grpcReq.wallet.callMethod(
+      "declareMatchProvider",
+      "DeclareFinalMatch",
+      requestData
+    );
+
+    return {};
+  } catch (error) {
+    throw error;
+  }
+};
+
+exports.unDeclareFinalMatchHandler = async (requestData) => {
+  try {
+    // Call the gRPC method and await the response
+    await grpcReq.wallet.callMethod(
+      "declareMatchProvider",
+      "UnDeclareFinalMatch",
+      requestData
+    );
+
+    return {};
+  } catch (error) {
+    throw error;
+  }
+};
+

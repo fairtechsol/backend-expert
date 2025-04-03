@@ -4,7 +4,7 @@ exports.declareMatchHandler = async (requestData) => {
   try {
     // Call the gRPC method and await the response
     const response = await grpcReq.wallet.callMethod(
-      "declareMatchProvider",
+      "DeclareMatchProvider",
       "DeclareTournament",
       requestData
     );
@@ -19,7 +19,7 @@ exports.unDeclareMatchHandler = async (requestData) => {
   try {
     // Call the gRPC method and await the response
     const response = await grpcReq.wallet.callMethod(
-      "declareMatchProvider",
+      "DeclareMatchProvider",
       "UnDeclareTournament",
       requestData
     );
@@ -38,7 +38,7 @@ exports.declareFinalMatchHandler = async (requestData) => {
   try {
     // Call the gRPC method and await the response
     await grpcReq.wallet.callMethod(
-      "declareMatchProvider",
+      "DeclareMatchProvider",
       "DeclareFinalMatch",
       requestData
     );
@@ -53,7 +53,7 @@ exports.unDeclareFinalMatchHandler = async (requestData) => {
   try {
     // Call the gRPC method and await the response
     await grpcReq.wallet.callMethod(
-      "declareMatchProvider",
+      "DeclareMatchProvider",
       "UnDeclareFinalMatch",
       requestData
     );

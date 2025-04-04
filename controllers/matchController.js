@@ -20,7 +20,6 @@ const {
 const { addRaceInCache, addMatchInCache, updateMatchInCache, updateRaceInCache, getMatchFromCache, updateMatchKeyInCache, hasBettingInCache, hasMatchInCache, getSingleMatchKey } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { commonGetMatchDetails, commonGetRaceDetails } = require("../services/commonService");
 const { getRacingMatchCountryList, getRacingMatchDateList, getRacingMatch } = require("../services/racingMatchService");

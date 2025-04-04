@@ -8,7 +8,7 @@ const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, up
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getSpecificResultsSession } = require("../services/betService");
 const { getExpertResult } = require("../services/expertResultService");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
+const { sessionProfitLossUserWiseData, sessionProfitLossBetsData } = require("../grpc/grpcClient/handlers/wallet/betsHandler");
 
 exports.addSession = async (req, res) => {
   try {
@@ -596,16 +596,7 @@ exports.sessionProfitLossUserWise = async (req, res) => {
   try {
     const { betId } = req.query;
 
-    const response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.sessionUserWieProfitLossExpert,
-      {
-        betId: betId
-      }
-    )
-      .then((data) => {
-        return data;
-      })
+    const response = await sessionProfitLossUserWiseData({betId: betId})
       .catch(async (err) => {
         logger.error({
           error: `Error at get sessions users`,
@@ -615,7 +606,7 @@ exports.sessionProfitLossUserWise = async (req, res) => {
         throw err?.response?.data || err;
       });
 
-    return SuccessResponse({ statusCode: 200, data: response?.data }, req, res);
+    return SuccessResponse({ statusCode: 200, data: response }, req, res);
   } catch (err) {
     logger.error({
       error: `Error at get sessions user`,
@@ -631,22 +622,13 @@ exports.sessionProfitLossBets = async (req, res) => {
   try {
     const { betId, matchId, url, userId } = req.query;
 
-    const response = await apiCall(
-      apiMethod.get,
-      walletDomain + allApiRoutes.wallet.sessionBetsExpert,
-      null,
-      null,
-      {
+    const response = await sessionProfitLossBetsData({
         betId: betId,
         matchId:matchId,
         isSession:true,
         url:url,
         userId:userId,
         roleName: "user"
-      }
-    )
-      .then((data) => {
-        return data;
       })
       .catch(async (err) => {
         logger.error({
@@ -657,7 +639,7 @@ exports.sessionProfitLossBets = async (req, res) => {
         throw err?.response?.data || err;
       });
 
-    return SuccessResponse({ statusCode: 200, data: response?.data }, req, res);
+    return SuccessResponse({ statusCode: 200, data: response }, req, res);
   } catch (err) {
     logger.error({
       error: `Error at get sessions user`,

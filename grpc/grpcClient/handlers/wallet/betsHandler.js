@@ -42,3 +42,33 @@ exports.getBetsLoginData = async () => {
         throw error;
     }
 };
+
+exports.sessionProfitLossUserWiseData = async (requestData) => {
+    try {
+        // Call the gRPC method and await the response
+        const response = await grpcReq.wallet.callMethod(
+            "BetsProvider",
+            "GetSessionProfitLossUserWise",
+            requestData
+        );
+
+        return JSON.parse(response?.data || "{}");
+    } catch (error) {
+        throw error;
+    }
+};
+
+exports.sessionProfitLossBetsData = async (requestData) => {
+    try {
+        // Call the gRPC method and await the response
+        const response = await grpcReq.wallet.callMethod(
+            "BetsProvider",
+            "GetSessionProfitLossBet",
+            requestData
+        );
+
+        return JSON.parse(response?.data || "{}");
+    } catch (error) {
+        throw error;
+    }
+};

@@ -39,11 +39,3 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
     throw error;
   }
 };
-
-exports.allApiRoutes = {
-  wallet: {
-    sessionUserWieProfitLossExpert: "/expert/userwise/session/profitLoss/expert",
-    sessionBetsExpert: "/expert/total/bet/profitLoss"
-  }
-
-};

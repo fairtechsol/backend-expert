@@ -43,7 +43,6 @@ const {
   getSessionBettings,
 } = require("../services/sessionBettingService");
 const { sendMessageToUser } = require("../sockets/socketManager");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { getTournamentBettingWithRunners, getSingleTournamentBetting, updateTournamentBettingStatus } = require("../services/tournamentBettingService");
 const { removeBlinkingTabs } = require("../services/blinkingTabsService");

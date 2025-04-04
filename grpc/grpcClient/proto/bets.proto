@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package betsProvider;
+
+message GetBetsRequest {
+  string query = 1; 
+}
+
+message GetBetsResponse {
+  string data = 1; 
+}
+
+message VerifyBetRequest {
+  bool isVerified = 1;
+  string id=2;
+  string verifyBy = 3; 
+}
+
+message VerifyBetResponse {}
+
+message GetBetsLoginDataRequest {}
+
+message GetBetsLoginDataResponse {
+  string data = 1; 
+}
+
+
+service BetsProvider {
+  rpc GetBets(GetBetsRequest) returns (GetBetsResponse);
+  rpc VerifyBet(VerifyBetRequest) returns (VerifyBetResponse);
+  rpc GetBetsLoginData(GetBetsLoginDataRequest) returns (GetBetsLoginDataResponse);
+}

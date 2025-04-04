@@ -3,7 +3,6 @@ const {
   betStatus,
   socketData,
   teamStatus,
-  walletDomain,
   betStatusType,
   bettingType,
   noResult,
@@ -50,11 +49,12 @@ const { getTournamentBettingWithRunners, getSingleTournamentBetting, updateTourn
 const { removeBlinkingTabs } = require("../services/blinkingTabsService");
 const { declareSessionHandler, declareSessionNoResultHandler, unDeclareSessionHandler } = require("../grpc/grpcClient/handlers/wallet/declareSession");
 const { declareMatchHandler, unDeclareMatchHandler, declareFinalMatchHandler, unDeclareFinalMatchHandler } = require("../grpc/grpcClient/handlers/wallet/declareMatch");
+const { getBets, verifyBetHandler } = require("../grpc/grpcClient/handlers/wallet/betsHandler");
 
 
 exports.getPlacedBets = async (req, res, next) => {
   try {
-    const result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.wallet.bets, null, {}, req.query)
+    const result = await getBets({ query: JSON.stringify(req.query) })
       .then((data) => {
         return data;
       })
@@ -70,7 +70,7 @@ exports.getPlacedBets = async (req, res, next) => {
     return SuccessResponse(
       {
         statusCode: 200,
-        data: result?.data,
+        data: result,
       },
       req,
       res
@@ -142,7 +142,7 @@ exports.declareSessionResult = async (req, res) => {
       );
     }
     // check result already declare
-    let resultDeclare = await getSessionBettingById(betId,["activeStatus","id","matchId","selectionId","type"]);
+    let resultDeclare = await getSessionBettingById(betId, ["activeStatus", "id", "matchId", "selectionId", "type"]);
     if (resultDeclare && resultDeclare.activeStatus == betStatus.result) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
@@ -186,7 +186,7 @@ exports.declareSessionResult = async (req, res) => {
 
     let fwProfitLoss;
 
-    const response = await declareSessionHandler( {
+    const response = await declareSessionHandler({
       betId,
       score,
       sessionDetails: resultDeclare,
@@ -476,7 +476,7 @@ exports.unDeclareSessionResult = async (req, res) => {
     }
 
     // check result already declare
-    let bet = await getSessionBettingById(betId,["activeStatus","id","matchId","selectionId","type","result"]);
+    let bet = await getSessionBettingById(betId, ["activeStatus", "id", "matchId", "selectionId", "type", "result"]);
     if (!bet) {
       logger.error({
         message: "Error in unDeclare no bet found",
@@ -656,7 +656,7 @@ const checkResult = async (body) => {
   }
   else if (betType) {
     const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[betType], 'json');
-    if ( betType == matchBettingType.tournament) {
+    if (betType == matchBettingType.tournament) {
       for (let item of matchData) {
         if (item.id == betId || item.parentBetId == betId) {
           item.activeStatus = betStatus.save;
@@ -740,7 +740,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
   const { matchId, result, betId } = req.body;
   const { id: userId } = req.user;
   try {
-    const match = await getMatchById(matchId,["stopAt","matchType","title","startAt","id"]);
+    const match = await getMatchById(matchId, ["stopAt", "matchType", "title", "startAt", "id"]);
 
     if (!match) {
       return ErrorResponse({
@@ -759,7 +759,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
     }
 
     // check result already declare
-    let matchBettingDetails = await getTournamentBettingWithRunners({ id: betId }, ["tournamentBetting.type","tournamentBetting.activeStatus","tournamentBetting.id", "tournamentBetting.name", "tournamentRunner.id", "tournamentRunner.runnerName"]);
+    let matchBettingDetails = await getTournamentBettingWithRunners({ id: betId }, ["tournamentBetting.type", "tournamentBetting.activeStatus", "tournamentBetting.id", "tournamentBetting.name", "tournamentRunner.id", "tournamentRunner.runnerName"]);
 
     if (matchBettingDetails?.activeStatus == betStatus.result) {
       return ErrorResponse(
@@ -843,7 +843,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       commission: response?.data?.totalCommission
     });
 
-    
+
     const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchBettingDetails?.type], 'json');
     matchData.forEach(item => {
       if (item.id === betId || item.parentBetId === betId) {
@@ -896,7 +896,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
   const { matchId, betId } = req.body;
   const { id: userId } = req.user;
   try {
-    const match = await getMatchById(matchId,["id","stopAt","matchType"]);
+    const match = await getMatchById(matchId, ["id", "stopAt", "matchType"]);
 
     if (!match) {
       return ErrorResponse(
@@ -913,7 +913,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       );
     }
 
-  
+
     if (match.stopAt) {
       return ErrorResponse(
         {
@@ -926,8 +926,8 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
     }
 
     // check result already declare
-    let bet = await getTournamentBettingWithRunners({ id: betId },["tournamentBetting.result","tournamentBetting.stopAt","tournamentBetting.type","tournamentBetting.activeStatus","tournamentBetting.id", "tournamentBetting.name", "tournamentRunner.id", "tournamentRunner.runnerName"]);
-    
+    let bet = await getTournamentBettingWithRunners({ id: betId }, ["tournamentBetting.result", "tournamentBetting.stopAt", "tournamentBetting.type", "tournamentBetting.activeStatus", "tournamentBetting.id", "tournamentBetting.name", "tournamentRunner.id", "tournamentRunner.runnerName"]);
+
     if (!bet) {
       logger.error({
         message: "Error in unDeclare racing match",
@@ -1017,7 +1017,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
     );
 
     const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[bet?.type], 'json');
-   
+
 
     matchData.forEach(item => {
       if (item.id === betId || item.parentBetId === betId) {
@@ -1163,9 +1163,9 @@ exports.unDeclareFinalMatchResult = async (req, res) => {
     }
 
     await unDeclareFinalMatchHandler({
-        matchId,
-        matchType: match.matchType
-      }
+      matchId,
+      matchType: match.matchType
+    }
     )
       .then((data) => {
         return data;
@@ -1241,12 +1241,7 @@ exports.sendUpdateDeleteReason = async (req, res, next) => {
 exports.verifyBet = async (req, res) => {
   try {
     let { isVerified, id, domain, matchId } = req.body;
-    await apiCall(
-      apiMethod.post,
-      domain + allApiRoutes.user.verifyBet,
-      {
-        isVerified, id, verifyBy: !isVerified ? null : req?.user?.userName
-      }
+    await verifyBetHandler({ isVerified, id, verifyBy: !isVerified ? null : req?.user?.userName }, domain
     );
 
     sendMessageToUser(
@@ -1276,4 +1271,3 @@ exports.verifyBet = async (req, res) => {
     return ErrorResponse(error, req, res)
   }
 }
-  

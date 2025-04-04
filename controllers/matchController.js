@@ -1,5 +1,5 @@
 const { ILike, IsNull } = require("typeorm");
-const { bettingType, marketBettingTypeByBettingType, socketData, walletDomain} = require("../config/contants");
+const { bettingType, marketBettingTypeByBettingType, socketData, walletDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getAllProfitLossResults, getAllProfitLossResultsRace } = require("../services/betService");
 const { getRaceByMarketId, raceAddMatch, deleteRace, getRacingMatchById } = require("../services/racingMatchService");
@@ -17,7 +17,7 @@ const {
   getOneMatchByCondition,
 } = require("../services/matchService");
 
-const { addRaceInCache, addMatchInCache, updateMatchInCache, updateRaceInCache,  getMatchFromCache, updateMatchKeyInCache, hasBettingInCache,  hasMatchInCache, getSingleMatchKey } = require("../services/redis/commonfunction");
+const { addRaceInCache, addMatchInCache, updateMatchInCache, updateRaceInCache, getMatchFromCache, updateMatchKeyInCache, hasBettingInCache, hasMatchInCache, getSingleMatchKey } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { broadcastEvent, sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -26,6 +26,7 @@ const { commonGetMatchDetails, commonGetRaceDetails } = require("../services/com
 const { getRacingMatchCountryList, getRacingMatchDateList, getRacingMatch } = require("../services/racingMatchService");
 const { getCardMatch } = require("../services/cardMatchService");
 const { updateTournamentBetting } = require("../services/tournamentBettingService");
+const { addMatchHandler, addRaceMatchHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
 /**
  * Create or update a match.
  *
@@ -133,9 +134,7 @@ exports.createMatch = async (req, res) => {
 
     broadcastEvent(socketData.addMatchEvent, { gameType: match?.matchType });
 
-    await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.addMatch,
+    await addMatchHandler(
       {
         matchType: match.matchType,
         competitionId: match.competitionId,
@@ -222,8 +221,8 @@ exports.updateMatch = async (req, res) => {
 
     await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet, rateThan100: rateThan100, ...(startAt ? { startAt } : {}) });
 
-    const isExistInRedis=await hasMatchInCache(id);
-    if(isExistInRedis){
+    const isExistInRedis = await hasMatchInCache(id);
+    if (isExistInRedis) {
       updateMatchDataAndBettingInRedis(id);
     }
     // await Promise.all(updatePromises);
@@ -498,7 +497,7 @@ exports.getMatchCompetitionsByType = async (req, res) => {
 
 exports.getMatchDatesByCompetitionId = async (req, res) => {
   try {
-    const { type  } = req.params;
+    const { type } = req.params;
 
     const dates = await getMatchDates(type);
 
@@ -523,7 +522,7 @@ exports.getMatchDatesByCompetitionId = async (req, res) => {
 
 exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
   try {
-    const {  date, type  } = req.params;
+    const { date, type } = req.params;
 
     const matches = await getMatchByCompetitionIdAndDates(type, date);
 
@@ -689,9 +688,7 @@ exports.racingCreateMatch = async (req, res) => {
     await addRaceInCache(race.id, runnerAndRaceData)
     broadcastEvent(socketData.addMatchEvent, { gameType: race?.matchType, startAt: startAt, countryCode: countryCode });
 
-    await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.addRaceMatch,
+    await addRaceMatchHandler(
       {
         matchType: race.matchType,
         title: race.title,
@@ -789,7 +786,7 @@ exports.racingUpdateMatch = async (req, res) => {
 
     updateRaceInCache(raceBatting.matchId, raceBatting);
 
-    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent,raceBatting);
+    sendMessageToUser(socketData.expertRoomSocket, socketData.updateMatchEvent, raceBatting);
     // Send success response with the updated race data
     return SuccessResponse(
       {

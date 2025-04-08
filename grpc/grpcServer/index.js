@@ -1,5 +1,5 @@
 const { Server } = require("./grpcServer");
-const { getMatchCompetitionsByType, getMatchDatesByCompetitionId, getMatchDatesByCompetitionIdAndDate, sendUpdateDeleteReason, matchDetailsHandler, raceDetails, cardDetails, listMatchSuperAdmin, listRacingMatchSuperAdmin, racingCountryCodeListSuperAdmin, getTournamentBettingDetails } = require("./handlers/matchHandler");
+const { getMatchCompetitionsByType, getMatchDatesByCompetitionId, getMatchDatesByCompetitionIdAndDate, sendUpdateDeleteReason, matchDetailsHandler, raceDetails, cardDetails, listMatchSuperAdmin, listRacingMatchSuperAdmin, racingCountryCodeListSuperAdmin, getTournamentBettingDetails, getBlinkingTabsData, getSessions } = require("./handlers/matchHandler");
 const { createUser, updateUserHandler, changePassword, expertList, lockUnlockUser, getNotificationHandler, isUserExist } = require("./handlers/userHandler");
 
 const { GRPC_PORT = 60600 } = process.env;
@@ -41,6 +41,8 @@ server
     .addService("MatchProvider", "RaceList", listRacingMatchSuperAdmin)
     .addService("MatchProvider", "RaceCountryCodeList", racingCountryCodeListSuperAdmin)
     .addService("MatchProvider", "GetTournamentBetting", getTournamentBettingDetails)
+    .addService("MatchProvider", "BlinkingTabs", getBlinkingTabsData)
+    .addService("MatchProvider", "SessionDetail", getSessions)
 
     .addService("BetsProvider", "ChangeBetsDeleteReason", sendUpdateDeleteReason)
 

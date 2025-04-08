@@ -81,7 +81,22 @@ message MatchCompetitionsRequest {
   message TournamentBettingResponse {
     string data = 1;
   }
+
+    
+  message BlinkingTabsRequest {}
   
+  message BlinkingTabsResponse {
+    string data = 1;
+  }
+  
+  message SessionDetailRequest {
+    string matchId = 1;
+    string id = 2;
+  }
+  
+  message SessionDetailResponse {
+    string data = 1;
+  }
 
   service MatchProvider {
     rpc GetMatchCompetitions(MatchCompetitionsRequest) returns (MatchCompetitionsResponse);
@@ -95,5 +110,7 @@ message MatchCompetitionsRequest {
     rpc RaceList(MatchListRequest) returns (MatchListResponse);
     rpc RaceCountryCodeList(RaceCountryCodeListRequest) returns (RaceCountryCodeListResponse);
     rpc GetTournamentBetting(TournamentBettingRequest) returns (TournamentBettingResponse);
+    rpc BlinkingTabs(BlinkingTabsRequest) returns (BlinkingTabsResponse);
+    rpc SessionDetail(SessionDetailRequest) returns (SessionDetailResponse);
 }
   

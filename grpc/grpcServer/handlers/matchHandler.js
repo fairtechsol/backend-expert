@@ -4,14 +4,16 @@ const lodash = require("lodash");
 const { logger } = require("../../../config/logger");
 const { getMatchCompetitions, getMatchDates, getMatchByCompetitionIdAndDates, getMatchSuperAdmin, getMatchById } = require("../../../services/matchService");
 const { sendMessageToUser } = require("../../../sockets/socketManager");
-const { socketData, marketBettingTypeByBettingType, resultStatus } = require("../../../config/contants");
+const { socketData, marketBettingTypeByBettingType, resultStatus, matchBettingType, betStatusType, betStatus } = require("../../../config/contants");
 const { commonGetMatchDetails, commonGetRaceDetails } = require("../../../services/commonService");
 const { getCardMatch } = require("../../../services/cardMatchService");
 const { IsNull } = require("typeorm");
-const { getMatchFromCache, getExpertsRedisKeyData } = require("../../../services/redis/commonfunction");
+const { getMatchFromCache, getExpertsRedisKeyData, getAllSessionRedis, settingAllSessionMatchRedis, updateMultipleMarketSessionIdRedis, getSessionFromRedis, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey } = require("../../../services/redis/commonfunction");
 const { getTournamentBetting, getTournamentRunners, getTournamentBettings } = require("../../../services/tournamentBettingService");
 const { getExpertResult } = require("../../../services/expertResultService");
 const { getRacingMatchCountryList } = require("../../../services/racingMatchService");
+const { getBlinkingTabs } = require("../../../services/blinkingTabsService");
+const { getSessionBettings, getSessionBettingById } = require("../../../services/sessionBettingService");
 
 exports.getMatchCompetitionsByType = async (call) => {
     try {
@@ -254,7 +256,7 @@ exports.listRacingMatchSuperAdmin = async (call) => {
 
 exports.getTournamentBettingDetails = async (call) => {
     try {
-        const { matchId, type, id, isRate } = call.request;
+        const { matchId, type = matchBettingType.tournament, id, isRate } = call.request;
         let matchBetting, matchDetails, runners;
         matchDetails = await getMatchFromCache(matchId);
         if (!matchDetails) {
@@ -362,6 +364,121 @@ exports.racingCountryCodeListSuperAdmin = async (call) => {
             message: err.message
         });
         // Handle any errors and return an error response
+        throw {
+            code: grpc.status.INTERNAL,
+            message: err?.message || __mf("internalServerError"),
+        };
+    }
+};
+
+exports.getBlinkingTabsData = async () => {
+    try {
+        let blinkingTabs = await getBlinkingTabs();
+        return { data: JSON.stringify(blinkingTabs) }
+    } catch (error) {
+        logger.error({
+            error: `Error at the getting the blinking tabs.`,
+            stack: error.stack,
+            message: error.message
+        });
+
+        throw {
+            code: grpc.status.INTERNAL,
+            message: err?.message || __mf("internalServerError"),
+        };
+    }
+}
+
+exports.getSessions = async (call) => {
+    try {
+        const { matchId, id: sessionId } = call.request;
+        let session;
+
+        if (!sessionId) {
+            const redisMatchData = await getAllSessionRedis(matchId);
+
+            if (redisMatchData) {
+                session = Object.values(redisMatchData);
+            } else {
+                session = await getSessionBettings({ matchId, activeStatus: betStatusType.live });
+                if (!session) {
+                    throw {
+                        code: grpc.status.NOT_FOUND,
+                        message: __mf("notFound", { name: "Session" }),
+                    };
+                }
+                let result = {};
+                let apiSelectionIdObj = {};
+                for (let index = 0; index < session?.length; index++) {
+                    if (session[index]?.activeStatus == betStatusType.live) {
+                        if (session?.[index]?.selectionId) {
+                            apiSelectionIdObj[session?.[index]?.selectionId] = session?.[index]?.id;
+                        }
+                        result[session?.[index]?.id] = JSON.stringify(session?.[index]);
+                    }
+                    session[index] = JSON.stringify(session?.[index]);
+                }
+                settingAllSessionMatchRedis(matchId, result);
+                updateMultipleMarketSessionIdRedis(matchId, apiSelectionIdObj);
+            }
+        } else {
+            const redisMatchData = await getSessionFromRedis(matchId, sessionId);
+            let expertResults = await getExpertResult({ betId: sessionId });
+
+            if (redisMatchData) {
+                session = redisMatchData;
+            } else {
+                session = await getSessionBettingById(sessionId);
+                if (!session) {
+                    throw {
+                        code: grpc.status.NOT_FOUND,
+                        message: __mf("notFound", { name: "Session" }),
+                    };
+                }
+                addAllsessionInRedis(matchId, null);
+            }
+
+            const isMatch = await hasMatchInCache(matchId);
+            let match;
+            if (isMatch) {
+                match = await getMultipleMatchKey(matchId);
+                match = {
+                    apiSessionActive: JSON.parse(match?.apiSessionActive),
+                    manualSessionActive: JSON.parse(match?.manualSessionActive),
+                    marketId: match?.marketId,
+                    stopAt: match?.stopAt,
+                };
+
+
+            } else {
+                match = await getMatchById(matchId, [
+                    "apiSessionActive",
+                    "manualSessionActive",
+                    "marketId",
+                    "stopAt",
+                ]);
+            }
+
+            if (expertResults?.length != 0 && !(session.activeStatus == betStatus.result)) {
+                if (expertResults?.length == 1) {
+                    session.resultStatus = resultStatus.pending;
+                }
+                else {
+                    session.resultStatus = resultStatus.missMatched;
+                }
+
+            }
+
+            session = { ...session, ...match };
+        }
+
+        return { data: JSON.stringify(session) }
+    } catch (error) {
+        logger.error({
+            error: `Error at get list session.`,
+            stack: error.stack,
+            message: error.message,
+        });
         throw {
             code: grpc.status.INTERNAL,
             message: err?.message || __mf("internalServerError"),

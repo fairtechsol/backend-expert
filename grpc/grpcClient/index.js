@@ -32,7 +32,7 @@ const userProtoOptionsArray = [
 ]
 
 
-const walletServerAddress = "localhost:50500";
+const walletServerAddress = "127.0.0.1:50500";
 
 const grpcReq = {
   wallet: new GrpcClient(walletProtoOptionsArray, walletServerAddress),

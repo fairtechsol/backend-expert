@@ -1,3 +1,4 @@
+const { walletDomain } = require("../../config/contants");
 const GrpcClient = require("./grpcClient");
 
 const walletProtoOptionsArray = [
@@ -32,7 +33,7 @@ const userProtoOptionsArray = [
 ]
 
 
-const walletServerAddress = "localhost:50500";
+const walletServerAddress = walletDomain;
 
 const grpcReq = {
   wallet: new GrpcClient(walletProtoOptionsArray, walletServerAddress),

@@ -1,5 +1,5 @@
 module.exports.redisTimeOut = 10 * 60 * 60;
-module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
+module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "127.0.0.1:50500";
 module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
 module.exports.noResult = "No Result";
 module.exports.passwordRegex = /^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z])(?=.*\d.*\d.*\d.*\d).{8,}$/;

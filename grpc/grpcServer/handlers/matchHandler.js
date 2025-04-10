@@ -256,7 +256,8 @@ exports.listRacingMatchSuperAdmin = async (call) => {
 
 exports.getTournamentBettingDetails = async (call) => {
     try {
-        const { matchId, type = matchBettingType.tournament, id, isRate } = call.request;
+        const { matchId, id, isRate } = call.request;
+        const type = call.request.type || matchBettingType.tournament;
         let matchBetting, matchDetails, runners;
         matchDetails = await getMatchFromCache(matchId);
         if (!matchDetails) {

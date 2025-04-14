@@ -352,7 +352,10 @@ module.exports.redisKeys = {
     return prev;
   }, {})),
   declare: "_declare",
-  profitLoss: "_profitLoss"
+  profitLoss: "_profitLoss",
+  notification:"notification",
+  banner:"banner",
+  blinkingTabs:"blinkingTabs"
 }
 
 module.exports.redisKeysMatchWise = {

@@ -1,5 +1,7 @@
+const { redisKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getNotification, addNotification, addBanner } = require("../services/generalService");
+const { setExternalRedisKey, getExternalRedisKey } = require("../services/redis/commonfunction");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.addNotification = async (req, res) => {
@@ -7,10 +9,11 @@ exports.addNotification = async (req, res) => {
         const { value } = req.body;
         const { id: userId } = req.user;
         const data = await addNotification(value, userId);
+        await setExternalRedisKey(redisKeys.notification, value);
         return SuccessResponse(
             {
                 statusCode: 200,
-                message: { msg: "updated", keys: { name: "Notification" }},
+                message: { msg: "updated", keys: { name: "Notification" } },
                 data
             },
             req,
@@ -36,7 +39,14 @@ exports.addNotification = async (req, res) => {
 
 exports.getNotification = async (req, res) => {
     try {
-        let notification = await getNotification(req.query.type);
+        const type = req.query.type || "notification";
+
+        let notification = await getExternalRedisKey(type);
+        if (!notification) {
+            notification = await getNotification(type);
+            await setExternalRedisKey(type, notification?.value);
+        }
+
         return SuccessResponse(
             {
                 statusCode: 200,
@@ -68,10 +78,11 @@ exports.addBannerData = async (req, res) => {
         const { value, type } = req.body;
         const { id: userId } = req.user;
         const data = await addBanner(value, userId, type);
+        await setExternalRedisKey(redisKeys.banner + type, value);
         return SuccessResponse(
             {
                 statusCode: 200,
-                message: { msg: "updated", keys: { name: "Banner" }},
+                message: { msg: "updated", keys: { name: "Banner" } },
                 data
             },
             req,

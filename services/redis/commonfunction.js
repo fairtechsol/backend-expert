@@ -1,6 +1,7 @@
 
 const { redisKeys, betStatusType, marketBettingTypeByBettingType, redisKeysMatchWise, mainMatchMarketType, mainMatchRacingMarketType, raceTypeByBettingType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
+const externalRedis = require("../../config/externalRedisConnection");
 const { logger } = require("../../config/logger");
 const joiValidator = require("../../middleware/joi.validator");
 const { getMatchSchema } = require("../../validators/matchValidator");
@@ -796,4 +797,12 @@ exports.getHashKeysByPattern = async (key, pattern) => {
     }
   } while (cursor !== '0');
   return resultObj;
+}
+
+exports.setExternalRedisKey = async (key, val) => {
+  await externalRedis.set(key, val);
+}
+
+exports.getExternalRedisKey = async (key) => {
+  return await externalRedis.get(key);
 }

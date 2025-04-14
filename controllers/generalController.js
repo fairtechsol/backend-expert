@@ -39,7 +39,7 @@ exports.addNotification = async (req, res) => {
 
 exports.getNotification = async (req, res) => {
     try {
-        const type = req.query.type || "notification";
+        const type = req.query.type || redisKeys.notification;
 
         let notification = await getExternalRedisKey(type);
         if (!notification) {

@@ -110,20 +110,20 @@ class Server {
 
 
   loadReflectionProtoServices(protoOptionsArray) {
-      let protoOptions = protoOptionsArray[0] || {};
-      const options = {
-        keepCase: true,
-        longs: String,
-        enums: String,
-        defaults: true,
-        oneofs: true,
-        ...(protoOptions?.options || {}),
-      };
-      // Load proto file definition
-      const definition = protoLoader.loadSync(protoOptions.path, options);
-  
-      return definition
-    }
+    let protoOptions = protoOptionsArray[0] || {};
+    const options = {
+      keepCase: true,
+      longs: String,
+      enums: String,
+      defaults: true,
+      oneofs: true,
+      ...(protoOptions?.options || {}),
+    };
+    // Load proto file definition
+    const definition = protoLoader.loadSync(protoOptions.path, options);
+
+    return definition
+  }
 
   /**
    * Adds a gRPC service to the server.
@@ -164,16 +164,12 @@ class Server {
       // Bind the server to the specified port
       this.server.bindAsync(
         `0.0.0.0:${port}`,
-        process.env.NODE_ENV == "production" || process.env.NODE_ENV == "dev" ?ServerCredentials.createSsl(
-          null,    // No client certificate (mutual TLS not needed)
-          [
-            {
-              cert_chain: fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/fullchain.pem'),
-              private_key: fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/privkey.pem')
-            }
-          ],
-          true      // If true, the server will require a client to connect using SSL
-        ):ServerCredentials.createInsecure(),
+        process.env.NODE_ENV == "production" || process.env.NODE_ENV == "dev" ? ServerCredentials.createSsl(
+          null, // Root certificate authorities (optional, null for Let's Encrypt)
+          fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/fullchain.pem'),
+          fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/privkey.pem'),
+          { checkClientCertificate: false }
+        ) : ServerCredentials.createInsecure(),
         (err) => {
           if (err) {
             reject(err); // Reject the promise if there's an error

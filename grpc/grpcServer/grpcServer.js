@@ -13,9 +13,6 @@ const fs = require("fs");
 // Default values for gRPC port and shutdown timeout
 const { GRPC_PORT = 50000, SHUTDOWN_TIMEOUT = "1000" } = process.env;
 const defaultShutdownTimeout = parseInt(SHUTDOWN_TIMEOUT, 10);
-// Path to your Let's Encrypt certificates
-const serverCert = fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/fullchain.pem');  // Fullchain cert (including CA cert)
-const serverKey = fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/privkey.pem');      // Private key
 
 /**
  * Converts an error into a gRPC StatusObject.
@@ -144,22 +141,20 @@ class Server {
         );
       });
 
-      // Create SSL credentials from the certificates
-      const credentials = ServerCredentials.createSsl(
-        null,    // No client certificate (mutual TLS not needed)
-        [
-          {
-            cert_chain: serverCert,
-            private_key: serverKey
-          }
-        ],
-        true      // If true, the server will require a client to connect using SSL
-      );
 
       // Bind the server to the specified port
       this.server.bindAsync(
         `0.0.0.0:${port}`,
-        credentials,
+        process.env.NODE_ENV == "production" || process.env.NODE_ENV == "dev" ?ServerCredentials.createSsl(
+          null,    // No client certificate (mutual TLS not needed)
+          [
+            {
+              cert_chain: fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/fullchain.pem'),
+              private_key: fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/privkey.pem')
+            }
+          ],
+          true      // If true, the server will require a client to connect using SSL
+        ):ServerCredentials.createInsecure(),
         (err) => {
           if (err) {
             reject(err); // Reject the promise if there's an error

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package betsProvider;
+package grpc.betsProvider;
 
 // Request for changing bet delete reason
 message ChangeBetsDeleteReasonRequest {

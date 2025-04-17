@@ -7,15 +7,15 @@ const { GRPC_PORT = 60600 } = process.env;
 const protoOptionsArray = [
     {
         path: `${__dirname}/proto/user.proto`, //path to proto file
-        package: "userProvider",//package in proto name
+        package: "grpc.userProvider",//package in proto name
         service: "UserService",//service name in proto file
     }, {
         path: `${__dirname}/proto/match.proto`, //path to proto file
-        package: "matchProvider",//package in proto name
+        package: "grpc.matchProvider",//package in proto name
         service: "MatchProvider",//service name in proto file
     }, {
         path: `${__dirname}/proto/bet.proto`, //path to proto file
-        package: "betsProvider",//package in proto name
+        package: "grpc.betsProvider",//package in proto name
         service: "BetsProvider",//service name in proto file
     }
 

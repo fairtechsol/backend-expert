@@ -10,6 +10,7 @@ const {
 const protoLoader = require("@grpc/proto-loader");
 const fs = require("fs");
 const { ReflectionService } = require('@grpc/reflection');
+const lodash = require("lodash");
 
 // Default values for gRPC port and shutdown timeout
 const { GRPC_PORT = 50000, SHUTDOWN_TIMEOUT = "1000" } = process.env;
@@ -102,8 +103,7 @@ class Server {
       // Load gRPC package definition
       const grpcObject = loadPackageDefinition(definition);
       // Map the service definition to the services object
-      services[protoOptions.service] =
-        grpcObject[protoOptions.package][protoOptions.service].service;
+      services[protoOptions.service] = lodash.get(grpcObject, `${protoOptions.package}.${protoOptions.service}.service`);
     });
     return services;
   }
@@ -168,8 +168,8 @@ class Server {
           null,    // No client certificate (mutual TLS not needed)
           [
             {
-              cert_chain: fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/fullchain.pem'),
-              private_key: fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/privkey.pem')
+              cert_chain: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/fullchain.pem`),
+              private_key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/privkey.pem`)
             }
           ],
           false

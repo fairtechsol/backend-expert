@@ -14,8 +14,8 @@ const fs = require("fs");
 const { GRPC_PORT = 50000, SHUTDOWN_TIMEOUT = "1000" } = process.env;
 const defaultShutdownTimeout = parseInt(SHUTDOWN_TIMEOUT, 10);
 // Path to your Let's Encrypt certificates
-const serverCert = fs.readFileSync('/etc/letsencrypt/live/devbetfairapi.fairgame.club/fullchain.pem');  // Fullchain cert (including CA cert)
-const serverKey = fs.readFileSync('/etc/letsencrypt/live/devbetfairapi.fairgame.club/privkey.pem');      // Private key
+const serverCert = fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/fullchain.pem');  // Fullchain cert (including CA cert)
+const serverKey = fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/privkey.pem');      // Private key
 
 /**
  * Converts an error into a gRPC StatusObject.

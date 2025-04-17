@@ -145,7 +145,7 @@ class Server {
       });
 
       // Create SSL credentials from the certificates
-      const credentials = grpc.ServerCredentials.createSsl(
+      const credentials = ServerCredentials.createSsl(
         null,    // No client certificate (mutual TLS not needed)
         [
           {

@@ -165,10 +165,15 @@ class Server {
       this.server.bindAsync(
         `0.0.0.0:${port}`,
         process.env.NODE_ENV == "production" || process.env.NODE_ENV == "dev" ? ServerCredentials.createSsl(
-          null, // Root certificate authorities (optional, null for Let's Encrypt)
-          fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/fullchain.pem'),
-          fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/privkey.pem'),
-          { checkClientCertificate: false }
+          null,    // No client certificate (mutual TLS not needed)
+          [
+            {
+              cert_chain: fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/fullchain.pem'),
+              private_key: fs.readFileSync('/etc/letsencrypt/live/devexpertapi.fairgame.club/privkey.pem')
+            }
+          ],
+          false
+          // If true, the server will require a client to connect using SSL
         ) : ServerCredentials.createInsecure(),
         (err) => {
           if (err) {

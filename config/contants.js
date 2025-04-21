@@ -177,7 +177,10 @@ module.exports.redisKeys = {
   profitLoss: "_profitLoss",
   card: "_card",
   declare: "_declare",
-  profitLoss: "_profitLoss"
+  profitLoss: "_profitLoss",
+  notification:"notification",
+  banner:"banner",
+  blinkingTabs:"blinkingTabs"
 }
 
 exports.cardGames = [

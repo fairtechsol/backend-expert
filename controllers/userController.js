@@ -1,10 +1,6 @@
 const {
   getUserById,
-  addUser,
-  getUserByUserName,
   updateUser,
-  getUser,
-  getUsers,
 } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
@@ -12,8 +8,7 @@ const lodash = require("lodash");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
-const { ILike } = require("typeorm");
-const { loginCount, addDataInRedis } = require('../services/redis/commonfunction')
+const { loginCount } = require('../services/redis/commonfunction');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};

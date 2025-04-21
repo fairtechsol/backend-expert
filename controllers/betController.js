@@ -51,6 +51,7 @@ const { removeBlinkingTabs } = require("../services/blinkingTabsService");
 const { declareSessionHandler, declareSessionNoResultHandler, unDeclareSessionHandler } = require("../grpc/grpcClient/handlers/wallet/declareSession");
 const { declareMatchHandler, unDeclareMatchHandler, declareFinalMatchHandler, unDeclareFinalMatchHandler } = require("../grpc/grpcClient/handlers/wallet/declareMatch");
 const { getBets, verifyBetHandler } = require("../grpc/grpcClient/handlers/wallet/betsHandler");
+const { notifyTelegram } = require("../utils/telegramMessage");
 
 
 exports.getPlacedBets = async (req, res, next) => {
@@ -210,6 +211,7 @@ exports.declareSessionResult = async (req, res) => {
         bet.result = null;
         await addSessionBetting(bet);
         await deleteExpertResult(betId, userId);
+        notifyTelegram(`Error at result declare session expert side while calling wallet api on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
         throw err;
       });
     isResultChange = false;
@@ -272,6 +274,7 @@ exports.declareSessionResult = async (req, res) => {
         { activeStatus: betStatus.save, result: null }
       );
     }
+    notifyTelegram(`Error at result declare session expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -391,6 +394,7 @@ exports.declareSessionNoResult = async (req, res) => {
         bet.result = null;
         await addSessionBetting(bet);
         await deleteExpertResult(betId, userId);
+        notifyTelegram(`Error at result declare session no result expert side while calling wallet api on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
 
         throw err;
       });
@@ -452,6 +456,7 @@ exports.declareSessionNoResult = async (req, res) => {
         { activeStatus: betStatus.save, result: null }
       );
     }
+    notifyTelegram(`Error at result declare session no result expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -548,6 +553,9 @@ exports.unDeclareSessionResult = async (req, res) => {
         bettingGame.activeStatus = betStatusType.result;
         bettingGame.result = bet.result;
         await addSessionBetting(bettingGame);
+
+        notifyTelegram(`Error at result undeclare session expert side while calling wallet api on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
         throw err;
       });
 
@@ -614,6 +622,8 @@ exports.unDeclareSessionResult = async (req, res) => {
         }
       );
     }
+    notifyTelegram(`Error at result undeclare session expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -827,6 +837,9 @@ exports.declareTournamentMatchResult = async (req, res) => {
           id: betId,
         }], { activeStatus: betStatus.save, result: null, stopAt: null });
         await deleteExpertResult(matchBettingDetails.id, userId);
+
+        notifyTelegram(`Error at result declare tournament expert side while calling wallet api on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
         throw err?.response?.data || err;
       });
     isResultChange = false;
@@ -885,6 +898,8 @@ exports.declareTournamentMatchResult = async (req, res) => {
         id: betId,
       }], { activeStatus: betStatus.save, result: null, stopAt: null });
     }
+    notifyTelegram(`Error at result declare tournament expert side on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -988,6 +1003,8 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
         await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
           id: betId,
         }], { activeStatus: betStatus.result, result: bet.result, stopAt: bet?.stopAt });
+
+        notifyTelegram(`Error at result undeclare tournament expert side while calling wallet api on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
         throw err;
       });
 
@@ -1046,6 +1063,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
         id: betId,
       }], { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
     }
+    notifyTelegram(`Error at result undeclare tournament expert side on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -1114,6 +1132,8 @@ exports.declareFinalMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
+        notifyTelegram(`Error at result declare final match expert side while calling wallet api for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
         throw err;
       });
 
@@ -1144,6 +1164,8 @@ exports.declareFinalMatchResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+    notifyTelegram(`Error at result declare final match expert side for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -1182,6 +1204,8 @@ exports.unDeclareFinalMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
+        notifyTelegram(`Error at result undeclare final match expert side while calling wallet api for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
         throw err;
       });
 
@@ -1205,6 +1229,8 @@ exports.unDeclareFinalMatchResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+    notifyTelegram(`Error at result undeclare final match expert side for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }

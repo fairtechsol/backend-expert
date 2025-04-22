@@ -51,7 +51,7 @@ exports.addMatchInCache = async (matchId, data) => {
   if (data.stopAt) {
     payload.stopAt = data.stopAt;
   }
-  let res = await internalRedis
+  let res = await externalRedis
     .pipeline()
     .hset(matchKey, payload)
     .expire(matchKey, expiry)
@@ -84,7 +84,7 @@ exports.addRaceInCache = async (matchId, data) => {
   if (data.stopAt) {
     payload.stopAt = data.stopAt;
   }
-  let res = await internalRedis
+  let res = await externalRedis
     .pipeline()
     .hset(matchKey, payload)
     .expire(matchKey, expiry)
@@ -100,7 +100,7 @@ exports.updateMatchInCache = async (matchId, data) => {
     data: data
   });
   let matchKey = `${matchId}_match`;
-  let match = await internalRedis.hgetall(matchKey);
+  let match = await externalRedis.hgetall(matchKey);
   let payload = {
     id: match.id || data.id,
     matchType: data.matchType || match.matchType,
@@ -133,7 +133,7 @@ exports.updateMatchInCache = async (matchId, data) => {
   if (data.stopAt || match.stopAt) {
     payload.stopAt = data.stopAt || match.stopAt;
   }
-  return await internalRedis
+  return await externalRedis
     .pipeline()
     .hset(matchKey, payload)
     .expire(matchKey, expiry)
@@ -147,7 +147,7 @@ exports.updateRaceInCache = async (matchId, data) => {
     data: data
   });
   let matchKey = `${matchId}_match`;
-  let match = await internalRedis.hgetall(matchKey);
+  let match = await externalRedis.hgetall(matchKey);
   let matchOdd = JSON.parse(match.matchOdd)
   matchOdd.maxBet = data.maxBet
   matchOdd.minBet = data.minBet
@@ -166,7 +166,7 @@ exports.updateRaceInCache = async (matchId, data) => {
   if (data.stopAt || match.stopAt) {
     payload.stopAt = data.stopAt || match.stopAt;
   }
-  return await internalRedis
+  return await externalRedis
     .pipeline()
     .hset(matchKey, payload)
     .expire(matchKey, expiry)
@@ -180,7 +180,7 @@ exports.updateMatchKeyInCache = async (matchId, key, data) => {
   let payload = {
     [key]: data
   }
-  return await internalRedis
+  return await externalRedis
     .pipeline()
     .hset(matchKey, payload)
     .expire(matchKey, expiry)
@@ -189,26 +189,26 @@ exports.updateMatchKeyInCache = async (matchId, key, data) => {
 
 exports.hasMatchInCache = async (matchId) => {
   let matchKey = `${matchId}_match`;
-  return await internalRedis.exists(matchKey);
+  return await externalRedis.exists(matchKey);
 }
 
 exports.updateMatchExpiry = async (matchId) => {
   let matchKey = `${matchId}_match`;
 
-  return await internalRedis
+  return await externalRedis
     .expire(matchKey, expiry);
 }
 
 exports.getKeyFromMatchRedis = async (matchId, key) => {
   // Retrieve match data from Redis
-  const matchData = await internalRedis.hget(`${matchId}_match`, key);
+  const matchData = await externalRedis.hget(`${matchId}_match`, key);
 
   // Parse and return the match data or null if it doesn't exist
   return matchData ? JSON.parse(matchData) : null;
 };
 
 // exports.getMatchFromCache = async(matchId) =>{
-//     let match = await internalRedis.hgetall(`${matchId}_match`);
+//     let match = await externalRedis.hgetall(`${matchId}_match`);
 //     return Object.keys(match)?.length > 0 ? match : null;
 // }
 
@@ -223,7 +223,7 @@ exports.getKeyFromMatchRedis = async (matchId, key) => {
 exports.updateSessionMatchRedis = async (matchId, sessionId, data) => {
 
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis
+  await externalRedis
     .pipeline()
     .hset(`${matchId}_session`, sessionId, JSON.stringify(data))
     .expire(`${matchId}_session`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
@@ -232,7 +232,7 @@ exports.updateSessionMatchRedis = async (matchId, sessionId, data) => {
 
 exports.hasSessionInCache = async (matchId) => {
   let sessionKey = `${matchId}_session`;
-  return await internalRedis.exists(sessionKey);
+  return await externalRedis.exists(sessionKey);
 }
 
 /**
@@ -245,7 +245,7 @@ exports.hasSessionInCache = async (matchId) => {
 exports.settingAllSessionMatchRedis = async (matchId, data) => {
 
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis
+  await externalRedis
     .pipeline()
     .hset(`${matchId}_session`, data)
     .expire(`${matchId}_session`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
@@ -262,7 +262,7 @@ exports.settingAllSessionMatchRedis = async (matchId, data) => {
  */
 exports.getSessionFromRedis = async (matchId, sessionId) => {
   // Retrieve session data from Redis
-  const sessionData = await internalRedis.hget(`${matchId}_session`, sessionId);
+  const sessionData = await externalRedis.hget(`${matchId}_session`, sessionId);
 
   // Parse and return the session data or null if it doesn't exist
   return sessionData ? JSON.parse(sessionData) : null;
@@ -277,14 +277,14 @@ exports.getSessionFromRedis = async (matchId, sessionId) => {
  */
 exports.getAllSessionRedis = async (matchId) => {
   // Retrieve all session data for the match from Redis
-  const sessionData = await internalRedis.hgetall(`${matchId}_session`);
+  const sessionData = await externalRedis.hgetall(`${matchId}_session`);
 
   // Return the session data as an object or null if no data is found
   return Object.keys(sessionData)?.length == 0 ? null : sessionData;
 };
 
 exports.updateExpiryTimeSession = async (matchId) => {
-  await internalRedis.expire(`${matchId}_session`, expiry);
+  await externalRedis.expire(`${matchId}_session`, expiry);
 };
 
 /**
@@ -303,7 +303,7 @@ exports.updateBettingMatchRedis = async (matchId, bettingType, data) => {
   });
 
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis
+  await externalRedis
     .pipeline()
     .hset(`${matchId}_manualBetting`, bettingType, JSON.stringify(data))
     .expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
@@ -320,7 +320,7 @@ exports.updateBettingMatchRedis = async (matchId, bettingType, data) => {
 exports.settingAllBettingMatchRedis = async (matchId, data) => {
 
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis
+  await externalRedis
     .pipeline()
     .hset(`${matchId}_manualBetting`, data)
     .expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
@@ -337,7 +337,7 @@ exports.settingAllBettingMatchRedis = async (matchId, data) => {
  */
 exports.getBettingFromRedis = async (matchId, bettingType) => {
   // Retrieve betting data from Redis
-  const bettingData = await internalRedis.hget(`${matchId}_manualBetting`, bettingType);
+  const bettingData = await externalRedis.hget(`${matchId}_manualBetting`, bettingType);
 
   // Parse and return the betting data or null if it doesn't exist
   return bettingData ? JSON.parse(bettingData) : null;
@@ -353,7 +353,7 @@ exports.getBettingFromRedis = async (matchId, bettingType) => {
  */
 exports.getBettingFromRedis = async (matchId, bettingType) => {
   // Retrieve betting data from Redis
-  const bettingData = await internalRedis.hget(`${matchId}_manualBetting`, bettingType);
+  const bettingData = await externalRedis.hget(`${matchId}_manualBetting`, bettingType);
 
   // Parse and return the betting data or null if it doesn't exist
   return bettingData ? JSON.parse(bettingData) : null;
@@ -368,7 +368,7 @@ exports.getBettingFromRedis = async (matchId, bettingType) => {
  */
 exports.getAllBettingRedis = async (matchId) => {
   // Retrieve all betting data for the match from Redis
-  const bettingData = await internalRedis.hgetall(`${matchId}_manualBetting`);
+  const bettingData = await externalRedis.hgetall(`${matchId}_manualBetting`);
 
   // Return the betting data as an object or null if no data is found
   return Object.keys(bettingData)?.length == 0 ? null : bettingData;
@@ -383,22 +383,22 @@ exports.getAllBettingRedis = async (matchId) => {
  */
 exports.getMatchTournamentFromCache = async (matchId) => {
   // Retrieve all betting data for the match from Redis
-  const bettingData = await internalRedis.hget(`${matchId}_match`, "tournament");
+  const bettingData = await externalRedis.hget(`${matchId}_match`, "tournament");
   return JSON.parse(bettingData || "[]")
 };
 
 exports.updateExpiryTimeBetting = async (matchId) => {
-  await internalRedis.expire(`${matchId}_manualBetting`, expiry);
+  await externalRedis.expire(`${matchId}_manualBetting`, expiry);
 };
 
 exports.hasBettingInCache = async (matchId) => {
   let bettingKey = `${matchId}_manualBetting`;
-  return await internalRedis.exists(bettingKey);
+  return await externalRedis.exists(bettingKey);
 }
 
 exports.getMatchFromCache = async (matchId) => {
   let matchKey = `${matchId}_match`;
-  let MatchData = await internalRedis.hgetall(matchKey);
+  let MatchData = await externalRedis.hgetall(matchKey);
   if (Object.keys(MatchData)?.length) {
     if (MatchData?.sessionMaxBets) {
       MatchData.sessionMaxBets = JSON.parse(MatchData.sessionMaxBets)
@@ -418,7 +418,7 @@ exports.getMatchFromCache = async (matchId) => {
 
 exports.getRaceFromCache = async (matchId) => {
   let matchKey = `${matchId}_match`;
-  let MatchData = await internalRedis.hgetall(matchKey);
+  let MatchData = await externalRedis.hgetall(matchKey);
   if (Object.keys(MatchData)?.length) {
     return MatchData;
   }
@@ -427,7 +427,7 @@ exports.getRaceFromCache = async (matchId) => {
 
 exports.getSingleMatchKey = async (matchId, key, type) => {
   let matchKey = `${matchId}_match`;
-  let MatchData = await internalRedis.hget(matchKey, key);
+  let MatchData = await externalRedis.hget(matchKey, key);
   if (type == 'number') {
     MatchData = Number(MatchData);
   }
@@ -442,18 +442,18 @@ exports.getSingleMatchKey = async (matchId, key, type) => {
 
 exports.getMultipleMatchKey = async (matchId) => {
   let matchKey = `${matchId}_match`;
-  let MatchData = await internalRedis.hgetall(matchKey);
+  let MatchData = await externalRedis.hgetall(matchKey);
   return MatchData;
 }
 
 exports.hasMatchInCache = async (matchId) => {
   let key = `${matchId}_match`;
-  return await internalRedis.exists(key);
+  return await externalRedis.exists(key);
 }
 
 exports.settingMatchKeyInCache = async (matchId, data) => {
   let key = `${matchId}_match`;
-  return await internalRedis.hset(key, data);
+  return await externalRedis.hset(key, data);
 }
 
 exports.addAllsessionInRedis = async (matchId, result) => {
@@ -496,12 +496,12 @@ exports.addAllMatchBetting = async (matchId, result) => {
 
 exports.hasMarketSessionIdsInCache = async (matchId) => {
   let Key = `${matchId}_selectionId`;
-  return await internalRedis.exists(Key);
+  return await externalRedis.exists(Key);
 }
 
 exports.getAllMarketSessionIdsRedis = async (matchId) => {
   // Retrieve all betting data for the match from Redis
-  const marketSessionIds = await internalRedis.hgetall(`${matchId}_selectionId`);
+  const marketSessionIds = await externalRedis.hgetall(`${matchId}_selectionId`);
 
   // Return the betting data as an object or null if no data is found
   return lodash.isEmpty(marketSessionIds) ? null : marketSessionIds;
@@ -509,7 +509,7 @@ exports.getAllMarketSessionIdsRedis = async (matchId) => {
 
 exports.getMarketSessionIdFromRedis = async (matchId, selectionId) => {
   // Retrieve betting data from Redis
-  const marketSessionId = await internalRedis.hget(`${matchId}_selectionId`, selectionId);
+  const marketSessionId = await externalRedis.hget(`${matchId}_selectionId`, selectionId);
 
   // Parse and return the betting data or null if it doesn't exist
   return marketSessionId ? marketSessionId : null;
@@ -517,7 +517,7 @@ exports.getMarketSessionIdFromRedis = async (matchId, selectionId) => {
 
 exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis
+  await externalRedis
     .pipeline()
     .hset(`${matchId}_selectionId`, selectionId, data)
     .expire(`${matchId}_selectionId`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
@@ -526,7 +526,7 @@ exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
 
 exports.updateMultipleMarketSessionIdRedis = async (matchId, data) => {
   // Use a Redis pipeline for atomicity and efficiency
-  await internalRedis
+  await externalRedis
   .pipeline()
   .hset(`${matchId}_selectionId`, data)
   .expire(`${matchId}_selectionId`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
@@ -551,13 +551,13 @@ exports.getUserRedisData = async (userId) => {
 
 // create function for remove key from market session
 exports.deleteKeyFromMarketSessionId = async (matchId, ...selectionId) => {
-  const deleteKey = await internalRedis.hdel(`${matchId}_selectionId`, selectionId);
+  const deleteKey = await externalRedis.hdel(`${matchId}_selectionId`, selectionId);
   return deleteKey;
 }
 
 // create function for remove key from market session
 exports.deleteKeyFromManualSessionId = async (matchId, sessionId) => {
-  const deleteKey = await internalRedis.hdel(`${matchId}_session`, sessionId);
+  const deleteKey = await externalRedis.hdel(`${matchId}_session`, sessionId);
   return deleteKey;
 }
 
@@ -646,13 +646,13 @@ exports.deleteKeyFromExpertRedisData = async (...key) => {
 
 // create function for remove key from market session
 exports.deleteKeyFromMatchRedisData = async (matchId, ...key) => {
-  const deleteKey = await internalRedis.hdel(`${matchId}_match`, key);
+  const deleteKey = await externalRedis.hdel(`${matchId}_match`, key);
   return deleteKey;
 }
 
 // create function for remove key from redis
 exports.deleteAllMatchRedis = async (matchId) => {
-  await internalRedis.del(matchId + "_match", matchId + "_manualBetting", matchId + "_session", matchId + "_selectionId");
+  await externalRedis.del(matchId + "_match", matchId + "_manualBetting", matchId + "_session", matchId + "_selectionId");
 }
 
 exports.loginCount = async (key) => {
@@ -669,9 +669,9 @@ exports.loginCount = async (key) => {
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
 exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
-  const manualBettingData = await internalRedis.hgetall(`${matchId}_manualBetting`);
+  const manualBettingData = await externalRedis.hgetall(`${matchId}_manualBetting`);
 
-  let redisPipeline = internalRedis
+  let redisPipeline = externalRedis
     .pipeline();
 
   if (manualBettingData) {
@@ -686,7 +686,7 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
     redisPipeline = redisPipeline.hset(`${matchId}_manualBetting`, manualBettingData).expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
   }
 
-  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
+  let matchDetails = await externalRedis.hgetall(`${matchId}_match`);
 
   if (matchDetails) {
     Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
@@ -711,9 +711,9 @@ exports.settingAllBettingMatchRedisStatus = async (matchId, status) => {
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
 exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
-  const manualBettingData = await internalRedis.hgetall(`${matchId}_manualBetting`);
+  const manualBettingData = await externalRedis.hgetall(`${matchId}_manualBetting`);
 
-  let redisPipeline = internalRedis
+  let redisPipeline = externalRedis
     .pipeline();
 
   if (manualBettingData) {
@@ -728,7 +728,7 @@ exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
     redisPipeline = redisPipeline.hset(`${matchId}_manualBetting`, manualBettingData).expire(`${matchId}_manualBetting`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key;
   }
 
-  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
+  let matchDetails = await externalRedis.hgetall(`${matchId}_match`);
 
   if (matchDetails) {
     mainMatchMarketType?.forEach((item) => {
@@ -753,10 +753,10 @@ exports.settingAllBettingOtherMatchRedisStatus = async (matchId, status) => {
  * @returns {Promise<void>} - A Promise that resolves when the update is complete.
  */
 exports.settingAllBettingRacingMatchRedisStatus = async (matchId, status) => {
-  let redisPipeline = internalRedis
+  let redisPipeline = externalRedis
     .pipeline();
 
-  let matchDetails = await internalRedis.hgetall(`${matchId}_match`);
+  let matchDetails = await externalRedis.hgetall(`${matchId}_match`);
 
   if (matchDetails) {
     Object.keys(mainMatchRacingMarketType)?.forEach((item) => {

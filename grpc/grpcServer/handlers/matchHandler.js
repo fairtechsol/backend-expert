@@ -39,9 +39,9 @@ exports.getMatchCompetitionsByType = async (call) => {
 
 exports.getMatchDatesByCompetitionId = async (call) => {
     try {
-        const { type } = call.request;
+        const { competitionId } = call.request;
 
-        const dates = await getMatchDates(type);
+        const dates = await getMatchDates(competitionId);
 
         return { data: JSON.stringify(dates) }
     } catch (err) {
@@ -60,9 +60,9 @@ exports.getMatchDatesByCompetitionId = async (call) => {
 
 exports.getMatchDatesByCompetitionIdAndDate = async (call) => {
     try {
-        const { date, type } = call.request;
+        const { date, competitionId } = call.request;
 
-        const matches = await getMatchByCompetitionIdAndDates(type, date);
+        const matches = await getMatchByCompetitionIdAndDates(competitionId, date);
 
         return { data: JSON.stringify(matches) }
     } catch (err) {

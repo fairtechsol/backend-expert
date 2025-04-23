@@ -482,7 +482,7 @@ exports.unDeclareSessionResult = async (req, res) => {
     }
 
     // check result already declare
-    let bet = await getSessionBettingById(betId, ["activeStatus", "id", "matchId", "selectionId", "type", "result"]);
+    let bet = await getSessionBettingById(betId);
     if (!bet) {
       logger.error({
         message: "Error in unDeclare no bet found",

@@ -85,8 +85,9 @@ exports.addSession = async (req, res) => {
     if (selectionId) {
       isManual = false;
       status = teamStatus.active
-      const isSessionExist = await getSessionBetting({ matchId: matchId, selectionId: selectionId }, ["id"]);
+      const isSessionExist = await getSessionBetting({ matchId: matchId, selectionId: selectionId });
       if (isSessionExist) {
+        await updateSessionMatchRedis(matchId, isSessionExist.id, isSessionExist);
         return ErrorResponse({ statusCode: 400, message: { msg: "alreadyExist", keys: { name: "Session" } } }, req, res);
       }
     }

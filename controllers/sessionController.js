@@ -403,7 +403,11 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
     }
     else {
 
-      let sessionData = await getSessionBettingById(sessionId);
+      let sessionData = await getSessionFromRedis(matchId, sessionId);
+      if (!sessionData) {
+        sessionData = await getSessionBettingById(sessionId);
+      }
+
       if (!sessionData) {
         return ErrorResponse({ statusCode: 404, message: { msg: "NotFound", keys: "Session" } });
       }
@@ -417,10 +421,10 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
           }
         }
       }
-      await updateSessionBetting({ id: sessionId }, { activeStatus: status });
       sessionData.activeStatus = status;
       sessionData.updatedAt = new Date();
       updateSessionMatchRedis(sessionData.matchId, sessionData.id, sessionData);
+      await updateSessionBetting({ id: sessionId }, { activeStatus: status });
       // Update redis cache
       if (status == betStatusType.live) {
         await updateMarketSessionIdRedis(sessionData.matchId, sessionData.selectionId, sessionId);

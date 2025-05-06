@@ -482,7 +482,7 @@ exports.getSessions = async (call) => {
         });
         throw {
             code: grpc.status.INTERNAL,
-            message: err?.message || __mf("internalServerError"),
+            message: error?.message || __mf("internalServerError"),
         };
     }
 };

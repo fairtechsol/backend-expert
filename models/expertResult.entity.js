@@ -47,9 +47,9 @@ const expertResultSchema = new EntitySchema({
       columns: ["matchId", "userId", "betId"],
     },
     {
-      name: "expertResult_betId", // index name should be start with the table name
+      name: "expertResult_betId_deletedAt", // index name should be start with the table name
       unique: false, // Optional: Set to true if you want a unique index
-      columns: ["betId"],
+      columns: ["betId", "deletedAt"],
     },
   ]
 });

@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class AddIndex1746616919081 {
-    name = 'AddIndex1746616919081'
+module.exports = class AddIndex1746620799801 {
+    name = 'AddIndex1746620799801'
 
     async up(queryRunner) {
         await queryRunner.query(`ALTER TYPE "public"."sessionBettings_type_enum" RENAME TO "sessionBettings_type_enum_old"`);
@@ -10,11 +10,11 @@ module.exports = class AddIndex1746616919081 {
         await queryRunner.query(`DROP TYPE "public"."sessionBettings_type_enum_old"`);
         await queryRunner.query(`CREATE INDEX "tournamentRunners_bettingId" ON "tournamentRunners" ("bettingId", "deletedAt") `);
         await queryRunner.query(`CREATE INDEX "tournamentBetting_matchId" ON "tournamentBettings" ("matchId") `);
-        await queryRunner.query(`CREATE INDEX "expertResult_betId" ON "expertResults" ("betId") `);
+        await queryRunner.query(`CREATE INDEX "expertResult_betId_deletedAt" ON "expertResults" ("betId", "deletedAt") `);
     }
 
     async down(queryRunner) {
-        await queryRunner.query(`DROP INDEX "public"."expertResult_betId"`);
+        await queryRunner.query(`DROP INDEX "public"."expertResult_betId_deletedAt"`);
         await queryRunner.query(`DROP INDEX "public"."tournamentBetting_matchId"`);
         await queryRunner.query(`DROP INDEX "public"."tournamentRunners_bettingId"`);
         await queryRunner.query(`CREATE TYPE "public"."sessionBettings_type_enum_old" AS ENUM('ballByBall', 'cricketCasino', 'fancy1', 'khado', 'meter', 'oddEven', 'overByover', 'session')`);

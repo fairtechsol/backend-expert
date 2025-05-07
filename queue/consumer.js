@@ -1,7 +1,7 @@
 const Queue = require('bee-queue');
 const { calculateProfitLossSession, mergeProfitLoss, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
 const { logger } = require('../config/logger');
-const { redisKeys, socketData, sessionBettingType } = require('../config/contants');
+const { redisKeys, socketData, sessionBettingType, jobQueueConcurrent } = require('../config/contants');
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { setExpertsRedisData, getExpertsRedisData } = require('../services/redis/commonfunction');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
@@ -19,7 +19,7 @@ const expertSessionBetDeleteQueue = new Queue('expertSessionBetDeleteQueue', exp
 const expertTournamentMatchBetDeleteQueue = new Queue('expertTournamentMatchBetDeleteQueue', expertRedisOption);
 const ExpertMatchTournamentBetQueue = new Queue('expertMatchTournamentBetQueue', expertRedisOption);
 
-ExpertMatchTournamentBetQueue.process(async function (job, done) {
+ExpertMatchTournamentBetQueue.process(jobQueueConcurrent, async function (job, done) {
   let jobData = job.data;
   let userId = jobData.userId;
   try {
@@ -88,7 +88,7 @@ let calculateTournamentRateAmount = async (jobData, userId) => {
   }
 }
 
-ExpertSessionBetQueue.process(async function (job, done) {
+ExpertSessionBetQueue.process(jobQueueConcurrent, async function (job, done) {
   let jobData = job.data;
   let userId = jobData.userId;
   try {
@@ -376,4 +376,4 @@ expertTournamentMatchBetDeleteQueue.process(async function (job, done) {
   }
 });
 
-module.exports.ExpertMatchQueue = { ExpertSessionBetQueue,  expertTournamentMatchBetDeleteQueue, expertSessionBetDeleteQueue, ExpertMatchTournamentBetQueue }
+module.exports.ExpertMatchQueue = { ExpertSessionBetQueue, expertTournamentMatchBetDeleteQueue, expertSessionBetDeleteQueue, ExpertMatchTournamentBetQueue }

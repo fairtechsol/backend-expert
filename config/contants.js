@@ -4,6 +4,7 @@ module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://local
 module.exports.noResult = "No Result";
 module.exports.passwordRegex = /^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z])(?=.*\d.*\d.*\d.*\d).{8,}$/;
 module.exports.jwtSecret = process.env.JWT_SECRET || "secret";
+module.exports.jobQueueConcurrent = process.env.JOB_QUEUE_CONCURRENT || 5;
 
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",

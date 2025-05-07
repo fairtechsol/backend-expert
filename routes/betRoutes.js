@@ -6,7 +6,7 @@ const validator = require('../middleware/joi.validator');
 const { sessionDeclareValidator, sessionDeclareNoResultValidator, sessionUnDeclareValidator, tournamentMatchDeclareValidator, tournamentMatchUnDeclareValidator, verifyBetValidator, finalMatchDeclareValidator, finalMatchUnDeclareValidator } = require("../validators/betsValidator");
 const { apiLimiter } = require("../middleware/apiHitLimiter");
 
-router.post("/declare/result/session", isAuthenticate, validator(sessionDeclareValidator), declareSessionResult);
+router.post("/declare/result/session", apiLimiter, isAuthenticate, validator(sessionDeclareValidator), declareSessionResult);
 router.post("/declare/noResult/session", apiLimiter, isAuthenticate, validator(sessionDeclareNoResultValidator), declareSessionNoResult);
 router.post("/unDeclare/result/session", apiLimiter, isAuthenticate, validator(sessionUnDeclareValidator), unDeclareSessionResult);
 

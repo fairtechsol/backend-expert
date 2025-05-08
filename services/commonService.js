@@ -6,7 +6,8 @@ const { getMatchBattingByMatchId } = require("./matchBettingService");
 const { getMatchDetails, getRaceDetails } = require("./matchService");
 const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
-const { getExpertResult, getExpertResultBetWise, getExpertResultTournamentBetWise, getExpertResultSessionBetWise } = require("./expertResultService");
+const { getExpertResult, getExpertResultBetWise, getExpertResultTournamentBetWise, getExpertResultSessionBetWise, deleteOldExpertResult } = require("./expertResultService");
+const { LessThanOrEqual } = require("typeorm");
 
 exports.forceLogoutIfLogin = async (userId) => {
 
@@ -473,8 +474,6 @@ exports.calculateProfitLossMeter = async (redisProfitLoss, betData, partnership)
   };
 };
 
-
-
 /**
 * Calculates the profit or loss for a betting session.
 * @param {object} redisProfitLoss - Redis data for profit and loss.
@@ -563,52 +562,52 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
 };
 
 exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
-  
-      if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
-        while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
-          const newEntry = {
-            odds: newbetPlaced[0].odds - 1,
-            profitLoss: newbetPlaced[0].profitLoss,
-          };
-          newbetPlaced.unshift(newEntry);
-        }
-      }
-      if (newbetPlaced[0].odds < oldbetPlaced[0].odds) {
-        while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
-          const newEntry = {
-            odds: oldbetPlaced[0].odds - 1,
-            profitLoss: oldbetPlaced[0].profitLoss,
-          };
-          oldbetPlaced.unshift(newEntry);
-        }
-      }
 
-      if (newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds) {
-        while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
-          const newEntry = {
-            odds: oldbetPlaced[oldbetPlaced.length - 1].odds + 1,
-            profitLoss: oldbetPlaced[oldbetPlaced.length - 1].profitLoss,
-          };
-          oldbetPlaced.push(newEntry);
-        }
-      }
-      if (newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds) {
-        while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
-          const newEntry = {
-            odds: newbetPlaced[newbetPlaced.length - 1].odds + 1,
-            profitLoss: newbetPlaced[newbetPlaced.length - 1].profitLoss,
-          };
-          newbetPlaced.push(newEntry);
-        }
-      }
-    
+  if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
+    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+      const newEntry = {
+        odds: newbetPlaced[0].odds - 1,
+        profitLoss: newbetPlaced[0].profitLoss,
+      };
+      newbetPlaced.unshift(newEntry);
+    }
+  }
+  if (newbetPlaced[0].odds < oldbetPlaced[0].odds) {
+    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+      const newEntry = {
+        odds: oldbetPlaced[0].odds - 1,
+        profitLoss: oldbetPlaced[0].profitLoss,
+      };
+      oldbetPlaced.unshift(newEntry);
+    }
+  }
+
+  if (newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds) {
+    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+      const newEntry = {
+        odds: oldbetPlaced[oldbetPlaced.length - 1].odds + 1,
+        profitLoss: oldbetPlaced[oldbetPlaced.length - 1].profitLoss,
+      };
+      oldbetPlaced.push(newEntry);
+    }
+  }
+  if (newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds) {
+    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+      const newEntry = {
+        odds: newbetPlaced[newbetPlaced.length - 1].odds + 1,
+        profitLoss: newbetPlaced[newbetPlaced.length - 1].profitLoss,
+      };
+      newbetPlaced.push(newEntry);
+    }
+  }
+
 };
 
 exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true, isMarketAllowed = true) => {
   let match = await getMatchFromCache(matchId);
   let expertResults = await getExpertResultBetWise({ matchId: matchId });
   expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId })), ...(await getExpertResultSessionBetWise({ matchId: matchId }))]
-  const sessionExpertResult = await getExpertResult({ matchId: matchId },["betId","userId","id"]);
+  const sessionExpertResult = await getExpertResult({ matchId: matchId }, ["betId", "userId", "id"]);
 
   // Check if the match exists
   if (match) {
@@ -652,10 +651,10 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
       let apiSelectionIdObj = {};
       for (let index = 0; index < sessions?.length; index++) {
         // if (sessions?.[index]?.activeStatus == betStatusType.live) {
-          if (sessions?.[index]?.selectionId) {
-            apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
-          }
-          result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
+        if (sessions?.[index]?.selectionId) {
+          apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
+        }
+        result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
         // }
         sessions[index] = JSON.stringify(sessions?.[index]);
       }
@@ -733,7 +732,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
       // Assign the categorized match betting to the match object
       Object.assign(match, categorizedMatchBettings);
     }
-    else{
+    else {
       delete match.other;
       delete match.tournament;
       delete match.matchOdd;
@@ -742,7 +741,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
       delete match.marketCompleteMatch;
       delete match.bookmaker2;
     }
-    
+
     delete match.marketBookmaker;
     delete match.marketTiedMatch;
     delete match.marketTiedMatch2;
@@ -760,7 +759,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
       }
     }
     // sort the runner by the sort priority
-    match.tournamentBettings?.forEach(item =>{
+    match.tournamentBettings?.forEach(item => {
       item.runners.sort((a, b) => a.sortPriority - b.sortPriority);
     })
 
@@ -818,7 +817,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
           break;
       }
     });
-    
+
     let payload = {
       ...match,
       matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
@@ -855,10 +854,10 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
     let apiSelectionIdObj = {};
     for (let index = 0; index < sessions?.length; index++) {
       // if (sessions?.[index]?.activeStatus == betStatusType.live) {
-        if (sessions?.[index]?.selectionId) {
-          apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
-        }
-        result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
+      if (sessions?.[index]?.selectionId) {
+        apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
+      }
+      result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
       // }
       sessions[index] = JSON.stringify(sessions?.[index]);
     }
@@ -1098,7 +1097,7 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
     });
     payload.tournament = [...match?.tournament || []],
 
-    await addMatchInCache(match.id, payload);
+      await addMatchInCache(match.id, payload);
 
     // Create an empty object to store manual betting Redis data
     const manualBettingRedisData = {};
@@ -1127,23 +1126,23 @@ exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
 
   match.teamRates = teamRates;
   if (userId) {
-   
+
     if (!(match.stopAt)) {
       let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
       let matchResult = expertResults.find((result) => result.betId == qBookId[0]?.id);
       if (matchResult) {
-          match.resultStatus = matchResult.status;
+        match.resultStatus = matchResult.status;
       }
 
       for (let items of [...(match?.other || []), ...(match?.tournament || [])]) {
         let matchResult = expertResults.find((result) => result.betId == items?.id);
         if (matchResult) {
-            match.otherBettings = match.otherBettings || {};
-            match.otherBettings[items?.id] = matchResult.status;
-            
+          match.otherBettings = match.otherBettings || {};
+          match.otherBettings[items?.id] = matchResult.status;
+
         }
       }
-      
+
     }
   }
   return match;
@@ -1157,3 +1156,9 @@ exports.extractNumbersFromString = (str) => {
 exports.parseRedisData = (redisKey, userRedisData) => {
   return parseFloat((Number(userRedisData[redisKey]) || 0.0).toFixed(2));
 };
+
+exports.deleteOldData = async () => {
+  const deleteTime = new Date();
+  deleteTime.setMonth(deleteTime.getMonth() - 3);
+  await deleteOldExpertResult({ createdAt: LessThanOrEqual(deleteTime) });
+}

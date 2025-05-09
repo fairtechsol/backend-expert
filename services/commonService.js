@@ -1,9 +1,9 @@
-const { socketData, betType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus} = require("../config/contants");
+const { socketData, betType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus } = require("../config/contants");
 const { __mf } = require("i18n");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchDetails, getRaceDetails } = require("./matchService");
-const { getRaceFromCache, getMatchFromCache, getAllSessionRedis, settingAllSessionMatchRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis } = require("./redis/commonfunction");
+const { getRaceFromCache, getMatchFromCache, getAllSessionRedis, settingAllSessionMatchRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis, hasSessionInCache } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 const { getExpertResult, getExpertResultTournamentBetWise, getExpertResultSessionBetWise, deleteOldExpertResult } = require("./expertResultService");
 const { LessThanOrEqual } = require("typeorm");
@@ -559,15 +559,15 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
 exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true, isMarketAllowed = true) => {
   let match = await getMatchFromCache(matchId);
   let expertResults = [...(await getExpertResultTournamentBetWise({ matchId: matchId })), ...(await getExpertResultSessionBetWise({ matchId: matchId }))]
-  const sessionExpertResult = await getExpertResult({ matchId: matchId },["betId","userId","id"]);
+  const sessionExpertResult = await getExpertResult({ matchId: matchId }, ["betId", "userId", "id"]);
 
   // Check if the match exists
   if (match) {
-      // Retrieve all session data from Redis for the given match
-    let sessions = await getAllSessionRedis(matchId);
-
+    let sessions;
+    // Retrieve all session data from Redis for the given match
+    let isSessionExist = await hasSessionInCache(matchId);
     // If session data is found in Redis, update its expiry time
-    if (!sessions) {
+    if (!isSessionExist) {
 
       // If no session data is found in Redis, fetch it from the database
       sessions = await getSessionBattingByMatchId(matchId, !userId ? { activeStatus: betStatusType.live } : {});
@@ -604,17 +604,17 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
 
     if (isMarketAllowed) {
       const categorizedMatchBettings = {
-       
+
         ...(match.tournament
           ? { [matchBettingType.tournament]: match.tournament }
           : {}),
       };
       // Iterate through matchBettings and categorize them
-      
+
       // Assign the categorized match betting to the match object
       Object.assign(match, categorizedMatchBettings);
     }
-    else{
+    else {
       delete match.tournament;
     }
   } else {
@@ -639,7 +639,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
       tournament: null,
     };
 
-    
+
     let payload = {
       ...match,
       tournament: [...match?.tournamentBettings?.sort((a, b) => a.sNo - b.sNo) || []],
@@ -704,7 +704,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
       }
     }
     if (!(match.stopAt) && isMarketAllowed) {
-    
+
       for (let items of (match?.tournament || [])) {
         let matchResult = expertResults.find((result) => result.betId == items?.id);
         if (matchResult) {

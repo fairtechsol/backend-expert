@@ -119,6 +119,11 @@ const tournamentBettingSchema = new EntitySchema({
       unique: false, // Optional: Set to true if you want a unique index
       columns: ["matchId", "name"],
     },
+    {
+      name: "tournamentBetting_matchId", // index name should be start with the table name
+      unique: false, // Optional: Set to true if you want a unique index
+      columns: ["matchId"],
+    },
   ],
   checks: [
     {

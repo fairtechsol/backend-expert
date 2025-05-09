@@ -5,7 +5,8 @@ const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchDetails, getRaceDetails } = require("./matchService");
 const { getRaceFromCache, getMatchFromCache, getAllSessionRedis, settingAllSessionMatchRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
-const { getExpertResult, getExpertResultTournamentBetWise, getExpertResultSessionBetWise } = require("./expertResultService");
+const { getExpertResult, getExpertResultTournamentBetWise, getExpertResultSessionBetWise, deleteOldExpertResult } = require("./expertResultService");
+const { LessThanOrEqual } = require("typeorm");
 
 exports.forceLogoutIfLogin = async (userId) => {
 
@@ -426,7 +427,6 @@ exports.calculateProfitLossMeter = async (redisProfitLoss, betData, partnership)
   };
 };
 
-
 /**
 * Calculates the profit or loss for a betting session.
 * @param {object} redisProfitLoss - Redis data for profit and loss.
@@ -515,45 +515,45 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
 };
 
 exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
-  
-      if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
-        while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
-          const newEntry = {
-            odds: newbetPlaced[0].odds - 1,
-            profitLoss: newbetPlaced[0].profitLoss,
-          };
-          newbetPlaced.unshift(newEntry);
-        }
-      }
-      if (newbetPlaced[0].odds < oldbetPlaced[0].odds) {
-        while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
-          const newEntry = {
-            odds: oldbetPlaced[0].odds - 1,
-            profitLoss: oldbetPlaced[0].profitLoss,
-          };
-          oldbetPlaced.unshift(newEntry);
-        }
-      }
 
-      if (newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds) {
-        while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
-          const newEntry = {
-            odds: oldbetPlaced[oldbetPlaced.length - 1].odds + 1,
-            profitLoss: oldbetPlaced[oldbetPlaced.length - 1].profitLoss,
-          };
-          oldbetPlaced.push(newEntry);
-        }
-      }
-      if (newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds) {
-        while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
-          const newEntry = {
-            odds: newbetPlaced[newbetPlaced.length - 1].odds + 1,
-            profitLoss: newbetPlaced[newbetPlaced.length - 1].profitLoss,
-          };
-          newbetPlaced.push(newEntry);
-        }
-      }
-    
+  if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
+    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+      const newEntry = {
+        odds: newbetPlaced[0].odds - 1,
+        profitLoss: newbetPlaced[0].profitLoss,
+      };
+      newbetPlaced.unshift(newEntry);
+    }
+  }
+  if (newbetPlaced[0].odds < oldbetPlaced[0].odds) {
+    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+      const newEntry = {
+        odds: oldbetPlaced[0].odds - 1,
+        profitLoss: oldbetPlaced[0].profitLoss,
+      };
+      oldbetPlaced.unshift(newEntry);
+    }
+  }
+
+  if (newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds) {
+    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+      const newEntry = {
+        odds: oldbetPlaced[oldbetPlaced.length - 1].odds + 1,
+        profitLoss: oldbetPlaced[oldbetPlaced.length - 1].profitLoss,
+      };
+      oldbetPlaced.push(newEntry);
+    }
+  }
+  if (newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds) {
+    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+      const newEntry = {
+        odds: newbetPlaced[newbetPlaced.length - 1].odds + 1,
+        profitLoss: newbetPlaced[newbetPlaced.length - 1].profitLoss,
+      };
+      newbetPlaced.push(newEntry);
+    }
+  }
+
 };
 
 exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true, isMarketAllowed = true) => {
@@ -576,10 +576,10 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
       let apiSelectionIdObj = {};
       for (let index = 0; index < sessions?.length; index++) {
         // if (sessions?.[index]?.activeStatus == betStatusType.live) {
-          if (sessions?.[index]?.selectionId) {
-            apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
-          }
-          result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
+        if (sessions?.[index]?.selectionId) {
+          apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
+        }
+        result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
         // }
         sessions[index] = JSON.stringify(sessions?.[index]);
       }
@@ -631,7 +631,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
       }
     }
     // sort the runner by the sort priority
-    match.tournamentBettings?.forEach(item =>{
+    match.tournamentBettings?.forEach(item => {
       item.runners.sort((a, b) => a.sortPriority - b.sortPriority);
     })
 
@@ -652,10 +652,10 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
     let apiSelectionIdObj = {};
     for (let index = 0; index < sessions?.length; index++) {
       // if (sessions?.[index]?.activeStatus == betStatusType.live) {
-        if (sessions?.[index]?.selectionId) {
-          apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
-        }
-        result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
+      if (sessions?.[index]?.selectionId) {
+        apiSelectionIdObj[sessions?.[index]?.selectionId] = sessions?.[index]?.id;
+      }
+      result[sessions?.[index]?.id] = JSON.stringify(sessions?.[index]);
       // }
       sessions[index] = JSON.stringify(sessions?.[index]);
     }
@@ -774,3 +774,9 @@ exports.extractNumbersFromString = (str) => {
 exports.parseRedisData = (redisKey, userRedisData) => {
   return parseFloat((Number(userRedisData[redisKey]) || 0.0).toFixed(2));
 };
+
+exports.deleteOldData = async () => {
+  const deleteTime = new Date();
+  deleteTime.setMonth(deleteTime.getMonth() - 3);
+  await deleteOldExpertResult({ createdAt: LessThanOrEqual(deleteTime) });
+}

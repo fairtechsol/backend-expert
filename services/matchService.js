@@ -3,8 +3,12 @@ const ApiFeature = require("../utils/apiFeatures");
 const { IsNull } = require("typeorm");
 const matchSchema = require("../models/match.entity");
 const RaceSchema = require("../models/racingMatch.entity");
-const {  betStatusType, gameType, matchOddName } = require("../config/contants");
+const { betStatusType, gameType } = require("../config/contants");
+const tournamentBettingSchema = require("../models/tournamentBetting.entity");
+const sessionBettingSchema = require("../models/sessionBetting.entity");
 const match = AppDataSource.getRepository(matchSchema);
+const sessionBetting = AppDataSource.getRepository(sessionBettingSchema);
+const tournamentBetting = AppDataSource.getRepository(tournamentBettingSchema);
 const race = AppDataSource.getRepository(RaceSchema);
 
 exports.getMatchById = async (id, select) => {
@@ -89,35 +93,16 @@ exports.getMatchSuperAdmin = async (filters, select, query) => {
   }
 };
 
-exports.getMatchWithBettingAndSession = async (
-  allPrivilege,
-  addMatchPrivilege,
-  bookmakerMatchPrivilege,
-  sessionMatchPrivilege,
-  matchType
-) => {
+exports.getMatchWithBettingAndSession = async (allPrivilege, addMatchPrivilege, bookmakerMatchPrivilege, sessionMatchPrivilege, matchType) => {
   try {
     // Start building the query
-    let matchQuery = match
-      .createQueryBuilder().where({ stopAt: IsNull(), ...(matchType ? { matchType: matchType } : { matchType: gameType.cricket }) });
+    let matchQuery = match.createQueryBuilder().where({ stopAt: IsNull(), ...(matchType ? { matchType: matchType } : { matchType: gameType.cricket }) });
+
     if (bookmakerMatchPrivilege || allPrivilege || addMatchPrivilege) {
-      matchQuery = matchQuery
-        .leftJoinAndMapMany(
-          "match.tournaments",
-          "match.tournamentBettings",
-          "tournamentBetting",
-          "tournamentBetting.isManual = true",
-          
-        );
+      matchQuery = matchQuery.leftJoinAndMapMany("match.tournaments", "match.tournamentBettings", "tournamentBetting", "tournamentBetting.isManual = true");
     }
     if (sessionMatchPrivilege || allPrivilege || addMatchPrivilege) {
-      matchQuery = matchQuery
-        .leftJoinAndMapMany(
-          "match.sessions",
-          "match.sessionBettings",
-          "sessions",
-          `sessions.isManual = true AND sessions.activeStatus <> '${betStatusType.result}'`
-        );
+      matchQuery = matchQuery.leftJoinAndMapMany("match.sessions", "match.sessionBettings", "sessions", `sessions.isManual = true AND sessions.activeStatus <> '${betStatusType.result}'`);
     }
 
     matchQuery = matchQuery.select(["match.id", "match.title", "match.teamA", "match.teamB", "match.teamC", "match.betFairSessionMaxBet", "match.betFairSessionMinBet", "match.matchType"]);
@@ -141,36 +126,34 @@ exports.getMatchWithBettingAndSession = async (
 
 exports.getMatchDetails = async (id, select) => {
   const result = await match.createQueryBuilder('match')
-  .leftJoinAndSelect('match.sessionBettings', 'sessionBettings')
-  .leftJoinAndMapOne("sessionBettings.resultData", "result", "resultData", "resultData.betId = sessionBettings.id")
-  .leftJoinAndSelect('match.tournamentBettings', 'tournamentBettings')
-  .leftJoinAndSelect('tournamentBettings.runners', 'runners')
-  .where('match.id = :id', { id: id })
-  .select(select)
-  .getOne();
-return result;
-  // return await match.findOne({
-  //   where: { id: id },
-  //   select: select,
-  //   relations: {
-  //     matchBettings: true,
-  //     sessionBettings: true,
-  //     tournamentBettings: {
-  //       runners: true
-  //     }
-  //   }
-  // });
+    .where('match.id = :id', { id: id })
+    .select(select)
+    .getOne();
+  const tournament = await tournamentBetting.createQueryBuilder('tournamentBetting')
+    .leftJoinAndSelect("tournamentBetting.runners", "runners")
+    .where("tournamentBetting.matchId = :id", { id: id })
+    .getMany();
+  result.tournamentBettings = tournament;
+  if (result.matchType === gameType.cricket) {
+    const session = await sessionBetting.createQueryBuilder('sessionBetting')
+      .leftJoinAndMapOne("sessionBetting.resultData", "result", "resultData", "resultData.betId = sessionBetting.id")
+      .where('sessionBetting.matchId = :id', { id: id })
+      .getMany();
+    result.sessionBettings = session;
+  }
+  return result;
+
 };
 
 exports.getRaceDetails = async (where) => {
   try {
     // Start building the query
-    let matchQuery =await race
+    let matchQuery = await race
       .createQueryBuilder("race")
-      .leftJoinAndMapOne("race.matchOdd", "racingBetting","matchOdd","race.id = matchOdd.matchId")
+      .leftJoinAndMapOne("race.matchOdd", "racingBetting", "matchOdd", "race.id = matchOdd.matchId")
       .leftJoinAndMapMany("race.runners", "racingRunner", "runners", "race.id = runners.matchId")
-      .where(where ).getOne();
-    return  matchQuery;
+      .where(where).getOne();
+    return matchQuery;
   } catch (error) {
     throw error;
   }
@@ -196,7 +179,7 @@ exports.getMatchByCompetitionIdAndDates = async (type, date) => {
   return await match.createQueryBuilder()
     .leftJoinAndMapMany('match.tournamentBetting', 'tournamentBetting', 'tournamentBetting', 'match.id = tournamentBetting.matchId AND tournamentBetting.isActive = true')
     .select(["match.id", "match.title", "tournamentBetting.id", "tournamentBetting.name", "tournamentBetting.type"])
-    .where({ stopAt: IsNull() , matchType: type })
+    .where({ stopAt: IsNull(), matchType: type })
     .andWhere('DATE_TRUNC(\'day\',match."startAt") = :date')
     .setParameters({ "date": new Date(date) })
     .getMany();

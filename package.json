@@ -11,7 +11,7 @@
     "dev": "node swagger.js & nodemon index.js",
     "migration:generate": "typeorm migration:generate -d ./orm.config.js -o",
     "migration:run": "typeorm migration:run -d ./orm.config.js",
-    "migration:revert": "typeorm migration:revert -d ./orm.config.js"
+    "migration:revert": "typeorm migration:revert -d ./orm.config.js -t"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.13.2",

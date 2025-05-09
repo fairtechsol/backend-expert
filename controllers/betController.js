@@ -173,9 +173,7 @@ exports.declareSessionResult = async (req, res) => {
 
     if (resultValidate) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
-      updateSessionBetting({ id: betId },
-        { activeStatus: betStatus.save, result: null }
-      );
+      updateSessionBetting({ id: betId }, { activeStatus: betStatus.save, result: null });
       return SuccessResponse(
         {
           statusCode: 200,

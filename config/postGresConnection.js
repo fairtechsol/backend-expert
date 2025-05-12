@@ -1,5 +1,4 @@
-const { DataSource, getConnection, DefaultNamingStrategy } = require("typeorm");
-const TypeORM = require("typeorm");
+const { DataSource, DefaultNamingStrategy } = require("typeorm");
 require("dotenv").config();
 require("reflect-metadata");
 
@@ -17,46 +16,52 @@ function customPluralizeWord(word) {
   return word + 's'; // Simple rule: add 's' to make it plural
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const dataSourceOption = {
   type: "postgres",
   host: process.env.POSTGRES_HOST,
-  port: parseInt(process.env.POSTGRES_PORT),
+  port: parseInt(process.env.POSTGRES_PORT, 10),
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DATABASE,
   synchronize: false,
-  logging: true,
+  logging: !isProduction,
   entities: [__dirname + "/../**/*.entity.{js,ts}"],
   migrations: [__dirname + "/../**/migrations/*{.js,.ts}"],
   migrationsTableName: "migrations",
   namingStrategy: new PluralNamingStrategy(),
+  // Connection Pool Configuration
+  extra: {
+    max: parseInt(process.env.DB_POOL_MAX || '10', 10),  // shrink max pool for safety
+    min: parseInt(process.env.DB_POOL_MIN || '1', 10)
+  },
 };
 
-if (process.env.NODE_ENV == 'production') {
-  dataSourceOption.ssl = {
-    rejectUnauthorized: false
-  }
-  dataSourceOption.logging = false;
+if (isProduction) {
+  dataSourceOption.ssl = { rejectUnauthorized: false };
 }
 
 const AppDataSource = new DataSource(dataSourceOption);
 
 AppDataSource.initialize()
-  .then(async () => {
-    console.log("Database connected successfully");
-    let isMigrationPending = await AppDataSource.showMigrations();
-    console.log("is migration pending ", isMigrationPending);
-    if (isMigrationPending) {
-      console.log("Database migration pending");
-      await AppDataSource.runMigrations().then(() => {
-        console.log("Database migration run success");
-      }).catch(err => {
-        console.log("error at migration run ", err);
-        process.exit(0);
+.then(async () => {
+  console.log("✅ Database connected successfully");
+  const isMigrationPending = await AppDataSource.showMigrations();
+  console.log("🔍 Migration pending:", isMigrationPending);
+
+  if (isMigrationPending) {
+    console.log("🚀 Running migrations...");
+    await AppDataSource.runMigrations()
+      .then(() => console.log("✅ Migrations applied successfully"))
+      .catch(err => {
+        console.error("❌ Migration error:", err);
+        process.exit(1);
       });
-    }
-  })
-  .catch((error) => console.log(`Error in connection:${error}`));
+  }
+})
+.catch((error) => console.error("❌ DB connection error:", error));
+
 
 const getDataSource = () => {
   if (AppDataSource.isInitialized) return Promise.resolve(AppDataSource);

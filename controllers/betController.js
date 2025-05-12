@@ -44,6 +44,8 @@ const {
   getRedisKey,
   setRedisKey,
   deleteRedisKey,
+  getExternalRedisKey,
+  setExternalRedisKey,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -2277,7 +2279,12 @@ exports.declareFinalMatchResult = async (req, res) => {
     deleteAllMatchRedis(matchId);
     await updateMatch({ id: matchId }, { stopAt: new Date() })
     await removeBlinkingTabs({ matchId: matchId });
-
+    let blinkingTabs = await getExternalRedisKey(redisKeys.blinkingTabs);
+    if (blinkingTabs) {
+      blinkingTabs = JSON.parse(blinkingTabs);
+      blinkingTabs = blinkingTabs.filter(tab => tab.matchId !== matchId);
+      setExternalRedisKey(redisKeys.blinkingTabs, JSON.stringify(blinkingTabs))
+    }
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.matchResultDeclared,
@@ -2734,4 +2741,3 @@ exports.verifyBet = async (req, res) => {
     return ErrorResponse(error, req, res)
   }
 }
-  

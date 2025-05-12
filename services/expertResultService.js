@@ -62,3 +62,7 @@ exports.deleteAllExpertResult = async (betId)=>{
     });
     return expertResult;
 }
+
+exports.deleteOldExpertResult = async (where) => {
+    await expertResultRepo.delete(where);
+  }

@@ -1,6 +1,8 @@
+const { redisKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getBlinkingTabs, getBlinkingTab, addBlinkingTabs, removeBlinkingTabs, updateBlinkingTabs } = require("../services/blinkingTabsService");
 const { getMatchById } = require("../services/matchService");
+const { setExternalRedisKey, getExternalRedisKey } = require("../services/redis/commonfunction");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.addBlinkingTabsData = async (req, res) => {
@@ -21,16 +23,20 @@ exports.addBlinkingTabsData = async (req, res) => {
             }
             await updateBlinkingTabs({ id: id }, { order: order })
         }
-        else{
+        else {
 
-        const blinkingTab = await getBlinkingTab({ matchId: matchId }, ["id"]);
+            const blinkingTab = await getBlinkingTab({ matchId: matchId }, ["id"]);
 
-        if (blinkingTab) {
-            logger.error({ message: `Match already exist ${matchId}` });
-            return ErrorResponse({ statusCode: 400, message: { msg: "alreadyExist", keys: { name: "Match" } } }, req, res);
+            if (blinkingTab) {
+                logger.error({ message: `Match already exist ${matchId}` });
+                return ErrorResponse({ statusCode: 400, message: { msg: "alreadyExist", keys: { name: "Match" } } }, req, res);
 
+            }
+            await addBlinkingTabs({ createBy: userId, matchId: matchId, matchName: matchName, matchType: matchType, order: order });
+
+            const blinkTabs = await getBlinkingTabs();
+            setExternalRedisKey(redisKeys.blinkingTabs, JSON.stringify(blinkTabs))
         }
-        await addBlinkingTabs({ createBy: userId, matchId: matchId, matchName: matchName, matchType: matchType, order: order });}
         return SuccessResponse(
             {
                 statusCode: 200,
@@ -59,7 +65,15 @@ exports.addBlinkingTabsData = async (req, res) => {
 
 exports.getBlinkingTabsData = async (req, res) => {
     try {
-        let blinkingTabs = await getBlinkingTabs();
+        let blinkingTabs = await getExternalRedisKey(redisKeys.blinkingTabs);
+        if (!blinkingTabs) {
+            blinkingTabs = await getBlinkingTabs();
+            setExternalRedisKey(redisKeys.blinkingTabs, JSON.stringify(blinkingTabs))
+        }
+        else {
+            blinkingTabs = JSON.parse(blinkingTabs)
+        }
+
         return SuccessResponse(
             {
                 statusCode: 200,
@@ -90,6 +104,12 @@ exports.removeBlinkingTabsData = async (req, res) => {
     try {
         const { id } = req.params;
         await removeBlinkingTabs({ id: id });
+        let blinkingTabs = await getExternalRedisKey(redisKeys.blinkingTabs);
+        if (blinkingTabs) {
+            blinkingTabs = JSON.parse(blinkingTabs);
+            blinkingTabs = blinkingTabs.filter(tab => tab.id !== id);
+            setExternalRedisKey(redisKeys.blinkingTabs, JSON.stringify(blinkingTabs))
+        }
         return SuccessResponse(
             {
                 statusCode: 200,

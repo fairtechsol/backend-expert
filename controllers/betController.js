@@ -272,7 +272,9 @@ exports.declareSessionResult = async (req, res) => {
         { activeStatus: betStatus.save, result: null }
       );
     }
-    notifyTelegram(`Error at result declare session expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+    if (err?.message?.msg != "bet.resultReject") {
+      notifyTelegram(`Error at result declare session expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -454,7 +456,9 @@ exports.declareSessionNoResult = async (req, res) => {
         { activeStatus: betStatus.save, result: null }
       );
     }
-    notifyTelegram(`Error at result declare session no result expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+    if (err?.message?.msg != "bet.resultReject") {
+      notifyTelegram(`Error at result declare session no result expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -896,8 +900,9 @@ exports.declareTournamentMatchResult = async (req, res) => {
         id: betId,
       }], { activeStatus: betStatus.save, result: null, stopAt: null });
     }
-    notifyTelegram(`Error at result declare tournament expert side on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
-
+    if (err?.message?.msg != "bet.resultReject") {
+      notifyTelegram(`Error at result declare tournament expert side on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }

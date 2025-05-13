@@ -3,18 +3,13 @@ const {
   betStatus,
   socketData,
   teamStatus,
-  walletDomain,
   betStatusType,
   bettingType,
   noResult,
   redisKeys,
   matchBettingType,
   resultStatus,
-  mainMatchMarketType,
   marketBettingTypeByBettingType,
-  redisKeysMarketWise,
-  scoreBasedMarket,
-  otherEventMatchBettingRedisKey,
   matchOddName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
@@ -26,8 +21,7 @@ const {
   updateExpertResult,
   deleteAllExpertResult,
 } = require("../services/expertResultService");
-const { getMatchBattingByMatchId, updateMatchBetting, getMatchBettingById, getMatchBetting, getMatchAllBettings } = require("../services/matchBettingService");
-const { getMatchById, addMatch, updateMatch } = require("../services/matchService");
+const { getMatchById, updateMatch } = require("../services/matchService");
 const {
   getSessionFromRedis,
   updateSessionMatchRedis,
@@ -36,11 +30,8 @@ const {
   updateMarketSessionIdRedis,
   setExpertsRedisData,
   deleteAllMatchRedis,
-  settingAllBettingMatchRedisStatus,
   getSingleMatchKey,
   settingMatchKeyInCache,
-  settingAllBettingOtherMatchRedisStatus,
-  settingAllBettingRacingMatchRedisStatus,
   getRedisKey,
   setRedisKey,
   deleteRedisKey,
@@ -54,18 +45,18 @@ const {
   getSessionBettings,
 } = require("../services/sessionBettingService");
 const { sendMessageToUser } = require("../sockets/socketManager");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const { extractNumbersFromString } = require("../services/commonService");
-const { getRacingMatchById, raceAddMatch } = require("../services/racingMatchService");
-const { getRaceBettingWithRunners, updateRaceBetting } = require("../services/raceBettingService");
-const { getTournamentBettingWithRunners, updateTournamentBetting, getTournamentBetting, getTournamentBettings, getSingleTournamentBetting, updateTournamentBettingStatus } = require("../services/tournamentBettingService");
+const { getTournamentBettingWithRunners, getSingleTournamentBetting, updateTournamentBettingStatus } = require("../services/tournamentBettingService");
 const { removeBlinkingTabs } = require("../services/blinkingTabsService");
+const { declareSessionHandler, declareSessionNoResultHandler, unDeclareSessionHandler } = require("../grpc/grpcClient/handlers/wallet/declareSession");
+const { declareMatchHandler, unDeclareMatchHandler, declareFinalMatchHandler, unDeclareFinalMatchHandler } = require("../grpc/grpcClient/handlers/wallet/declareMatch");
+const { getBets, verifyBetHandler } = require("../grpc/grpcClient/handlers/wallet/betsHandler");
+const { notifyTelegram } = require("../utils/telegramMessage");
 
 
 exports.getPlacedBets = async (req, res, next) => {
   try {
-    const result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.wallet.bets, null, {}, req.query)
+    const result = await getBets({ query: JSON.stringify(req.query) })
       .then((data) => {
         return data;
       })
@@ -81,7 +72,7 @@ exports.getPlacedBets = async (req, res, next) => {
     return SuccessResponse(
       {
         statusCode: 200,
-        data: result?.data,
+        data: result,
       },
       req,
       res
@@ -122,7 +113,7 @@ exports.declareSessionResult = async (req, res) => {
     }
     await setRedisKey(`${betId}${redisKeys.declare}`, true);
 
-    const match = await getMatchById(matchId);
+    const match = await getMatchById(matchId, ["id", "stopAt", "title", "startAt"]);
 
     if (match?.stopAt) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
@@ -153,7 +144,7 @@ exports.declareSessionResult = async (req, res) => {
       );
     }
     // check result already declare
-    let resultDeclare = await getSessionBettingById(betId);
+    let resultDeclare = await getSessionBettingById(betId, ["activeStatus", "id", "matchId", "selectionId", "type"]);
     if (resultDeclare && resultDeclare.activeStatus == betStatus.result) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
@@ -178,14 +169,11 @@ exports.declareSessionResult = async (req, res) => {
       userId: userId,
       result: score,
       selectionId: resultDeclare.selectionId,
-      match: match
     })
 
     if (resultValidate) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
-      updateSessionBetting({ id: betId },
-        { activeStatus: betStatus.save, result: null }
-      );
+      updateSessionBetting({ id: betId }, { activeStatus: betStatus.save, result: null });
       return SuccessResponse(
         {
           statusCode: 200,
@@ -198,18 +186,14 @@ exports.declareSessionResult = async (req, res) => {
 
     let fwProfitLoss;
 
-    const response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareSessionResult,
-      {
-        betId,
-        score,
-        sessionDetails: resultDeclare,
-        userId,
-        matchId,
-        match
-      }
-    )
+    const response = await declareSessionHandler({
+      betId,
+      score,
+      sessionDetails: resultDeclare,
+      userId,
+      matchId,
+      match
+    })
       .then((data) => {
         return data;
       })
@@ -225,6 +209,7 @@ exports.declareSessionResult = async (req, res) => {
         bet.result = null;
         await addSessionBetting(bet);
         await deleteExpertResult(betId, userId);
+        notifyTelegram(`Error at result declare session expert side while calling wallet api on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
         throw err;
       });
     isResultChange = false;
@@ -287,6 +272,7 @@ exports.declareSessionResult = async (req, res) => {
         { activeStatus: betStatus.save, result: null }
       );
     }
+    notifyTelegram(`Error at result declare session expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -311,7 +297,7 @@ exports.declareSessionNoResult = async (req, res) => {
     }
     await setRedisKey(`${betId}${redisKeys.declare}`, true);
 
-    const match = await getMatchById(matchId);
+    const match = await getMatchById(matchId, ["id", "stopAt", "title", "startAt"]);
     if (match?.stopAt) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       return ErrorResponse(
@@ -383,16 +369,12 @@ exports.declareSessionNoResult = async (req, res) => {
       );
     }
 
-    await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareSessionNoResult,
+    await declareSessionNoResultHandler(
       {
         score: noResult,
         betId,
-        noResult,
         userId,
         matchId,
-        match
       }
     )
       .then((data) => {
@@ -410,6 +392,7 @@ exports.declareSessionNoResult = async (req, res) => {
         bet.result = null;
         await addSessionBetting(bet);
         await deleteExpertResult(betId, userId);
+        notifyTelegram(`Error at result declare session no result expert side while calling wallet api on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
 
         throw err;
       });
@@ -471,6 +454,7 @@ exports.declareSessionNoResult = async (req, res) => {
         { activeStatus: betStatus.save, result: null }
       );
     }
+    notifyTelegram(`Error at result declare session no result expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -546,9 +530,7 @@ exports.unDeclareSessionResult = async (req, res) => {
     isResultChange = true;
     oldResult = bet.result;
 
-    let response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.unDeclareSessionResult,
+    let response = await unDeclareSessionHandler(
       {
         betId,
         userId,
@@ -569,6 +551,9 @@ exports.unDeclareSessionResult = async (req, res) => {
         bettingGame.activeStatus = betStatusType.result;
         bettingGame.result = bet.result;
         await addSessionBetting(bettingGame);
+
+        notifyTelegram(`Error at result undeclare session expert side while calling wallet api on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
         throw err;
       });
 
@@ -635,13 +620,15 @@ exports.unDeclareSessionResult = async (req, res) => {
         }
       );
     }
+    notifyTelegram(`Error at result undeclare session expert side on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
 };
 
 const checkResult = async (body) => {
-  const { betId, matchId, isSessionBet, userId, result, betType, isOtherMatch, isRacingMatch } = body;
+  const { betId, matchId, isSessionBet, userId, result, betType } = body;
   let checkExistResult = await getExpertResult({
     betId: betId
   });
@@ -678,8 +665,7 @@ const checkResult = async (body) => {
   }
   else if (betType) {
     const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[betType], 'json');
-    if (betType == matchBettingType.other || betType == matchBettingType.tournament) {
-      // matchData.find((item) => item?.id == betId).activeStatus = betStatus.save;
+    if (betType == matchBettingType.tournament) {
       for (let item of matchData) {
         if (item.id == betId || item.parentBetId == betId) {
           item.activeStatus = betStatus.save;
@@ -691,15 +677,7 @@ const checkResult = async (body) => {
     }
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[betType]]: JSON.stringify(matchData) });
   }
-  else if (isOtherMatch) {
-    await settingAllBettingOtherMatchRedisStatus(matchId, betStatus.save);
-  }
-  else if (isRacingMatch) {
-    await settingAllBettingRacingMatchRedisStatus(matchId, betStatus.save);
-  }
-  else {
-    await settingAllBettingMatchRedisStatus(matchId, betStatus.save);
-  }
+
 
 
   if (!checkExistResult?.length) {
@@ -766,29 +744,14 @@ const checkResult = async (body) => {
   }
 };
 
-exports.declareMatchResult = async (req, res) => {
+exports.declareTournamentMatchResult = async (req, res) => {
   let isResultChange = false;
-  const { matchId, result } = req.body;
+  const { matchId, result, betId } = req.body;
   const { id: userId } = req.user;
   try {
-    const isRedisSessionResultDeclare = await getRedisKey(`${matchId}${redisKeys.declare}`);
-
-    if (isRedisSessionResultDeclare) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.matchDeclare" },
-        },
-        req,
-        res
-      );
-    }
-    await setRedisKey(`${matchId}${redisKeys.declare}`, true);
-
-    const match = await getMatchById(matchId);
+    const match = await getMatchById(matchId, ["stopAt", "matchType", "title", "startAt", "id"]);
 
     if (!match) {
-      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       return ErrorResponse({
         statusCode: 403,
         message: { msg: "notFound", keys: { name: "Match" } },
@@ -797,7 +760,6 @@ exports.declareMatchResult = async (req, res) => {
     }
 
     if (match?.stopAt) {
-      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       return ErrorResponse({
         statusCode: 403,
         message: { msg: "bet.matchDeclare" },
@@ -806,101 +768,58 @@ exports.declareMatchResult = async (req, res) => {
     }
 
     // check result already declare
-    let resultDeclare = await getMatchAllBettings({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) });
-    const matchOddBetting = resultDeclare?.find(
-      (item) => item.type == matchBettingType.quickbookmaker1
-    );
+    let matchBettingDetails = await getTournamentBettingWithRunners({ id: betId }, ["tournamentBetting.type", "tournamentBetting.activeStatus", "tournamentBetting.id", "tournamentBetting.name", "tournamentRunner.id", "tournamentRunner.runnerName"]);
 
-
-    if (resultDeclare?.length > 0 && matchOddBetting.activeStatus == betStatus.result) {
-      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
+    if (matchBettingDetails?.activeStatus == betStatus.result) {
       return ErrorResponse(
         {
           statusCode: 403,
-          message: { msg: "bet.matchDeclare" },
+          message: { msg: "bet.marketAlreadyDeclare" },
         },
         req,
         res
       );
     }
 
-    const isMatchDeclared = await getResult({ betId: matchOddBetting.id, matchId: matchId }, ["id"]);
+    const isMatchDeclared = await getResult({ betId: betId, matchId: matchId }, ["id"]);
     if (isMatchDeclared) {
-      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
       return ErrorResponse({
         statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
+        message: { msg: "bet.marketAlreadyDeclare" },
       }, req, res);
     }
-    await updateMatchBetting({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
-
+    await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+      id: betId,
+    }], { activeStatus: betStatus.result, result: result, stopAt: new Date() });
     isResultChange = true;
 
-    const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
-    if (sessions?.length > 0) {
-      logger.error({
-        error: `Sessions is not declared yet.`,
-      });
-      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-      updateMatchBetting({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) }, { activeStatus: betStatus.save, result: null, stopAt: null });
-
-      return ErrorResponse(
-        { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
-        req,
-        res
-      );
-    }
-
-    const otherMatchBetting = await getMatchBetting({ matchId: matchId, activeStatus: Not(betStatus.result), type: matchBettingType.other }, ["id"]);
-    let resultDeclareTournament = await getTournamentBetting({ matchId: matchId, activeStatus: Not(betStatus.result) });
-    if (otherMatchBetting || resultDeclareTournament) {
-      logger.error({
-        error: `Other match is not declared yet.`,
-      });
-      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-      updateMatchBetting({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) }, { activeStatus: betStatus.save, result: null, stopAt: null });
-
-      return ErrorResponse(
-        { statusCode: 403, message: { msg: "bet.declareOtherMarket" } },
-        req,
-        res
-      );
-    }
-
     const resultValidate = await checkResult({
-      betId: matchOddBetting.id,
-      matchId: matchOddBetting.matchId,
+      betId: betId,
+      matchId: matchId,
       isSessionBet: false,
       userId: userId,
       result: result,
-      match: match
+      betType: matchBettingType.tournament
     });
 
     if (resultValidate) {
-      await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-      updateMatchBetting({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) }, { activeStatus: betStatus.save, result: null, stopAt: null });
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: { msg: "bet.resultApprove" },
-        },
-        req,
-        res
-      );
+      await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+        id: betId,
+      }], { activeStatus: betStatus.save, result: null, stopAt: null });
+      return SuccessResponse({ statusCode: 200, message: { msg: "bet.resultApprove" }, }, req, res);
     }
+
 
     let fwProfitLoss;
 
-    const response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareMatchResult,
+    const response = await declareMatchHandler(
       {
-        result,
-        matchDetails: resultDeclare,
+        result: result,
+        matchBettingDetails: matchBettingDetails,
         userId,
         matchId,
-        matchOddId: matchOddBetting.id,
-        match
+        match,
+        isMatchOdd: matchBettingDetails.name == matchOddName
       }
     )
       .then((data) => {
@@ -908,337 +827,48 @@ exports.declareMatchResult = async (req, res) => {
       })
       .catch(async (err) => {
         logger.error({
-          error: `Error at result declare match wallet side`,
+          error: `Error at result declare tournament match wallet side`,
           stack: err.stack,
           message: err.message,
         });
-        await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-        await updateMatchBetting({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) }, { activeStatus: betStatus.save, result: null, stopAt: null });
-        await deleteExpertResult(matchOddBetting.id, userId);
-        throw err;
+        await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+          id: betId,
+        }], { activeStatus: betStatus.save, result: null, stopAt: null });
+        await deleteExpertResult(matchBettingDetails.id, userId);
+
+        notifyTelegram(`Error at result declare tournament expert side while calling wallet api on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
+        throw err?.response?.data || err;
       });
     isResultChange = false;
-
 
     fwProfitLoss = response?.data?.profitLoss
       ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
       : 0;
 
-
     await addResult({
       betType: bettingType.match,
-      betId: matchOddBetting.id,
+      betId: matchBettingDetails?.id,
       matchId: matchId,
       result: result,
       profitLoss: fwProfitLoss,
       commission: response?.data?.totalCommission
     });
 
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultDeclared,
-      {
-        matchId: matchId,
-        result,
-        profitLoss: fwProfitLoss,
-        stopAt: match.stopAt,
-        activeStatus: betStatusType.result
-      }
-    );
 
-    deleteAllMatchRedis(matchId);
-    deleteKeyFromExpertRedisData(redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId)
-    match.stopAt = new Date();
-
-    addMatch(match);
-    await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-    await removeBlinkingTabs({ matchId: matchId });
-
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        message: {
-          msg: "success",
-          keys: {
-            name: "Match Result declared",
-          },
-        },
-        data: {
-          result,
-          profitLoss: fwProfitLoss,
-        },
-      },
-      req,
-      res
-    );
-  } catch (err) {
-    logger.error({
-      error: `Error at result declare match`,
-      stack: err.stack,
-      message: err.message,
-    });
-    await deleteRedisKey(`${matchId}${redisKeys.declare}`);
-    if (isResultChange) {
-      updateMatchBetting({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) }, { activeStatus: betStatus.save, result: null, stopAt: null });
-    }
-    // Handle any errors and return an error response
-    return ErrorResponse(err, req, res);
-  }
-};
-
-exports.unDeclareMatchResult = async (req, res) => {
-  let isResultChange = false;
-  let oldResult = null;
-  let oldStopAt = null;
-  const { matchId } = req.body;
-  const { id: userId } = req.user;
-  try {
-    const match = await getMatchById(matchId);
-
-    if (!match) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: {
-            msg: "notFound", keys: {
-              name: "Match"
-            }
-          },
-        },
-        req,
-        res
-      );
-    }
-
-    if (!match?.stopAt) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    // check result already declare
-    let bet = await getMatchAllBettings({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) });
-    const matchOddBetting = bet?.find(
-      (item) => item.type == matchBettingType.quickbookmaker1
-    );
-    if (bet?.length == 0) {
-      logger.error({
-        message: "Error in unDeclare match",
-
-      });
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    if (matchOddBetting.activeStatus != betStatus.result) {
-      logger.error({
-        message: "Error in unDeclare match no bet found",
-        data: {
-          matchId
-        }
-      });
-
-      return ErrorResponse(
-        {
-          statusCode: 404,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    await updateMatchBetting({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) }, { activeStatus: betStatus.live, result: null, stopAt: null });
-    isResultChange = true;
-    oldResult = matchOddBetting.result;
-    oldStopAt = match?.stopAt;
-
-    let response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.unDeclareMatchResult,
-      {
-        matchOddId: matchOddBetting?.id,
-        userId,
-        matchId,
-        match,
-        matchBetting: bet
-      }
-    )
-      .then((data) => {
-        return data;
-      })
-      .catch(async (err) => {
-        logger.error({
-          error: `Error at result undeclare match wallet side`,
-          stack: err.stack,
-          message: err.message,
+    const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchBettingDetails?.type], 'json');
+    matchData.forEach(item => {
+      if (item.id === betId || item.parentBetId === betId) {
+        Object.assign(item, {
+          activeStatus: betStatus.result,
+          result: result,
+          stopAt: new Date(),
+          updatedAt: new Date()
         });
-        await updateMatchBetting({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) }, { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: match?.stopAt });
-        throw err;
-      });
-
-    isResultChange = false;
-
-    await deleteResult(matchOddBetting.id);
-    await deleteAllExpertResult(matchOddBetting.id);
-    await deleteAllMatchRedis(matchId);
-
-    if (response?.data?.profitLossWallet) {
-      await setExpertsRedisData(response?.data?.profitLossWallet);
-    }
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultUnDeclared,
-      {
-        matchId: matchId,
-        profitLoss: response?.data?.profitLoss,
-        activeStatus: betStatusType.live
       }
-    );
-
-    match.stopAt = null;
-    addMatch(match);
-
-    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match result undeclared" } }, data: { matchId } }, req, res);
-  } catch (err) {
-    logger.error({
-      error: `Error at result undeclare match`,
-      stack: err.stack,
-      message: err.message,
     });
-    if (isResultChange) {
-      updateMatchBetting({ matchId: matchId, type: Not(In([matchBettingType.other, matchBettingType.tournament])) }, { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
-    }
-    // Handle any errors and return an error response
-    return ErrorResponse(err, req, res);
-  }
-};
-
-exports.declareMatchOtherMarketResult = async (req, res) => {
-  let isResultChange = false;
-  const { matchId, result, betId } = req.body;
-  const { id: userId } = req.user;
-  try {
-    const match = await getMatchById(matchId);
-
-    if (!match) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "notFound", keys: { name: "Match" } },
-      }, req, res
-      );
-    }
-
-    if (match?.stopAt) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
-      }, req, res
-      );
-    }
-
-    // check result already declare
-    let matchBettingDetails = await getMatchBettingById(betId);
-
-    if (matchBettingDetails?.activeStatus == betStatus.result) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.matchDeclare" },
-        },
-        req,
-        res
-      );
-    }
-
-    let dbScore = result;
-
-
-    const isMatchDeclared = await getResult({ betId: matchBettingDetails.id, matchId: matchId }, ["id"]);
-    if (isMatchDeclared) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
-      }, req, res);
-    }
-    await updateMatchBetting({ matchId: matchId, id: betId }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
-    isResultChange = true;
-
-    const resultValidate = await checkResult({
-      betId: matchBettingDetails.id,
-      matchId: matchBettingDetails.matchId,
-      isSessionBet: false,
-      userId: userId,
-      result: result,
-      match: match,
-      betType: matchBettingDetails?.type,
-      isOtherMatch: true
-    });
-
-    if (resultValidate) {
-      await updateMatchBetting({ matchId: matchId, id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: { msg: "bet.resultApprove" },
-        },
-        req,
-        res
-      );
-    }
-
-    let fwProfitLoss;
-
-    const response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareOtherMarketResult,
-      {
-        result: dbScore,
-        matchBettingDetail: matchBettingDetails,
-        userId,
-        matchId,
-        matchOddId: matchBettingDetails.id,
-        match,
-        matchBettingTypeData: matchBettingDetails?.type,
-      }
-    )
-      .then((data) => {
-        return data;
-      })
-      .catch(async (err) => {
-        logger.error({
-          error: `Error at result declare other market match wallet side`,
-          stack: err.stack,
-          message: err.message,
-        });
-        await updateMatchBetting({ matchId: matchId, id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
-        await deleteExpertResult(matchBettingDetails.id, userId);
-        throw err;
-      });
-    isResultChange = false;
-
-    fwProfitLoss = response?.data?.profitLoss
-      ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
-      : 0;
-
-    await addResult({
-      betType: bettingType.match,
-      betId: matchBettingDetails.id,
-      matchId: matchId,
-      result: result,
-      profitLoss: fwProfitLoss,
-    });
+    await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchBettingDetails?.type]]: JSON.stringify(matchData) });
+    await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${betId}${redisKeys.profitLoss}_${matchId}`);
 
     sendMessageToUser(
       socketData.expertRoomSocket,
@@ -1250,62 +880,37 @@ exports.declareMatchOtherMarketResult = async (req, res) => {
         stopAt: match.stopAt,
         activeStatus: betStatusType.result,
         betId: matchBettingDetails?.id,
-        betType: matchBettingDetails?.type
+        betType: matchBettingDetails?.type,
+        type: match?.matchType,
       }
     );
-
-
-    const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchBettingDetails?.type], 'json');
-
-    matchData.find((item) => item.id == betId).activeStatus = betStatus.result;
-    matchData.find((item) => item.id == betId).result = result;
-    matchData.find((item) => item.id == betId).stopAt = new Date();
-    matchData.find((item) => item.id == betId).updatedAt = new Date();
-    await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchBettingDetails?.type]]: JSON.stringify(matchData) });
-
-    await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, ...redisKeysMarketWise[matchBettingDetails.type].map((item) => item + betId + "_" + matchId));
-
-    await addMatch(match);
-
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        message: {
-          msg: "success",
-          keys: {
-            name: "Match Result declared",
-          },
-        },
-        data: {
-          result,
-          profitLoss: fwProfitLoss,
-        },
-      },
-      req,
-      res
-    );
+    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } } }, req, res);
   } catch (err) {
     logger.error({
-      error: `Error at result declare other match`,
+      error: `Error at result declare tournament match`,
       stack: err.stack,
       message: err.message,
     });
     if (isResultChange) {
-      updateMatchBetting({ matchId: matchId, id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
+      await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+        id: betId,
+      }], { activeStatus: betStatus.save, result: null, stopAt: null });
     }
+    notifyTelegram(`Error at result declare tournament expert side on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
 };
 
-exports.unDeclareMatchOtherMarketResult = async (req, res) => {
+exports.unDeclareTournamentMatchResult = async (req, res) => {
   let isResultChange = false;
   let oldResult = null;
   let oldStopAt = null;
   const { matchId, betId } = req.body;
   const { id: userId } = req.user;
   try {
-    const match = await getMatchById(matchId);
+    const match = await getMatchById(matchId, ["id", "stopAt", "matchType"]);
 
     if (!match) {
       return ErrorResponse(
@@ -1322,10 +927,11 @@ exports.unDeclareMatchOtherMarketResult = async (req, res) => {
       );
     }
 
+
     if (match.stopAt) {
       return ErrorResponse(
         {
-          statusCode: 400,
+          statusCode: 403,
           message: { msg: "bet.matchAlreadyDeclared" },
         },
         req,
@@ -1334,11 +940,11 @@ exports.unDeclareMatchOtherMarketResult = async (req, res) => {
     }
 
     // check result already declare
-    let bet = await getMatchBettingById(betId);
+    let bet = await getTournamentBettingWithRunners({ id: betId }, ["tournamentBetting.result", "tournamentBetting.stopAt", "tournamentBetting.type", "tournamentBetting.activeStatus", "tournamentBetting.id", "tournamentBetting.name", "tournamentRunner.id", "tournamentRunner.runnerName"]);
 
     if (!bet) {
       logger.error({
-        message: "Error in unDeclare other match",
+        message: "Error in unDeclare racing match",
 
       });
       return ErrorResponse(
@@ -1369,23 +975,20 @@ exports.unDeclareMatchOtherMarketResult = async (req, res) => {
       );
     }
 
-    await updateMatchBetting({ matchId: matchId, id: betId }, { activeStatus: betStatus.live, result: null, stopAt: null });
+    await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+      id: betId,
+    }], { activeStatus: betStatus.live, result: null, stopAt: null });
     isResultChange = true;
     oldResult = bet.result;
     oldStopAt = match?.stopAt;
 
-    let response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.unDeclareOtherMarketResult,
-      {
-        matchOddId: bet?.id,
-        userId,
-        matchId,
-        match,
-        matchBetting: bet,
-        matchBettingTypeData: bet?.type
-      }
-    )
+    let response = await unDeclareMatchHandler({
+      userId,
+      matchId,
+      match,
+      matchBetting: bet,
+      isMatchOdd: bet.name == matchOddName
+    })
       .then((data) => {
         return data;
       })
@@ -1395,7 +998,11 @@ exports.unDeclareMatchOtherMarketResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
-        await updateMatchBetting({ matchId: matchId, id: betId }, { activeStatus: betStatus.result, result: bet.result, stopAt: match?.stopAt });
+        await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
+          id: betId,
+        }], { activeStatus: betStatus.result, result: bet.result, stopAt: bet?.stopAt });
+
+        notifyTelegram(`Error at result undeclare tournament expert side while calling wallet api on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
         throw err;
       });
 
@@ -1403,744 +1010,6 @@ exports.unDeclareMatchOtherMarketResult = async (req, res) => {
 
     await deleteResult(bet.id);
     await deleteAllExpertResult(bet.id);
-
-    if (response?.data?.profitLossWallet) {
-      await setExpertsRedisData(response?.data?.profitLossWallet);
-    }
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultUnDeclared,
-      {
-        matchId: matchId,
-        profitLoss: response?.data?.profitLoss,
-        activeStatus: betStatusType.live,
-        betId: bet?.id,
-        betType: bet?.type,
-        profitLossData: response?.data?.profitLossWallet,
-        teamArateRedisKey: `${otherEventMatchBettingRedisKey[bet?.type]?.a}${bet?.type == matchBettingType.other ? bet?.id + "_" : ""}${matchId}`,
-        teamBrateRedisKey: `${otherEventMatchBettingRedisKey[bet?.type]?.b}${bet?.type == matchBettingType.other ? bet?.id + "_" : ""}${matchId}`,
-        teamCrateRedisKey: `${otherEventMatchBettingRedisKey[bet?.type]?.c}${bet?.type == matchBettingType.other ? bet?.id + "_" : ""}${matchId}`,
-      }
-    );
-
-    const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[bet?.type], 'json');
-    matchData.find((item) => item.id == bet?.id).activeStatus = betStatus.save;
-    matchData.find((item) => item.id == bet?.id).result = null;
-    matchData.find((item) => item.id == bet?.id).stopAt = null;
-    matchData.find((item) => item.id == bet?.id).updatedAt = new Date();
-    await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[bet?.type]]: JSON.stringify(matchData) });
-
-    await addMatch(match);
-
-    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match result undeclared" } }, data: { matchId } }, req, res);
-  } catch (err) {
-    logger.error({
-      error: `Error at result undeclare match`,
-      stack: err.stack,
-      message: err.message,
-    });
-    if (isResultChange) {
-      updateMatchBetting({ matchId: matchId, id: betId }, { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
-    }
-    // Handle any errors and return an error response
-    return ErrorResponse(err, req, res);
-  }
-};
-
-exports.declareOtherMatchResult = async (req, res) => {
-  let isResultChange = false;
-  const { matchId, result, betId } = req.body;
-  const { id: userId } = req.user;
-  try {
-    const match = await getMatchById(matchId);
-
-    if (!match) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "notFound", keys: { name: "Match" } },
-      }, req, res
-      );
-    }
-
-    if (match?.stopAt) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
-      }, req, res
-      );
-    }
-
-    // check result already declare
-    let matchBettingDetails = await getMatchBattingByMatchId(matchId);
-    let matchOddBetting;
-
-    if (betId) {
-      matchOddBetting = matchBettingDetails?.find(
-        (item) => item.id == betId
-      );
-    }
-    else {
-      matchOddBetting = matchBettingDetails?.find(
-        (item) => item.type == matchBettingType.quickbookmaker1
-      );
-    }
-    if (matchBettingDetails?.length > 0 && matchOddBetting?.activeStatus == betStatus.result) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.matchDeclare" },
-        },
-        req,
-        res
-      );
-    }
-
-    let dbScore = result;
-
-    if (scoreBasedMarket.find((item) => matchOddBetting?.type?.startsWith(item)) && result != noResult) {
-      const currScore = extractNumbersFromString(matchOddBetting?.type);
-      dbScore = parseFloat(result) < parseFloat(currScore) ? "UNDER" : "OVER";
-    }
-
-    if (!betId) {
-      let isOtherMatchResultDeclared = matchBettingDetails?.filter((item) => !mainMatchMarketType.includes(item?.type) && item?.activeStatus != betStatus.result);
-      const resultDeclareTournament = await getTournamentBetting({ matchId: matchId, activeStatus: Not(betStatus.result) });
-
-      if (isOtherMatchResultDeclared?.length > 0 || resultDeclareTournament) {
-        logger.error({
-          error: `Other match markets is not declared yet.`,
-        });
-        return ErrorResponse({
-          statusCode: 400,
-          message: { msg: "bet.declareOtherMarket" },
-        }, req, res);
-      }
-    }
-
-    const isMatchDeclared = await getResult({ betId: matchOddBetting.id, matchId: matchId }, ["id"]);
-    if (isMatchDeclared) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
-      }, req, res);
-    }
-
-
-
-    await updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
-    isResultChange = true;
-
-    const resultValidate = await checkResult({
-      betId: matchOddBetting.id,
-      matchId: matchOddBetting.matchId,
-      isSessionBet: false,
-      userId: userId,
-      result: result,
-      match: match,
-      ...(betId ? { betType: matchBettingDetails?.type } : {}),
-      isOtherMatch: true
-    });
-
-    if (resultValidate) {
-      await updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.save, result: null, stopAt: null });
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: { msg: "bet.resultApprove" },
-        },
-        req,
-        res
-      );
-    }
-
-    let fwProfitLoss;
-
-    const response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareOtherMatchResult,
-      {
-        result: dbScore,
-        matchBettingDetails: matchBettingDetails,
-        userId,
-        matchId,
-        matchOddId: matchOddBetting.id,
-        match,
-        matchBettingType: matchOddBetting?.type,
-      }
-    )
-      .then((data) => {
-        return data;
-      })
-      .catch(async (err) => {
-        logger.error({
-          error: `Error at result declare other match wallet side`,
-          stack: err.stack,
-          message: err.message,
-        });
-        await updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.save, result: null, stopAt: null });
-        await deleteExpertResult(matchOddBetting.id, userId);
-        throw err;
-      });
-    isResultChange = false;
-
-    fwProfitLoss = response?.data?.profitLoss
-      ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
-      : 0;
-
-    await addResult({
-      betType: bettingType.match,
-      betId: matchOddBetting.id,
-      matchId: matchId,
-      result: result,
-      profitLoss: fwProfitLoss,
-      commission: response?.data?.totalCommission
-    });
-
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultDeclared,
-      {
-        matchId: matchId,
-        result,
-        profitLoss: fwProfitLoss,
-        stopAt: match.stopAt,
-        activeStatus: betStatusType.result,
-        betId: matchOddBetting?.id,
-        betType: matchOddBetting?.type
-      }
-    );
-
-    if (!betId) {
-      deleteAllMatchRedis(matchId);
-      match.stopAt = new Date();
-    }
-    else {
-      const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
-      matchData.activeStatus = betStatus.result;
-      matchData.result = result;
-      matchData.stopAt = new Date();
-      matchData.updatedAt = new Date();
-      await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
-    }
-    await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, ...redisKeysMarketWise[matchOddBetting.type].map((item) => item + matchId));
-
-    await addMatch(match);
-
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        message: {
-          msg: "success",
-          keys: {
-            name: "Match Result declared",
-          },
-        },
-        data: {
-          result,
-          profitLoss: fwProfitLoss,
-        },
-      },
-      req,
-      res
-    );
-  } catch (err) {
-    logger.error({
-      error: `Error at result declare other match`,
-      stack: err.stack,
-      message: err.message,
-    });
-    if (isResultChange) {
-      updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.save, result: null, stopAt: null });
-    }
-    // Handle any errors and return an error response
-    return ErrorResponse(err, req, res);
-  }
-};
-
-exports.unDeclareOtherMatchResult = async (req, res) => {
-  let isResultChange = false;
-  let oldResult = null;
-  let oldStopAt = null;
-  const { matchId, betId } = req.body;
-  const { id: userId } = req.user;
-  try {
-    const match = await getMatchById(matchId);
-
-    if (!match) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: {
-            msg: "notFound", keys: {
-              name: "Match"
-            }
-          },
-        },
-        req,
-        res
-      );
-    }
-
-    if (betId && match.stopAt) {
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: { msg: "bet.matchAlreadyDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    if (!match.stopAt && !betId) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    // check result already declare
-    let bet = await getMatchBattingByMatchId(matchId);
-    let matchOddBetting;
-
-    if (betId) {
-      matchOddBetting = bet?.find(
-        (item) => item.id == betId
-      );
-    }
-    else {
-      matchOddBetting = bet?.find(
-        (item) => item.type == matchBettingType.quickbookmaker1
-      );
-    }
-    if (bet?.length == 0) {
-      logger.error({
-        message: "Error in unDeclare other match",
-
-      });
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    if (matchOddBetting.activeStatus != betStatus.result) {
-      logger.error({
-        message: "Error in unDeclare match no bet found",
-        data: {
-          matchId
-        }
-      });
-
-      return ErrorResponse(
-        {
-          statusCode: 404,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    await updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.live, result: null, stopAt: null });
-    isResultChange = true;
-    oldResult = matchOddBetting.result;
-    oldStopAt = match?.stopAt;
-
-    let response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.unDeclareOtherMatchResult,
-      {
-        matchOddId: matchOddBetting?.id,
-        userId,
-        matchId,
-        match,
-        matchBetting: bet,
-        matchBettingType: matchOddBetting?.type
-      }
-    )
-      .then((data) => {
-        return data;
-      })
-      .catch(async (err) => {
-        logger.error({
-          error: `Error at result undeclare match wallet side`,
-          stack: err.stack,
-          message: err.message,
-        });
-        await updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: match?.stopAt });
-        throw err;
-      });
-
-    isResultChange = false;
-
-    await deleteResult(matchOddBetting.id);
-    await deleteAllExpertResult(matchOddBetting.id);
-
-    if (response?.data?.profitLossWallet) {
-      await setExpertsRedisData(response?.data?.profitLossWallet);
-    }
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultUnDeclared,
-      {
-        matchId: matchId,
-        profitLoss: response?.data?.profitLoss,
-        activeStatus: betStatusType.live,
-        betId: matchOddBetting?.id,
-        betType: matchOddBetting?.type,
-        profitLossData: response?.data?.profitLossWallet,
-        teamArateRedisKey: `${otherEventMatchBettingRedisKey[matchOddBetting?.type]?.a}${matchId}`,
-        teamBrateRedisKey: `${otherEventMatchBettingRedisKey[matchOddBetting?.type]?.b}${matchId}`,
-        teamCrateRedisKey: `${otherEventMatchBettingRedisKey[matchOddBetting?.type]?.c}${matchId}`,
-      }
-    );
-    if (!betId) {
-      await deleteAllMatchRedis(matchId);
-      match.stopAt = null;
-    }
-    else {
-      const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
-      matchData.activeStatus = betStatus.save;
-      matchData.result = null;
-      matchData.stopAt = null;
-      matchData.updatedAt = new Date();
-      await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
-    }
-    await addMatch(match);
-
-    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match result undeclared" } }, data: { matchId } }, req, res);
-  } catch (err) {
-    logger.error({
-      error: `Error at result undeclare match`,
-      stack: err.stack,
-      message: err.message,
-    });
-    if (isResultChange) {
-      updateMatchBetting({ matchId: matchId, ...(betId ? { id: betId } : { type: In(mainMatchMarketType) }) }, { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
-    }
-    // Handle any errors and return an error response
-    return ErrorResponse(err, req, res);
-  }
-};
-
-exports.declareTournamentMatchResult = async (req, res) => {
-  let isResultChange = false;
-  const { matchId, result, betId } = req.body;
-  const { id: userId } = req.user;
-  try {
-    const match = await getMatchById(matchId);
-
-    if (!match) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "notFound", keys: { name: "Match" } },
-      }, req, res
-      );
-    }
-
-    if (match?.stopAt) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
-      }, req, res
-      );
-    }
-
-    // check result already declare
-    let matchBettingDetails = await getTournamentBettingWithRunners({ id: betId });
-    let matchOddBetting;
-
-    if (betId) {
-      matchOddBetting = matchBettingDetails?.find(
-        (item) => item.id == betId
-      );
-    }
-    if (matchBettingDetails?.length > 0 && matchOddBetting?.activeStatus == betStatus.result) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.matchDeclare" },
-        },
-        req,
-        res
-      );
-    }
-
-    const isMatchDeclared = await getResult({ betId: matchOddBetting.id, matchId: matchId }, ["id"]);
-    if (isMatchDeclared) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
-      }, req, res);
-    }
-    await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
-      id: betId,
-    }], { activeStatus: betStatus.result, result: result, stopAt: new Date() });
-    isResultChange = true;
-
-    // const unDeclaredMatchBettingTournament = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-    // const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-
-    // if (!unDeclaredMatchBettingTournament && !unDeclaredMatchBetting) {
-    //   const sessions = await getSessionBettings({ matchId: matchId, activeStatus: Not(betStatus.result) }, ["id"]);
-    //   if (sessions?.length > 0) {
-    //     logger.error({
-    //       error: `Sessions is not declared yet.`,
-    //     });
-    //     await updateTournamentBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
-    //     return ErrorResponse(
-    //       { statusCode: 403, message: { msg: "bet.sessionAllResult" } },
-    //       req,
-    //       res
-    //     );
-    //   }
-    // }
-    const resultValidate = await checkResult({
-      betId: matchOddBetting.id,
-      matchId: matchOddBetting.matchId,
-      isSessionBet: false,
-      userId: userId,
-      result: result,
-      match: match,
-      betType: matchBettingType.tournament
-    });
-
-    if (resultValidate) {
-      await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
-        id: betId,
-      }], { activeStatus: betStatus.save, result: null, stopAt: null });
-      return SuccessResponse({ statusCode: 200, message: { msg: "bet.resultApprove" }, }, req, res);
-    }
-
-
-    let fwProfitLoss;
-
-    const response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareTournamentMatchResult,
-      {
-        result: result,
-        matchBettingDetails: matchBettingDetails,
-        userId,
-        matchId,
-        matchOddId: matchOddBetting.id,
-        match,
-        matchBettingType: matchOddBetting?.type,
-        // isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting,
-        isMatchOdd: matchOddBetting.name == matchOddName
-      }
-    )
-      .then((data) => {
-        return data;
-      })
-      .catch(async (err) => {
-        logger.error({
-          error: `Error at result declare tournament match wallet side`,
-          stack: err.stack,
-          message: err.message,
-        });
-        await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
-          id: betId,
-        }], { activeStatus: betStatus.save, result: null, stopAt: null });
-        await deleteExpertResult(matchOddBetting.id, userId);
-        throw err?.response?.data || err;
-      });
-    isResultChange = false;
-
-    fwProfitLoss = response?.data?.profitLoss
-      ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
-      : 0;
-
-    await addResult({
-      betType: bettingType.match,
-      betId: matchOddBetting?.id,
-      matchId: matchId,
-      result: result,
-      profitLoss: fwProfitLoss,
-      commission: response?.data?.totalCommission
-    });
-
-    // if (!unDeclaredMatchBetting && !unDeclaredMatchBettingTournament) {
-    //   deleteAllMatchRedis(matchId);
-    //   match.stopAt = new Date();
-    //   await removeBlinkingTabs({ matchId: matchId });
-    //   await addMatch(match);
-    // }
-    // else{
-    const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
-    matchData.forEach(item => {
-      if (item.id === betId || item.parentBetId === betId) {
-        Object.assign(item, {
-          activeStatus: betStatus.result,
-          result: result,
-          stopAt: new Date(),
-          updatedAt: new Date()
-        });
-      }
-    });
-    await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
-    // }
-    await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${betId}${redisKeys.profitLoss}_${matchId}`);
-
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultDeclared,
-      {
-        matchId: matchId,
-        result,
-        profitLoss: fwProfitLoss,
-        stopAt: match.stopAt,
-        activeStatus: betStatusType.result,
-        betId: matchOddBetting?.id,
-        betType: matchOddBetting?.type,
-        type: match?.matchType,
-        // isMatchDeclare: !unDeclaredMatchBettingTournament && !unDeclaredMatchBetting
-      }
-    );
-    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } }, data: { result, profitLoss: fwProfitLoss } }, req, res);
-  } catch (err) {
-    logger.error({
-      error: `Error at result declare tournament match`,
-      stack: err.stack,
-      message: err.message,
-    });
-    if (isResultChange) {
-      await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
-        id: betId,
-      }], { activeStatus: betStatus.save, result: null, stopAt: null });
-    }
-    // Handle any errors and return an error response
-    return ErrorResponse(err, req, res);
-  }
-};
-
-exports.unDeclareTournamentMatchResult = async (req, res) => {
-  let isResultChange = false;
-  let oldResult = null;
-  let oldStopAt = null;
-  const { matchId, betId } = req.body;
-  const { id: userId } = req.user;
-  try {
-    const match = await getMatchById(matchId);
-
-    if (!match) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: {
-            msg: "notFound", keys: {
-              name: "Match"
-            }
-          },
-        },
-        req,
-        res
-      );
-    }
-
-    // const matchBettingsUndec = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-    // const tournamentBettingsUndec = await getTournamentBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-
-    if (match.stopAt
-      // && !matchBettingsUndec && !tournamentBettingsUndec
-    ) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.matchAlreadyDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    // check result already declare
-    let bet = await getTournamentBettingWithRunners({ id: betId });
-    let matchOddBetting;
-
-    matchOddBetting = bet?.find((item) => item.id == betId);
-
-    if (bet?.length == 0) {
-      logger.error({
-        message: "Error in unDeclare racing match",
-
-      });
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    if (matchOddBetting.activeStatus != betStatus.result) {
-      logger.error({
-        message: "Error in unDeclare match no bet found",
-        data: {
-          matchId
-        }
-      });
-
-      return ErrorResponse(
-        {
-          statusCode: 404,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
-      id: betId,
-    }], { activeStatus: betStatus.live, result: null, stopAt: null });
-    isResultChange = true;
-    oldResult = matchOddBetting.result;
-    oldStopAt = match?.stopAt;
-
-    let response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.unDeclareTournamentMatchResult,
-      {
-        matchOddId: matchOddBetting?.id,
-        userId,
-        matchId,
-        match,
-        matchBetting: bet,
-        matchBettingType: matchOddBetting?.type,
-        isMatchOdd: matchOddBetting.name == matchOddName
-      }
-    )
-      .then((data) => {
-        return data;
-      })
-      .catch(async (err) => {
-        logger.error({
-          error: `Error at result undeclare match wallet side`,
-          stack: err.stack,
-          message: err.message,
-        });
-        await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
-          id: betId,
-        }], { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: matchOddBetting?.stopAt });
-        throw err;
-      });
-
-    isResultChange = false;
-
-    await deleteResult(matchOddBetting.id);
-    await deleteAllExpertResult(matchOddBetting.id);
 
     if (response?.data?.profitLossWallet) {
       let expertPL = response?.data?.profitLossWallet;
@@ -2156,26 +1025,15 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
         matchId: matchId,
         profitLoss: response?.data?.profitLoss,
         activeStatus: betStatusType.live,
-        betId: matchOddBetting?.id,
-        betType: matchOddBetting?.type,
+        betId: bet?.id,
+        betType: bet?.type,
         profitLossData: response?.data?.profitLossWallet?.[`${betId}${redisKeys.profitLoss}_${matchId}`],
         type: match?.matchType
       }
     );
 
-    // const unDeclaredMatchBetting = await getMatchBetting({ type: matchBettingType.quickbookmaker1, matchId: matchId }, ["id"]);
-    // const declaredMatchBetting = await getTournamentBettings({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
-    // if (declaredMatchBetting?.length == 1 && !unDeclaredMatchBetting) {
-    //   await deleteAllMatchRedis(matchId);
-    //   match.stopAt = null;
-    //   await addMatch(match);
-    // }
-    // else{
-    const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[matchOddBetting?.type], 'json');
-    // matchData.find((item) => item.id == matchOddBetting?.id).activeStatus = betStatus.save;
-    // matchData.find((item) => item.id == matchOddBetting?.id).result = null;
-    // matchData.find((item) => item.id == matchOddBetting?.id).stopAt = null;
-    // matchData.find((item) => item.id == matchOddBetting?.id).updatedAt = new Date();
+    const matchData = await getSingleMatchKey(matchId, marketBettingTypeByBettingType[bet?.type], 'json');
+
 
     matchData.forEach(item => {
       if (item.id === betId || item.parentBetId === betId) {
@@ -2188,7 +1046,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       }
     });
 
-    await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchOddBetting?.type]]: JSON.stringify(matchData) });
+    await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[bet?.type]]: JSON.stringify(matchData) });
 
     // }
     return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match result undeclared" } }, data: { matchId } }, req, res);
@@ -2203,6 +1061,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
         id: betId,
       }], { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
     }
+    notifyTelegram(`Error at result undeclare tournament expert side on tournament ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -2231,9 +1090,9 @@ exports.declareFinalMatchResult = async (req, res) => {
 
     // check result already declare
     const matchTournamentsDetails = await getSingleTournamentBetting({ activeStatus: Not(betStatus.result), matchId: matchId }, ["id", "sNo"]);
-    const unDeclaredMatchBetting = await getMatchBetting({ activeStatus: Not(betStatusType.result), matchId: matchId }, ["id"]);
 
-    if (matchTournamentsDetails || unDeclaredMatchBetting) {
+
+    if (matchTournamentsDetails) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -2256,9 +1115,7 @@ exports.declareFinalMatchResult = async (req, res) => {
       );
     }
 
-    await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareFinalMatchResult,
+    await declareFinalMatchHandler(
       {
         matchId,
         matchType: match.matchType
@@ -2273,6 +1130,8 @@ exports.declareFinalMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
+        notifyTelegram(`Error at result declare final match expert side while calling wallet api for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
         throw err;
       });
 
@@ -2303,6 +1162,8 @@ exports.declareFinalMatchResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
+    notifyTelegram(`Error at result declare final match expert side for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -2327,13 +1188,10 @@ exports.unDeclareFinalMatchResult = async (req, res) => {
       );
     }
 
-    await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.unDeclareFinalMatchResult,
-      {
-        matchId,
-        matchType: match.matchType
-      }
+    await unDeclareFinalMatchHandler({
+      matchId,
+      matchType: match.matchType
+    }
     )
       .then((data) => {
         return data;
@@ -2344,6 +1202,8 @@ exports.unDeclareFinalMatchResult = async (req, res) => {
           stack: err.stack,
           message: err.message,
         });
+        notifyTelegram(`Error at result undeclare final match expert side while calling wallet api for match ${matchId} ${JSON.stringify(err || "{}")}`);
+
         throw err;
       });
 
@@ -2367,303 +1227,8 @@ exports.unDeclareFinalMatchResult = async (req, res) => {
       stack: err.stack,
       message: err.message,
     });
-    // Handle any errors and return an error response
-    return ErrorResponse(err, req, res);
-  }
-};
+    notifyTelegram(`Error at result undeclare final match expert side for match ${matchId} ${JSON.stringify(err || "{}")}`);
 
-exports.declareRacingMatchResult = async (req, res) => {
-  let isResultChange = false;
-  const { matchId, result, betId } = req.body;
-  const { id: userId } = req.user;
-  try {
-    const match = await getRacingMatchById(matchId);
-
-    if (!match) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "notFound", keys: { name: "Match" } },
-      }, req, res
-      );
-    }
-
-    if (match?.stopAt) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
-      }, req, res
-      );
-    }
-
-    // check result already declare
-    let matchBettingDetails = await getRaceBettingWithRunners({ id: betId });
-    let matchOddBetting;
-
-    if (betId) {
-      matchOddBetting = matchBettingDetails?.find(
-        (item) => item.id == betId
-      );
-    }
-    if (matchBettingDetails?.length > 0 && matchOddBetting?.activeStatus == betStatus.result) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.matchDeclare" },
-        },
-        req,
-        res
-      );
-    }
-
-    const isMatchDeclared = await getResult({ betId: matchOddBetting.id, matchId: matchId }, ["id"]);
-    if (isMatchDeclared) {
-      return ErrorResponse({
-        statusCode: 403,
-        message: { msg: "bet.matchDeclare" },
-      }, req, res);
-    }
-    await updateRaceBetting({ id: betId }, { activeStatus: betStatus.result, result: result, stopAt: new Date() });
-    isResultChange = true;
-
-    const resultValidate = await checkResult({
-      betId: matchOddBetting.id,
-      matchId: matchOddBetting.matchId,
-      isSessionBet: false,
-      userId: userId,
-      result: result,
-      match: match,
-      isRacingMatch: true
-    });
-
-    if (resultValidate) {
-      await updateRaceBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
-      return SuccessResponse({ statusCode: 200, message: { msg: "bet.resultApprove" }, }, req, res);
-    }
-
-    let fwProfitLoss;
-
-    const response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.declareRacingMatchResult,
-      {
-        result: result,
-        matchBettingDetails: matchBettingDetails,
-        userId,
-        matchId,
-        matchOddId: matchOddBetting.id,
-        match,
-        matchBettingType: matchOddBetting?.type,
-      }
-    )
-      .then((data) => {
-        return data;
-      })
-      .catch(async (err) => {
-        logger.error({
-          error: `Error at result declare other match wallet side`,
-          stack: err.stack,
-          message: err.message,
-        });
-        await updateRaceBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
-        await deleteExpertResult(matchOddBetting.id, userId);
-        throw err;
-      });
-    isResultChange = false;
-
-    fwProfitLoss = response?.data?.profitLoss
-      ? Number(parseFloat(response?.data?.profitLoss).toFixed(2))
-      : 0;
-
-    await addResult({
-      betType: bettingType.racing,
-      betId: matchOddBetting.id,
-      matchId: matchId,
-      result: result,
-      profitLoss: fwProfitLoss
-    });
-
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultDeclared,
-      {
-        matchId: matchId,
-        result,
-        profitLoss: fwProfitLoss,
-        stopAt: match.stopAt,
-        activeStatus: betStatusType.result,
-        betId: matchOddBetting?.id,
-        betType: matchOddBetting?.type,
-        type: match?.matchType
-      }
-    );
-
-    deleteAllMatchRedis(matchId);
-    match.stopAt = new Date();
-    await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${matchId}${redisKeys.profitLoss}`);
-
-    await raceAddMatch(match);
-    await removeBlinkingTabs({ matchId: matchId });
-
-    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match Result declared" } }, data: { result, profitLoss: fwProfitLoss } }, req, res);
-  } catch (err) {
-    logger.error({
-      error: `Error at result declare other match`,
-      stack: err.stack,
-      message: err.message,
-    });
-    if (isResultChange) {
-      await updateRaceBetting({ id: betId }, { activeStatus: betStatus.save, result: null, stopAt: null });
-    }
-    // Handle any errors and return an error response
-    return ErrorResponse(err, req, res);
-  }
-};
-
-exports.unDeclareRacingMatchResult = async (req, res) => {
-  let isResultChange = false;
-  let oldResult = null;
-  let oldStopAt = null;
-  const { matchId, betId } = req.body;
-  const { id: userId } = req.user;
-  try {
-    const match = await getRacingMatchById(matchId);
-
-    if (!match) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: {
-            msg: "notFound", keys: {
-              name: "Match"
-            }
-          },
-        },
-        req,
-        res
-      );
-    }
-
-    if (!match.stopAt) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    // check result already declare
-    let bet = await getRaceBettingWithRunners({ id: betId });
-    let matchOddBetting;
-
-    matchOddBetting = bet?.find((item) => item.id == betId);
-
-    if (bet?.length == 0) {
-      logger.error({
-        message: "Error in unDeclare racing match",
-
-      });
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    if (matchOddBetting.activeStatus != betStatus.result) {
-      logger.error({
-        message: "Error in unDeclare match no bet found",
-        data: {
-          matchId
-        }
-      });
-
-      return ErrorResponse(
-        {
-          statusCode: 404,
-          message: { msg: "bet.notDeclared" },
-        },
-        req,
-        res
-      );
-    }
-
-    await updateRaceBetting({ id: betId }, { activeStatus: betStatus.live, result: null, stopAt: null });
-    isResultChange = true;
-    oldResult = matchOddBetting.result;
-    oldStopAt = match?.stopAt;
-
-    let response = await apiCall(
-      apiMethod.post,
-      walletDomain + allApiRoutes.wallet.unDeclareRacingMatchResult,
-      {
-        matchOddId: matchOddBetting?.id,
-        userId,
-        matchId,
-        match,
-        matchBetting: bet,
-        matchBettingType: matchOddBetting?.type
-      }
-    )
-      .then((data) => {
-        return data;
-      })
-      .catch(async (err) => {
-        logger.error({
-          error: `Error at result undeclare match wallet side`,
-          stack: err.stack,
-          message: err.message,
-        });
-        await updateRaceBetting({ id: betId }, { activeStatus: betStatus.result, result: matchOddBetting.result, stopAt: match?.stopAt });
-        throw err;
-      });
-
-    isResultChange = false;
-
-    await deleteResult(matchOddBetting.id);
-    await deleteAllExpertResult(matchOddBetting.id);
-
-    if (response?.data?.profitLossWallet) {
-      let expertPL = response?.data?.profitLossWallet;
-      Object.keys(expertPL)?.forEach((item) => {
-        expertPL[item] = JSON.stringify(expertPL[item]);
-      });
-      await setExpertsRedisData(expertPL);
-    }
-    sendMessageToUser(
-      socketData.expertRoomSocket,
-      socketData.matchResultUnDeclared,
-      {
-        matchId: matchId,
-        profitLoss: response?.data?.profitLoss,
-        activeStatus: betStatusType.live,
-        betId: matchOddBetting?.id,
-        betType: matchOddBetting?.type,
-        profitLossData: response?.data?.profitLossWallet?.[`${matchId}${redisKeys.profitLoss}`],
-        type: match?.matchType
-      }
-    );
-
-    await deleteAllMatchRedis(matchId);
-    match.stopAt = null;
-
-    await raceAddMatch(match);
-
-    return SuccessResponse({ statusCode: 200, message: { msg: "success", keys: { name: "Match result undeclared" } }, data: { matchId } }, req, res);
-  } catch (err) {
-    logger.error({
-      error: `Error at result undeclare match`,
-      stack: err.stack,
-      message: err.message,
-    });
-    if (isResultChange) {
-      updateRaceBetting({ id: betId }, { activeStatus: betStatus.result, result: oldResult, stopAt: oldStopAt });
-    }
     // Handle any errors and return an error response
     return ErrorResponse(err, req, res);
   }
@@ -2706,12 +1271,7 @@ exports.sendUpdateDeleteReason = async (req, res, next) => {
 exports.verifyBet = async (req, res) => {
   try {
     let { isVerified, id, domain, matchId } = req.body;
-    await apiCall(
-      apiMethod.post,
-      domain + allApiRoutes.user.verifyBet,
-      {
-        isVerified, id, verifyBy: !isVerified ? null : req?.user?.userName
-      }
+    await verifyBetHandler({ isVerified, id, verifyBy: !isVerified ? null : req?.user?.userName }, domain
     );
 
     sendMessageToUser(

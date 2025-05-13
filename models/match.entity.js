@@ -116,11 +116,6 @@ const matchSchema = new EntitySchema({
     startAt: "DESC",
   },
   relations: {
-    matchBettings: {
-      type: "one-to-many",
-      target: "matchBetting",
-      inverseSide: "match",
-    },
     sessionBettings:{
       type: "one-to-many",
       target: "sessionBetting",

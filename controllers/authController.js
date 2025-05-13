@@ -6,9 +6,9 @@ const { getUserByUserName } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { walletDomain, jwtSecret } = require("../config/contants");
+const { jwtSecret } = require("../config/contants");
 const { setExpertsRedisData, getExpertsRedisData } = require("../services/redis/commonfunction");
+const { getBetsLoginData } = require("../grpc/grpcClient/handlers/wallet/betsHandler");
 
 // Function to validate a user by username and password
 const validateUser = async (userName, password) => {
@@ -39,13 +39,7 @@ const validateUser = async (userName, password) => {
 const setBetDataRedis = async () => {
   let data = await getExpertsRedisData();
   if (!data) {
-    let result = await apiCall(
-      apiMethod.get,
-      walletDomain + allApiRoutes.wallet.loginData
-    )
-      .then((data) => {
-        return data.data;
-      })
+    let result = await getBetsLoginData()
       .catch(async (err) => {
         logger.error({
           error: `Error at setting redis data at expert side`,

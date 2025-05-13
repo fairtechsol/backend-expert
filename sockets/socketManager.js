@@ -7,20 +7,16 @@ const { logger } = require("../config/logger");
 const { userRoleConstant, socketData } = require("../config/contants");
 const {
   getSessionFromRedis,
-  getBettingFromRedis,
-  updateBettingMatchRedis,
   updateSessionMatchRedis,
   addAllsessionInRedis,
-  addAllMatchBetting,
   getMatchTournamentFromCache,
   updateMatchKeyInCache,
 } = require("../services/redis/commonfunction");
-const { updateMatchBettingById } = require("../services/matchBettingService");
 const { UpdateMatchBettingRateInSocket } = require("../validators/matchBettingValidator");
 const { jsonValidator } = require("../middleware/joi.validator");
 const { updateSessionBetting } = require("../services/sessionBettingService");
 const { UpdateSessionRateInSocket } = require("../validators/sessionValidator");
-const { getTournamentBetting, getSingleTournamentBetting, addTournamentRunners } = require("../services/tournamentBettingService");
+const {  getSingleTournamentBetting, addTournamentRunners } = require("../services/tournamentBettingService");
 require("dotenv").config();
 
 let io;
@@ -181,7 +177,7 @@ exports.socketManager = (server) => {
     });
 
     client.on("updateMatchBettingRate", async (body) => {
-      const { error, validated } = await jsonValidator(UpdateMatchBettingRateInSocket, body);
+      const { error } = await jsonValidator(UpdateMatchBettingRateInSocket, body);
       if (error) {
         return;
       }
@@ -204,11 +200,11 @@ exports.socketManager = (server) => {
         redisMatchTournament[currRunnerIndex] = matchBettingData;
         updateMatchKeyInCache(matchId, "tournament", JSON.stringify(redisMatchTournament));
       }
-      addTournamentRunners(matchBettingData.runners);
+      // addTournamentRunners(matchBettingData.runners);
     });
 
     client.on("updateSessionRate", async (body) => {
-      const { error, validated } = await jsonValidator(UpdateSessionRateInSocket, body);
+      const { error } = await jsonValidator(UpdateSessionRateInSocket, body);
       if (error) {
         return;
       }
@@ -226,7 +222,7 @@ exports.socketManager = (server) => {
       sessionData["yesPercent"] = body.yesPercent ? body.yesPercent : 0;
       sessionData["noPercent"] = body.noPercent ? body.noPercent : 0;
       sessionData["status"] = body.status;
-      updateSessionBetting({ id }, sessionData);
+      // updateSessionBetting({ id }, sessionData);
       updateSessionMatchRedis(matchId, id, sessionData);
     });
 

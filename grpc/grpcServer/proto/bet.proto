@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package grpc.betsProvider;
+
+// Request for changing bet delete reason
+message ChangeBetsDeleteReasonRequest {
+  string betIds = 1;
+  string deleteReason = 2;
+  string matchId = 3;
+}
+
+// Response for changing bet delete reason
+message ChangeBetsDeleteReasonResponse {
+  string data = 1;
+}
+
+service BetsProvider {
+  rpc ChangeBetsDeleteReason(ChangeBetsDeleteReasonRequest) returns (ChangeBetsDeleteReasonResponse);
+}

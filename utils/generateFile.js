@@ -39,7 +39,7 @@ class FileGenerate {
    * @returns {Promise<string>} - The generated PDF file name.
    */
   async generatePdf(formattedData) {
-    pdfMake.vfs = pdfFonts.pdfMake.vfs;
+    pdfMake.vfs = pdfFonts;
 
     if (formattedData && formattedData.length > 0) {
       const headers = Object.keys(formattedData[0]);

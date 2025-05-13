@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { matchBettingType, teamStatus, gameTypeMatchBetting, manualMatchBettingType } = require('../config/contants');
+const { matchBettingType, teamStatus, gameTypeMatchBetting } = require('../config/contants');
 
 exports.UpdateMatchBettingRateInSocket = Joi.object({
     id: Joi.string().guid({ version: 'uuidv4' }).required().messages({
@@ -50,58 +50,6 @@ exports.matchBetStatusChangeValidator = Joi.object({
     isTournament: Joi.boolean()
 });
 
-exports.raceBetStatusChangeValidator = Joi.object({
-    betId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
-        'string.base': `Bet id should be a type of 'text'`,
-        'string.empty': `Bet id cannot be an empty field`,
-        'string.guid': `Bet id must be a valid GUID`,
-        'any.required': `Bet id is a required field`
-    }),
-    isStop: Joi.boolean().required(),
-});
-
-exports.matchBetApiChangeValidator = Joi.object({
-    betIds: Joi.array().min(1).items(Joi.string().guid({ version: 'uuidv4' }).required().messages({
-        'string.base': `Bet id should be a type of 'text'`,
-        'string.empty': `Bet id cannot be an empty field`,
-        'string.guid': `Bet id must be a valid GUID`,
-        'any.required': `Bet id is a required field`
-    })).required().messages({
-        'any.required': `Bet id is required`,
-        'any.min': `Send atleast one bet id.`,
-    }),
-    apiType: Joi.number().required().messages({
-        'any.required': `Api type is required`,
-    }),
-    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
-        'string.base': `Bet id should be a type of 'text'`,
-        'string.empty': `Bet id cannot be an empty field`,
-        'string.guid': `Bet id must be a valid GUID`,
-        'any.required': `Bet id is a required field`
-    })
-});
-
-exports.racingBetApiChangeValidator = Joi.object({
-    betIds: Joi.array().min(1).items(Joi.string().guid({ version: 'uuidv4' }).required().messages({
-        'string.base': `Bet id should be a type of 'text'`,
-        'string.empty': `Bet id cannot be an empty field`,
-        'string.guid': `Bet id must be a valid GUID`,
-        'any.required': `Bet id is a required field`
-    })).required().messages({
-        'any.required': `Bet id is required`,
-        'any.min': `Send atleast one bet id.`,
-    }),
-    apiType: Joi.number().required().messages({
-        'any.required': `Api type is required`,
-    }),
-    matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
-        'string.base': `Bet id should be a type of 'text'`,
-        'string.empty': `Bet id cannot be an empty field`,
-        'string.guid': `Bet id must be a valid GUID`,
-        'any.required': `Bet id is a required field`
-    })
-});
-
 exports.addMatchBettingDataValidator = Joi.object({
     id: Joi.string().guid({ version: 'uuidv4' }).allow(null).messages({
         'string.base': `id should be a type of 'text'`,
@@ -139,11 +87,7 @@ exports.addMatchBettingDataValidator = Joi.object({
     exposureLimit: Joi.number().allow(null).messages({
         'number.base': `Exposure limit should be a type of 'number'`,
     }),
-    marketId: Joi.string().when('type', {
-        is: Joi.valid(...Object.values(manualMatchBettingType)),
-        then: Joi.allow(null),
-        otherwise: Joi.allow(null)
-    }).messages({
+    marketId: Joi.string().allow(null).messages({
         "string.base": "Market ID must be a string"
     }),
     mid: Joi.string().allow(null),

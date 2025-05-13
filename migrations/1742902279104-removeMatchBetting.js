@@ -12,6 +12,7 @@ module.exports = class RemoveMatchBetting1742902279104 {
         await queryRunner.query(`CREATE TYPE "public"."sessionBettings_type_enum" AS ENUM('session', 'fancy1', 'overByover', 'ballByBall', 'oddEven', 'cricketCasino', 'khado', 'meter', 'manualSession')`);
         await queryRunner.query(`ALTER TABLE "sessionBettings" ALTER COLUMN "type" TYPE "public"."sessionBettings_type_enum" USING "type"::"text"::"public"."sessionBettings_type_enum"`);
         await queryRunner.query(`DROP TYPE "public"."sessionBettings_type_enum_old"`);
+        await queryRunner.query(`CREATE INDEX "user_createBy" ON "users" ("createBy") `);
     }
 
     async down(queryRunner) {
@@ -23,5 +24,6 @@ module.exports = class RemoveMatchBetting1742902279104 {
         await queryRunner.query(`ALTER TABLE "tournamentBettings" ALTER COLUMN "type" TYPE "public"."tournamentBettings_type_enum_old" USING "type"::"text"::"public"."tournamentBettings_type_enum_old"`);
         await queryRunner.query(`DROP TYPE "public"."tournamentBettings_type_enum"`);
         await queryRunner.query(`ALTER TYPE "public"."tournamentBettings_type_enum_old" RENAME TO "tournamentBettings_type_enum"`);
+        await queryRunner.query(`DROP INDEX "public"."user_createBy"`);
     }
 }

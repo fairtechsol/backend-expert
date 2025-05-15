@@ -282,6 +282,7 @@ exports.getAllSessionRedis = async (matchId) => {
   return Object.keys(sessionData)?.length == 0 ? null : sessionData;
 };
 
+
 exports.updateExpiryTimeSession = async (matchId) => {
   await externalRedis.expire(`${matchId}_session`, expiry);
 };

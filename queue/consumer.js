@@ -111,7 +111,6 @@ const calculateSessionRateAmount = async (jobData, userId) => {
 
   // Extract relevant data from jobData
   const placedBetObject = jobData.betPlaceObject;
-  let partnerSessionExposure = placedBetObject.diffSessionExp;
   let stake = placedBetObject?.betPlacedData?.stake;
 
   // Iterate through partnerships based on role and update exposure

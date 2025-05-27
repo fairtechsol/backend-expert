@@ -1,9 +1,9 @@
 const Queue = require('bee-queue');
 const { calculateProfitLossSession, mergeProfitLoss, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
 const { logger } = require('../config/logger');
-const { redisKeys, socketData, sessionBettingType, jobQueueConcurrent } = require('../config/contants');
+const { redisKeys, socketData, sessionBettingType, jobQueueConcurrent, oddsSessionBetType } = require('../config/contants');
 const { sendMessageToUser } = require('../sockets/socketManager');
-const { setExpertsRedisData, getExpertsRedisData } = require('../services/redis/commonfunction');
+const { setExpertsRedisData, getExpertsRedisData, setUserPLSession, setUserPLSessionOddEven, getUserSessionPL, getUserSessionAllPL, setProfitLossData } = require('../services/redis/commonfunction');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 const expertRedisOption = {
   removeOnSuccess: true,
@@ -118,12 +118,9 @@ const calculateSessionRateAmount = async (jobData, userId) => {
     let partnershipId = partnershipObj['fwPartnershipId'];
     let partnership = partnershipObj[`fwPartnership`];
     try {
-      // Get user data from Redis or balance data by userId
-      let expertRedisData = (await getExpertsRedisData()) || {};
       // Calculate profit loss session and update Redis data
-      const redisBetData = expertRedisData[`${placedBetObject?.betPlacedData?.betId}_profitLoss`]
-        ? JSON.parse(expertRedisData[`${placedBetObject?.betPlacedData?.betId}_profitLoss`])
-        : null;
+      const redisBetData = await getUserSessionPL(jobData?.placedBet?.matchId, jobData?.placedBet?.betId);
+
       let redisData;
 
       switch (jobData?.placedBet?.marketType) {
@@ -166,10 +163,38 @@ const calculateSessionRateAmount = async (jobData, userId) => {
           break;
       }
 
-      await setExpertsRedisData({
-        [`${placedBetObject?.betPlacedData?.betId}_profitLoss`]: JSON.stringify(redisData),
-
-      });
+      let socketRedisData = {};
+      if ([sessionBettingType.session, sessionBettingType.overByOver, sessionBettingType.ballByBall, sessionBettingType.khado, sessionBettingType.meter].includes(jobData?.placedBet?.marketType)) {
+        const returnedPF = await setUserPLSession(jobData?.placedBet?.matchId, jobData?.placedBet?.betId, redisData?.betPlaced?.map((item) => ([item?.odds?.toString(), item?.profitLoss?.toString()]))?.flat(2));
+        const [maxL, , , totalBet, ...pl] = returnedPF;
+        socketRedisData = {
+          betPlaced: pl.map((item, index) => {
+            if (index % 2 === 0) {
+              return {
+                odds: item,
+                profitLoss: pl[index + 1]
+              }
+            }
+            return null;
+          }).filter(Boolean),
+          maxLoss: maxL,
+          totalBet: totalBet
+        }
+      }
+      else if ([sessionBettingType.oddEven, sessionBettingType.cricketCasino, sessionBettingType.fancy1].includes(jobData?.placedBet?.marketType)) {
+        const returnedPF = await setUserPLSessionOddEven(jobData?.placedBet?.matchId, jobData?.placedBet?.betId, Object.entries(redisData?.betPlaced)?.flat(2)?.map((item) => item.toString()));
+        const [maxL, totalBet, ...pl] = returnedPF;
+        socketRedisData = {
+          betPlaced: pl.reduce((acc, curr, index) => {
+            if (index % 2 === 0) {
+              acc[curr] = pl[index + 1];
+            }
+            return acc;
+          }, {}),
+          maxLoss: maxL,
+          totalBet: totalBet
+        }
+      }
 
       // Update jobData with calculated stake
       jobData.betPlaceObject.myStack = (
@@ -180,10 +205,8 @@ const calculateSessionRateAmount = async (jobData, userId) => {
       // Send data to socket for session bet placement
       sendMessageToUser(socketData.expertRoomSocket, socketData.SessionBetPlaced, {
         jobData,
-        redisData
+        redisData: socketRedisData
       });
-
-
     } catch (error) {
       // Log error if any during exposure update
       logger.error({
@@ -210,13 +233,11 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
 
     // Extract relevant data from jobData
     const userDeleteProfitLoss = jobData.userDeleteProfitLoss;
-    let exposureDiff = jobData.exposureDiff;
     let betId = jobData.betId;
     let matchId = jobData.matchId;
     let deleteReason = jobData.deleteReason;
     let domainUrl = jobData.domainUrl;
     let betPlacedId = jobData.betPlacedId;
-    let redisName = `${betId}_profitLoss`;
     let sessionType = jobData.sessionType;
 
     // Iterate through partnerships based on role and update exposure
@@ -225,9 +246,9 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
       let partnership = partnershipObj[`fwPartnership`];
       try {
         // Get user data from Redis or balance data by userId
-        let expertRedisData = await getExpertsRedisData();
+        const masterRedisDataPL = await getUserSessionAllPL(matchId, betId, sessionType);
 
-        let oldProfitLossParent = JSON.parse(expertRedisData[redisName]);
+        let oldProfitLossParent = masterRedisDataPL;
         let parentPLbetPlaced = oldProfitLossParent?.betPlaced || [];
         if (![sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(sessionType)) {
           await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
@@ -260,11 +281,13 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
         oldProfitLossParent.maxLoss = newMaxLossParent;
         oldProfitLossParent.totalBet = oldProfitLossParent.totalBet - userDeleteProfitLoss.total_bet;
 
-        let redisObj = {
-          [redisName]: JSON.stringify(oldProfitLossParent)
-        };
-
-        await setExpertsRedisData(redisObj);
+        if (oddsSessionBetType.includes(sessionType)) {
+          oldProfitLossParent.betPlaced = oldProfitLossParent.betPlaced.reduce((acc, item) => {
+            acc[item.odds] = item.profitLoss;
+            return acc;
+          }, {});
+        }
+        await setProfitLossData(matchId, betId, oldProfitLossParent);
 
         // Send data to socket for session bet placement
         sendMessageToUser(socketData.expertRoomSocket, socketData.sessionDeleteBet, {

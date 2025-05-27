@@ -37,6 +37,8 @@ const {
   deleteRedisKey,
   getExternalRedisKey,
   setExternalRedisKey,
+  deleteProfitLossData,
+  setProfitLossData,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -239,7 +241,7 @@ exports.declareSessionResult = async (req, res) => {
     );
 
     await deleteKeyFromManualSessionId(matchId, betId);
-    await deleteKeyFromExpertRedisData(betId + redisKeys.profitLoss);
+    await deleteProfitLossData(matchId, betId);
     await deleteRedisKey(`${betId}${redisKeys.declare}`);
 
     return SuccessResponse(
@@ -422,7 +424,7 @@ exports.declareSessionNoResult = async (req, res) => {
       }
     );
 
-    await deleteKeyFromExpertRedisData(`${betId}${redisKeys.profitLoss}`);
+    await deleteProfitLossData(matchId, betId);
     await deleteKeyFromManualSessionId(matchId, betId);
     await deleteRedisKey(`${betId}${redisKeys.declare}`);
 
@@ -557,7 +559,6 @@ exports.unDeclareSessionResult = async (req, res) => {
         await addSessionBetting(bettingGame);
 
         notifyTelegram(`Error at result undeclare session expert side while calling wallet api on session ${betId} for match ${matchId} ${JSON.stringify(err || "{}")}`);
-
         throw err;
       });
 
@@ -576,9 +577,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       await updateSessionMatchRedis(bet.matchId, bet.id, bet);
     }
 
-    await setExpertsRedisData({
-      [`${bet.id}${redisKeys.profitLoss}`]: JSON.stringify(response?.data?.profitLossObj),
-    });
+    await setProfitLossData(matchId, bet.id, response?.data?.profitLossObj);
 
     sendMessageToUser(
       socketData.expertRoomSocket,

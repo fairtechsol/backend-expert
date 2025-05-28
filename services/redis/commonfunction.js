@@ -805,7 +805,7 @@ exports.setUserPLSession = async (matchId, betId, redisData) => {
                 local totalBet = redis.call('INCRBY', KEYS[4], 1)
                 redis.call('SET', KEYS[5], math.abs(maxLoss))
 
-                return { math.abs(maxLoss), low, high, totalBet, unpack(updatedProfitLoss) }
+                return { tostring(math.abs(maxLoss)), low, high, totalBet, unpack(updatedProfitLoss) }
                 `, 5,
     base + 'profitLoss',
     base + 'lowerLimitOdds',
@@ -840,7 +840,7 @@ exports.setUserPLSessionOddEven = async (matchId, betId, redisData) => {
                 local totalBet =redis.call('INCRBY', KEYS[2], 1)
                 redis.call('SET', KEYS[3], math.abs(maxLoss))
 
-                return { math.abs(maxLoss), totalBet, unpack(updatedProfitLoss) }
+                return { tostring(math.abs(maxLoss)), totalBet, unpack(updatedProfitLoss) }
 
                 `, 3,
     base + 'profitLoss',

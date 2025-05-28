@@ -5,6 +5,7 @@ const { redisKeys, socketData, sessionBettingType, jobQueueConcurrent, oddsSessi
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { setExpertsRedisData, getExpertsRedisData, setUserPLSession, setUserPLSessionOddEven, getUserSessionPL, getUserSessionAllPL, setProfitLossData } = require('../services/redis/commonfunction');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
+const { roundToTwoDecimals } = require('../utils/mathUtils');
 const expertRedisOption = {
   removeOnSuccess: true,
   redis: {
@@ -259,9 +260,9 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
         if ([sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(sessionType)) {
           Object.keys(userDeleteProfitLoss.betData).forEach((ob) => {
             let partnershipData = (userDeleteProfitLoss.betData[ob] * partnership) / 100;
-            parentPLbetPlaced[ob] = parentPLbetPlaced[ob] + partnershipData;
+            parentPLbetPlaced[ob] = parseFloat(parentPLbetPlaced[ob]) + partnershipData;
             if (newMaxLossParent < Math.abs(parentPLbetPlaced[ob]) && parentPLbetPlaced[ob] < 0) {
-              newMaxLossParent = Math.abs(parentPLbetPlaced[ob]);
+              newMaxLossParent = Math.abs(roundToTwoDecimals(parentPLbetPlaced[ob]));
             }
           });
         }
@@ -271,7 +272,7 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
             if (ob.odds == parentPLbetPlaced[index].odds) {
               parentPLbetPlaced[index].profitLoss = parseFloat((parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData).toFixed(2));
               if (newMaxLossParent < Math.abs(parentPLbetPlaced[index].profitLoss) && parentPLbetPlaced[index].profitLoss < 0) {
-                newMaxLossParent = Math.abs(parentPLbetPlaced[index].profitLoss);
+                newMaxLossParent = Math.abs(roundToTwoDecimals(parentPLbetPlaced[index].profitLoss));
               }
             }
           });

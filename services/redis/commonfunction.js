@@ -1,5 +1,5 @@
 
-const { redisKeys, betStatusType, marketBettingTypeByBettingType, mainMatchRacingMarketType, raceTypeByBettingType } = require("../../config/contants");
+const { redisKeys, betStatusType, marketBettingTypeByBettingType, mainMatchRacingMarketType, raceTypeByBettingType, sessionBettingType, oddsSessionBetType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const externalRedis = require("../../config/externalRedisConnection");
 const { logger } = require("../../config/logger");
@@ -510,10 +510,10 @@ exports.updateMarketSessionIdRedis = async (matchId, selectionId, data) => {
 exports.updateMultipleMarketSessionIdRedis = async (matchId, data) => {
   // Use a Redis pipeline for atomicity and efficiency
   await externalRedis
-  .pipeline()
-  .hset(`${matchId}_selectionId`, data)
-  .expire(`${matchId}_selectionId`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
-  .exec();
+    .pipeline()
+    .hset(`${matchId}_selectionId`, data)
+    .expire(`${matchId}_selectionId`, expiry) // Set a TTL of 3600 seconds (1 hour) for the key
+    .exec();
 };
 
 exports.addDataInRedis = async (key, dataObj) => {
@@ -734,7 +734,7 @@ exports.deleteRedisKey = async (key, val) => {
 
 exports.getHashKeysByPattern = async (key, pattern) => {
   let cursor = '0';
-  let resultObj={};
+  let resultObj = {};
   do {
     const result = await internalRedis.hscan(key, cursor, 'MATCH', pattern);
     cursor = result[0];
@@ -754,10 +754,11 @@ exports.getExternalRedisKey = async (key) => {
   return await externalRedis.get(key);
 }
 
-exports.setUserPLSession = async ( matchId, betId, redisData) => {
+exports.setUserPLSession = async (matchId, betId, redisData) => {
   const base = `session:expert:${matchId}:${betId}:`;
 
-  return await internalRedis.eval(`local pl = KEYS[1]
+  return await internalRedis.eval(`
+                local pl = KEYS[1]
                 local lo = tonumber(redis.call('GET', KEYS[2])) or 0
                 local hi = tonumber(redis.call('GET', KEYS[3])) or 0
 
@@ -814,7 +815,7 @@ exports.setUserPLSession = async ( matchId, betId, redisData) => {
     ...redisData);
 };
 
-exports.setUserPLSessionOddEven = async ( matchId, betId, redisData) => {
+exports.setUserPLSessionOddEven = async (matchId, betId, redisData) => {
   const base = `session:expert:${matchId}:${betId}:`;
 
   return await internalRedis.eval(`
@@ -873,7 +874,7 @@ exports.getUserSessionPL = async (matchId, betId) => {
   };
 };
 
-exports.getUserSessionAllPL = async ( matchId, betId, type = sessionBettingType.session) => {
+exports.getUserSessionAllPL = async (matchId, betId, type = sessionBettingType.session) => {
   const pipeline = internalRedis.pipeline();
 
   const upperKey = `session:expert:${matchId}:${betId}:upperLimitOdds`;
@@ -929,7 +930,7 @@ exports.setProfitLossData = async (matchId, betId, redisData) => {
   await pipeline.exec();
 }
 
-exports.deleteProfitLossData = async (matchId,betId) => {
+exports.deleteProfitLossData = async (matchId, betId) => {
   let cursor = '0';
   const keysToUnlink = [];
 
@@ -1054,3 +1055,17 @@ return cjson.encode(sessions)
     }, {})
   }
 };
+
+exports.setLoginVal = async (values) => {
+  const pipeline = internalRedis.pipeline();
+
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === 'object') {
+      pipeline.hset(key, value);
+    }
+    else {
+      pipeline.set(key, value);
+    }
+  }
+  await pipeline.exec();
+}

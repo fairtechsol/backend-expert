@@ -7,7 +7,7 @@ const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { jwtSecret } = require("../config/contants");
-const { setExpertsRedisData, getExpertsRedisData } = require("../services/redis/commonfunction");
+const { setExpertsRedisData, getExpertsRedisData, setLoginVal } = require("../services/redis/commonfunction");
 const { getBetsLoginData } = require("../grpc/grpcClient/handlers/wallet/betsHandler");
 
 // Function to validate a user by username and password
@@ -48,8 +48,8 @@ const setBetDataRedis = async () => {
         });
         throw err;
       });
-
-    setExpertsRedisData(result);
+    await setExpertsRedisData({ isLogin: true });
+    await setLoginVal(result);
   }
 }
 

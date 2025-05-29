@@ -3,7 +3,7 @@ const { calculateProfitLossSession, mergeProfitLoss, parseRedisData, calculateRa
 const { logger } = require('../config/logger');
 const { redisKeys, socketData, sessionBettingType, jobQueueConcurrent, oddsSessionBetType } = require('../config/contants');
 const { sendMessageToUser } = require('../sockets/socketManager');
-const { setExpertsRedisData, getExpertsRedisData, setUserPLSession, setUserPLSessionOddEven, getUserSessionPL, getUserSessionAllPL, setProfitLossData } = require('../services/redis/commonfunction');
+const { setExpertsRedisData, getExpertsRedisData, setUserPLSession, setUserPLSessionOddEven, getUserSessionPL, getUserSessionAllPL, setProfitLossData, setUserPLTournament } = require('../services/redis/commonfunction');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 const { roundToTwoDecimals } = require('../utils/mathUtils');
 const expertRedisOption = {
@@ -49,34 +49,25 @@ let calculateTournamentRateAmount = async (jobData, userId) => {
     let mPartenerShipId = partnership['fwPartnershipId'];
     let mPartenerShip = partnership['fwPartnership'];
     try {
-      let masterRedisData = (await getExpertsRedisData()) || {};
-      let teamRates = masterRedisData?.[`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`];
 
-      if (teamRates) {
-        teamRates = JSON.parse(teamRates);
-      }
-
-      if (!teamRates) {
-        teamRates = jobData?.runners?.reduce((acc, key) => {
-          acc[key?.id] = 0;
-          return acc;
-        }, {});
-      }
-
-      teamRates = Object.keys(teamRates).reduce((acc, key) => {
-        acc[key] = parseRedisData(key, teamRates);
+      let teamRates = jobData?.runners?.reduce((acc, key) => {
+        acc[key?.id] = 0;
         return acc;
       }, {});
 
-      let teamData = await calculateRacingExpertRate(teamRates, obj, mPartenerShip);
-      let userRedisObj = {
-        [`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`]: JSON.stringify(teamData)
-      }
-      await setExpertsRedisData(userRedisObj);
+      const teamData = await calculateRacingExpertRate(teamRates, obj, mPartenerShip);
+
+      const plData = await setUserPLTournament(jobData?.matchId, jobData?.betId, teamData);
+      const socketRedisData = plData?.reduce((acc, curr, index) => {
+        if (index % 2 === 0) {
+          acc[curr] = roundToTwoDecimals(plData[index + 1]);
+        }
+        return acc;
+      }, {});
 
       //send Data to socket
       jobData.myStake = Number(((jobData.stake / 100) * mPartenerShip).toFixed(2));
-      sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData, userRedisObj: teamData });
+      sendMessageToUser(socketData.expertRoomSocket, socketData.MatchBetPlaced, { jobData, userRedisObj: socketRedisData });
     }
     catch (error) {
       logger.error({
@@ -350,24 +341,23 @@ expertTournamentMatchBetDeleteQueue.process(async function (job, done) {
       let partnership = partnershipObj[`fwPartnership`];
       try {
         // Get user data from Redis or balance data by userId
-        let expertRedisData = await getExpertsRedisData();
 
-        let masterTeamRates = JSON.parse(expertRedisData[`${betId}${redisKeys.profitLoss}_${matchId}`]);
-
-        masterTeamRates = Object.keys(masterTeamRates).reduce((acc, key) => {
-          acc[key] = parseFloat((parseRedisData(key, masterTeamRates) + ((newTeamRate[key] * partnership) / 100)).toFixed(2));
+        const masterTeamRates = Object.keys(masterTeamRates).reduce((acc, key) => {
+          acc[key] = roundToTwoDecimals((newTeamRate[key] * partnership) / 100);
           return acc;
         }, {});
 
-        let redisObj = {
-          [`${betId}${redisKeys.profitLoss}_${matchId}`]: JSON.stringify(masterTeamRates)
-        }
-
-        await setExpertsRedisData(redisObj);
+        const plData = await setUserPLTournament(partnershipId, matchId, betId, masterTeamRates);
+        const socketRedisData = plData?.reduce((acc, curr, index) => {
+          if (index % 2 === 0) {
+            acc[curr] = roundToTwoDecimals(plData[index + 1]);
+          }
+          return acc;
+        }, {});
 
         // Send data to socket for session bet placement
         sendMessageToUser(socketData.expertRoomSocket, socketData.matchDeleteBet, {
-          teamRate: masterTeamRates,
+          teamRate: socketRedisData,
           betId: betId,
           matchId: matchId,
           betPlacedId: betPlacedId,

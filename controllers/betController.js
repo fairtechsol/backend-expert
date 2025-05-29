@@ -39,6 +39,8 @@ const {
   setExternalRedisKey,
   deleteProfitLossData,
   setProfitLossData,
+  setUserPLTournament,
+  setProfitLossDataTournament,
 } = require("../services/redis/commonfunction");
 const {
   getSessionBettingById,
@@ -871,8 +873,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       }
     });
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchBettingDetails?.type]]: JSON.stringify(matchData) });
-    await deleteKeyFromExpertRedisData(redisKeys.expertRedisData, `${betId}${redisKeys.profitLoss}_${matchId}`);
-
+    await deleteRedisKey(`match:expert:${betId}:${matchId}:profitLoss`);
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.matchResultDeclared,
@@ -1018,9 +1019,10 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
     if (response?.data?.profitLossWallet) {
       let expertPL = response?.data?.profitLossWallet;
       Object.keys(expertPL)?.forEach((item) => {
-        expertPL[item] = JSON.stringify(expertPL[item]);
+        expertPL = expertPL[item];
+        delete expertPL[item];
       });
-      await setExpertsRedisData(expertPL);
+      await setProfitLossDataTournament(matchId, betId, expertPL);
     }
     sendMessageToUser(
       socketData.expertRoomSocket,

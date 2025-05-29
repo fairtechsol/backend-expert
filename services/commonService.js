@@ -3,7 +3,7 @@ const { __mf } = require("i18n");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getMatchDetails, getRaceDetails } = require("./matchService");
-const { getRaceFromCache, getMatchFromCache, settingAllSessionMatchRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis, hasSessionInCache, getAllSessions } = require("./redis/commonfunction");
+const { getRaceFromCache, getMatchFromCache, settingAllSessionMatchRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis, hasSessionInCache, getAllSessions, getAllTournament } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
 const { getExpertResult, getExpertResultTournamentBetWise, getExpertResultSessionBetWise, deleteOldExpertResult } = require("./expertResultService");
 const { LessThanOrEqual } = require("typeorm");
@@ -693,7 +693,7 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
     }
     delete match.matchBettings;
   }
-  let teamRates = await getExpertsRedisMatchData(matchId);
+  let teamRates = await getAllTournament(matchId);
 
   if (isMarketAllowed) {
     match.teamRates = teamRates;

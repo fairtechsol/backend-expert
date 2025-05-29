@@ -39,7 +39,6 @@ const {
   setExternalRedisKey,
   deleteProfitLossData,
   setProfitLossData,
-  setUserPLTournament,
   setProfitLossDataTournament,
 } = require("../services/redis/commonfunction");
 const {
@@ -579,7 +578,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       await updateSessionMatchRedis(bet.matchId, bet.id, bet);
     }
 
-    await setProfitLossData(matchId, bet.id, response?.data?.profitLossObj);
+    await setProfitLossData(matchId, bet.id, response?.data?.profitLossObj || {});
 
     sendMessageToUser(
       socketData.expertRoomSocket,

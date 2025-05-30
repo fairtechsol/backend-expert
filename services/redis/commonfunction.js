@@ -815,6 +815,77 @@ exports.setUserPLSession = async (matchId, betId, redisData) => {
     ...redisData);
 };
 
+exports.setUserPLMeter = async (matchId, betId, redisData) => {
+  const base = `session:expert:${matchId}:${betId}:`;
+
+  return await internalRedis.eval(`local pl = KEYS[1]
+          local lo = tonumber(redis.call('GET', KEYS[2])) or 0
+          local hi = tonumber(redis.call('GET', KEYS[3])) or 0
+
+          local blo = tonumber(redis.call('HGET', pl, tostring(lo))) or 0
+          local prevBlo = tonumber(redis.call('HGET', pl, tostring(lo+1))) or 0
+          local bhi = tonumber(redis.call('HGET', pl, tostring(hi))) or 0
+          local prevBhi = tonumber(redis.call('HGET', pl, tostring(hi-1))) or 0
+
+          local maxLoss=0
+          local high=hi
+          local low=tonumber(redis.call('GET', KEYS[2])) or 999
+          local updatedProfitLoss = {}
+
+          for i = 1, #ARGV, 2 do
+            local k = tonumber(ARGV[i])
+            local v = tonumber(ARGV[i + 1])
+            local base = 0
+
+            if k < low then
+              low=k
+            end
+
+            if k > high then
+                high=k
+            end
+
+            if k < lo then
+              base = blo + (blo - prevBlo)
+              local t=blo
+              blo=base
+              prevBlo=t
+
+            elseif k > hi then
+              base = bhi + (bhi - prevBhi)
+              local t=bhi
+              bhi=base
+              prevBhi=t
+
+            else
+              base = 0
+            end
+
+            local incr = v
+            local newValue =  redis.call('HINCRBYFLOAT', pl, ARGV[i], tonumber(base + incr))
+            if tonumber(newValue) < maxLoss then
+              maxLoss = tonumber(newValue)
+            end
+
+            table.insert(updatedProfitLoss, ARGV[i])
+            table.insert(updatedProfitLoss, tostring(newValue))
+          end
+
+          redis.call('SET', KEYS[2], low)
+          redis.call('SET', KEYS[3], high)
+          local totalBet = redis.call('INCRBY', KEYS[4], 1)
+          redis.call('SET', KEYS[5], math.abs(maxLoss))
+
+          return { tostring(math.abs(maxLoss)), low, high, totalBet, unpack(updatedProfitLoss) }
+                `, 5,
+    base + 'profitLoss',
+    base + 'lowerLimitOdds',
+    base + 'upperLimitOdds',
+    base + 'totalBet',
+    base + 'maxLoss',
+    ...redisData);
+};
+
 exports.setUserPLSessionOddEven = async (matchId, betId, redisData) => {
   const base = `session:expert:${matchId}:${betId}:`;
 

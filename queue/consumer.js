@@ -342,12 +342,12 @@ expertTournamentMatchBetDeleteQueue.process(async function (job, done) {
       try {
         // Get user data from Redis or balance data by userId
 
-        const masterTeamRates = Object.keys(masterTeamRates).reduce((acc, key) => {
+        const masterTeamRates = Object.keys(newTeamRate).reduce((acc, key) => {
           acc[key] = roundToTwoDecimals((newTeamRate[key] * partnership) / 100);
           return acc;
         }, {});
 
-        const plData = await setUserPLTournament(partnershipId, matchId, betId, masterTeamRates);
+        const plData = await setUserPLTournament(matchId, betId, masterTeamRates);
         const socketRedisData = plData?.reduce((acc, curr, index) => {
           if (index % 2 === 0) {
             acc[curr] = roundToTwoDecimals(plData[index + 1]);

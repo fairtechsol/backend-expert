@@ -3,7 +3,7 @@ const { marketBettingTypeByBettingType, betStatusType, socketData, matchBettingT
 const { logger } = require("../config/logger");
 const { getExpertResult } = require("../services/expertResultService");
 const { getMatchById } = require("../services/matchService");
-const {  getMatchFromCache,  hasMatchInCache, updateMatchKeyInCache, getSingleMatchKey, getExpertsRedisKeyData } = require("../services/redis/commonfunction");
+const { getMatchFromCache, hasMatchInCache, updateMatchKeyInCache, getSingleMatchKey, getExpertsRedisKeyData, getProfitLossDataTournament } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require('lodash');
@@ -62,12 +62,12 @@ exports.getTournamentBettingDetails = async (req, res) => {
         runners: runners?.sort((a, b) => a.sortPriority - b.sortPriority)
       };
       if (isRate) {
-        response.teamRates = JSON.parse((await getExpertsRedisKeyData(`${matchBetting?.parentBetId || id}_profitLoss_${matchId}`)) || "{}")
+        response.teamRates = await getProfitLossDataTournament(matchId, matchBetting?.parentBetId || id);
       }
 
       if (matchBetting.activeStatus != betStatus.result) {
         let expertResults = await getExpertResult({ betId: id });
-  
+
         if (expertResults?.length != 0) {
           if (expertResults?.length == 1) {
             matchBetting.resultStatus = resultStatus.pending;

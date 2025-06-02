@@ -8,7 +8,7 @@ const { socketData, marketBettingTypeByBettingType, resultStatus, matchBettingTy
 const { commonGetMatchDetails, commonGetRaceDetails } = require("../../../services/commonService");
 const { getCardMatch } = require("../../../services/cardMatchService");
 const { IsNull } = require("typeorm");
-const { getMatchFromCache, getExpertsRedisKeyData, getAllSessionRedis, settingAllSessionMatchRedis, updateMultipleMarketSessionIdRedis, getSessionFromRedis, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey } = require("../../../services/redis/commonfunction");
+const { getMatchFromCache, getExpertsRedisKeyData, getAllSessionRedis, settingAllSessionMatchRedis, updateMultipleMarketSessionIdRedis, getSessionFromRedis, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, getProfitLossDataTournament } = require("../../../services/redis/commonfunction");
 const { getTournamentBetting, getTournamentRunners, getTournamentBettings } = require("../../../services/tournamentBettingService");
 const { getExpertResult } = require("../../../services/expertResultService");
 const { getRacingMatchCountryList, getRacingMatch } = require("../../../services/racingMatchService");
@@ -310,7 +310,7 @@ exports.getTournamentBettingDetails = async (call) => {
                 runners: runners?.sort((a, b) => a.sortPriority - b.sortPriority)
             };
             if (isRate) {
-                response.teamRates = JSON.parse((await getExpertsRedisKeyData(`${matchBetting?.parentBetId || id}_profitLoss_${matchId}`)) || "{}")
+                response.teamRates = await getProfitLossDataTournament(matchId, matchBetting?.parentBetId || id);
             }
 
             if (matchBetting.activeStatus != betStatus.result) {

@@ -289,7 +289,8 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
         oldProfitLossParent.betPlaced = parentPLbetPlaced;
         oldProfitLossParent.maxLoss = newMaxLossParent;
         oldProfitLossParent.totalBet = oldProfitLossParent.totalBet - userDeleteProfitLoss.total_bet;
-
+        
+        const oldPL = { ...oldProfitLossParent }
         if (oddsSessionBetType.includes(sessionType)) {
           oldProfitLossParent.betPlaced = oldProfitLossParent.betPlaced.reduce((acc, item) => {
             acc[item.odds] = item.profitLoss;
@@ -300,7 +301,7 @@ expertSessionBetDeleteQueue.process(async function (job, done) {
 
         // Send data to socket for session bet placement
         sendMessageToUser(socketData.expertRoomSocket, socketData.sessionDeleteBet, {
-          profitLoss: oldProfitLossParent,
+          profitLoss: oldPL,
           matchId: matchId,
           betPlacedId: betPlacedId,
           deleteReason: deleteReason,

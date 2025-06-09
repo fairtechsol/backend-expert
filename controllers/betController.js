@@ -174,7 +174,7 @@ exports.declareSessionResult = async (req, res) => {
       selectionId: resultDeclare.selectionId,
     })
 
-    if (resultValidate) {
+    if (resultValidate && false) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       updateSessionBetting({ id: betId }, { activeStatus: betStatus.save, result: null });
       return SuccessResponse(
@@ -806,7 +806,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       betType: matchBettingType.tournament
     });
 
-    if (resultValidate) {
+    if (resultValidate && false) {
       await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
         id: betId,
       }], { activeStatus: betStatus.save, result: null, stopAt: null });

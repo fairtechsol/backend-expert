@@ -806,7 +806,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       betType: matchBettingType.tournament
     });
 
-    if (resultValidate && false) {
+    if (resultValidate) {
       await updateTournamentBettingStatus(["id = :id OR parentBetId = :id", {
         id: betId,
       }], { activeStatus: betStatus.save, result: null, stopAt: null });

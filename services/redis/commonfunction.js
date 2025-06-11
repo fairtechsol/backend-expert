@@ -989,6 +989,7 @@ exports.getUserSessionAllPL = async (matchId, betId, type = sessionBettingType.s
 exports.setProfitLossData = async (matchId, betId, redisData) => {
   const base = `session:expert:${matchId}:${betId}:`;
   const pipeline = internalRedis.pipeline();
+  pipeline.del(base + 'profitLoss');
   pipeline.hset(base + 'profitLoss', redisData.betPlaced);
   pipeline.set(base + 'totalBet', redisData.totalBet);
   if (redisData.upperLimitOdds != null) {

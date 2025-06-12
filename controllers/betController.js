@@ -872,7 +872,7 @@ exports.declareTournamentMatchResult = async (req, res) => {
       }
     });
     await settingMatchKeyInCache(matchId, { [marketBettingTypeByBettingType[matchBettingDetails?.type]]: JSON.stringify(matchData) });
-    await deleteRedisKey(`match:expert:${betId}:${matchId}:profitLoss`);
+    await deleteRedisKey(`match:expert:${matchId}:${betId}:profitLoss`);
     sendMessageToUser(
       socketData.expertRoomSocket,
       socketData.matchResultDeclared,

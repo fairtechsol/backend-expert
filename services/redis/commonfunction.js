@@ -728,7 +728,7 @@ exports.setRedisKey = async (key, val) => {
   await internalRedis.set(key, val);
 }
 
-exports.deleteRedisKey = async (key, val) => {
+exports.deleteRedisKey = async (key) => {
   await internalRedis.del(key);
 }
 

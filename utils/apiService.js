@@ -39,36 +39,3 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
     throw error;
   }
 };
-
-exports.allApiRoutes = {
-  wallet: {
-    declareSessionResult: "/expert/declare/result/session",
-    declareSessionNoResult: "/expert/declare/noResult/session",
-    unDeclareSessionResult: "/expert/unDeclare/result/session",
-    declareMatchResult: "/expert/declare/result/match",
-    declareOtherMatchResult: "/expert/declare/result/other/match",
-    declareOtherMarketResult: "/expert/declare/result/other/market",
-    declareRacingMatchResult: "/expert/declare/result/race/match",
-    declareTournamentMatchResult: "/expert/declare/result/tournament/match",
-    declareFinalMatchResult: "/expert/declare/result/final/match",
-    unDeclareMatchResult: "/expert/unDeclare/result/match",
-    unDeclareOtherMatchResult: "/expert/unDeclare/result/other/match",
-    unDeclareOtherMarketResult: "/expert/unDeclare/result/other/market",
-    unDeclareRacingMatchResult: "/expert/unDeclare/result/race/match",
-    unDeclareTournamentMatchResult: "/expert/unDeclare/result/tournament/match",
-    unDeclareFinalMatchResult: "/expert/unDeclare/result/final/match",
-    bets: "/expert/bets",
-    loginData: "/expert/login/bet/data",
-    addMatch: "/match/add",
-    addRaceMatch: "/match/raceAdd",
-    sessionUserWieProfitLossExpert: "/expert/userwise/session/profitLoss/expert",
-    sessionBetsExpert: "/expert/total/bet/profitLoss"
-  },
-  user:{
-    verifyBet: "/fairgameWallet/verifyBet"
-  },
-  thirdParty:{
-    extraMarket:"/extraMarketList/"
-  }
-
-};

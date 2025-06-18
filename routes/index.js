@@ -5,7 +5,6 @@ const router = express.Router();
 const authRoutes = require("./authRoutes");
 const userRoutes = require("./userRoutes");
 const matchRoutes = require("./matchRouter");
-const superAdminRoutes = require("./superAdminRouter");
 const sessionRoute = require("./sessionRoutes");
 const generalRoute = require("./generalRoute");
 const matchBettingRoute = require('./matchBettingRoutes');
@@ -21,9 +20,7 @@ router.use("/user", userRoutes
 router.use("/match", matchRoutes
 // #swagger.tags = ['match']
 );
-router.use("/superAdmin", superAdminRoutes
-// #swagger.tags = ['superAdmin']
-);
+
 router.use('/session',sessionRoute
 // #swagger.tags = ['session']
 );

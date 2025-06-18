@@ -1,12 +1,11 @@
-const { socketData, betType, manualMatchBettingType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus, marketBettingTypeByBettingType, quickBookmakers, matchBettingKeysForMatchDetails, marketMatchBettingType, multiMatchBettingRecord } = require("../config/contants");
+const { socketData, betType, betStatusType, matchBettingType, redisKeys, resultStatus, betStatus } = require("../config/contants");
 const { __mf } = require("i18n");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
-const { getMatchBattingByMatchId } = require("./matchBettingService");
 const { getMatchDetails, getRaceDetails } = require("./matchService");
-const { getRaceFromCache, getMatchFromCache, getAllBettingRedis, settingAllBettingMatchRedis, getAllSessionRedis, settingAllSessionMatchRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis } = require("./redis/commonfunction");
+const { getRaceFromCache, getMatchFromCache, getAllSessionRedis, settingAllSessionMatchRedis, addMatchInCache, addRaceInCache, getExpertsRedisMatchData, getExpertsRedisSessionDataByKeys, getExpertsRedisKeyData, updateMultipleMarketSessionIdRedis, hasSessionInCache } = require("./redis/commonfunction");
 const { getSessionBattingByMatchId } = require("./sessionBettingService");
-const { getExpertResult, getExpertResultBetWise, getExpertResultTournamentBetWise, getExpertResultSessionBetWise, deleteOldExpertResult } = require("./expertResultService");
+const { getExpertResult, getExpertResultTournamentBetWise, getExpertResultSessionBetWise, deleteOldExpertResult } = require("./expertResultService");
 const { LessThanOrEqual } = require("typeorm");
 
 exports.forceLogoutIfLogin = async (userId) => {
@@ -18,52 +17,6 @@ exports.forceLogoutIfLogin = async (userId) => {
     sendMessageToUser(userId, socketData.logoutUserForceEvent, { message: __mf("auth.forceLogout") })
   }
 };
-
-exports.calculateExpertRate = async (teamRates, data, partnership = 100) => {
-  let { teamA, teamB, teamC, winAmount, lossAmount, bettingType, betOnTeam } = data;
-  let newTeamRates = {
-    teamA: 0,
-    teamB: 0,
-    teamC: 0,
-  }
-  if (betOnTeam == teamA && bettingType == betType.BACK) {
-    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
-  }
-  else if (betOnTeam == teamA && bettingType == betType.LAY) {
-    newTeamRates.teamA = teamRates.teamA + ((lossAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB - ((winAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC - (teamC ? ((winAmount * partnership) / 100) : 0);
-  }
-  else if (betOnTeam == teamB && bettingType == betType.BACK) {
-    newTeamRates.teamB = teamRates.teamB - ((winAmount * partnership) / 100);
-    newTeamRates.teamA = teamRates.teamA + ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
-  }
-  else if (betOnTeam == teamB && bettingType == betType.LAY) {
-    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
-    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC - (teamC ? ((winAmount * partnership) / 100) : 0);
-  }
-  else if (teamC && betOnTeam == teamC && bettingType == betType.BACK) {
-    newTeamRates.teamA = teamRates.teamA + ((lossAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC - ((winAmount * partnership) / 100);
-  }
-  else if (teamC && betOnTeam == teamC && bettingType == betType.LAY) {
-    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB - ((winAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC + ((lossAmount * partnership) / 100);
-  }
-
-  newTeamRates = {
-    teamA: Number(newTeamRates.teamA.toFixed(2)),
-    teamB: Number(newTeamRates.teamB.toFixed(2)),
-    teamC: Number(newTeamRates.teamC.toFixed(2))
-  }
-  return newTeamRates;
-}
 
 exports.calculateRacingExpertRate = async (teamRates, data, partnership = 100) => {
   let { runners, winAmount, lossAmount, bettingType, runnerId } = data;
@@ -605,44 +558,16 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
 
 exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true, isMarketAllowed = true) => {
   let match = await getMatchFromCache(matchId);
-  let expertResults = await getExpertResultBetWise({ matchId: matchId });
-  expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId })), ...(await getExpertResultSessionBetWise({ matchId: matchId }))]
+  let expertResults = [...(await getExpertResultTournamentBetWise({ matchId: matchId })), ...(await getExpertResultSessionBetWise({ matchId: matchId }))]
   const sessionExpertResult = await getExpertResult({ matchId: matchId }, ["betId", "userId", "id"]);
 
   // Check if the match exists
   if (match) {
-    // Retrieve all betting data from Redis for the given match
-    let betting = await getAllBettingRedis(matchId);
-
-    // If betting data is found in Redis, update its expiry time
-    if (!betting) {
-
-      // If no betting data is found in Redis, fetch it from the database
-      const matchBetting = await getMatchBattingByMatchId(matchId);
-
-      // Create an empty object to store manual betting Redis data
-      const manualBettingRedisData = {};
-      betting = {};
-      // Iterate through each item in manualMatchBettingType
-      matchBetting?.forEach((item) => {
-        // Check if the item exists in the convertedData object
-        if (manualMatchBettingType.includes(item?.type)) {
-          // If the item exists, add it to the manualBettingRedisData object
-          // with its value stringified using JSON.stringify
-          manualBettingRedisData[item?.type] = JSON.stringify(item);
-          betting[item?.type] = JSON.stringify(item);
-        }
-      });
-
-      // Update Redis with the manual betting data for the current match
-      settingAllBettingMatchRedis(match.id, manualBettingRedisData);
-    }
-
+    let sessions;
     // Retrieve all session data from Redis for the given match
-    let sessions = await getAllSessionRedis(matchId);
-
+    let isSessionExist = await hasSessionInCache(matchId);
     // If session data is found in Redis, update its expiry time
-    if (!sessions) {
+    if (!isSessionExist) {
 
       // If no session data is found in Redis, fetch it from the database
       sessions = await getSessionBattingByMatchId(matchId, !userId ? { activeStatus: betStatusType.live } : {});
@@ -679,72 +604,19 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
 
     if (isMarketAllowed) {
       const categorizedMatchBettings = {
-        ...(match.matchOdd
-          ? { [matchBettingType.matchOdd]: match.matchOdd }
-          : {}),
+
         ...(match.tournament
           ? { [matchBettingType.tournament]: match.tournament }
           : {}),
-        ...(match.bookmaker2
-          ? { [matchBettingType.bookmaker2]: match.bookmaker2 }
-          : {}),
-        ...(match.marketBookmaker
-          ? { [matchBettingType.bookmaker]: match.marketBookmaker }
-          : {}),
-        ...(match.marketCompleteMatch
-          ? { "marketCompleteMatch": match.marketCompleteMatch }
-          : {}),
-        ...(match.marketCompleteMatch1
-          ? { "marketCompleteMatch1": match.marketCompleteMatch1 }
-          : {}),
-        quickBookmaker: [],
-        ...(match.marketTiedMatch
-          ? { "apiTideMatch": match.marketTiedMatch }
-          : {}),
-        ...(match.marketTiedMatch2
-          ? { "apiTideMatch2": match.marketTiedMatch2 }
-          : {}),
-        manualTiedMatch: null,
-        manualCompleteMatch: null,
-        ...(match.other
-          ? { "other": match.other }
-          : {})
       };
       // Iterate through matchBettings and categorize them
-      (Object.values(betting) || []).forEach(
-        (item) => {
-          item = JSON.parse(item);
-          switch (item?.type) {
-            case matchBettingType.quickbookmaker1:
-            case matchBettingType.quickbookmaker2:
-            case matchBettingType.quickbookmaker3:
-              categorizedMatchBettings.quickBookmaker.push(item);
-              break;
-            case matchBettingType.tiedMatch2:
-              categorizedMatchBettings.manualTiedMatch = item;
-              break;
-            case matchBettingType.completeManual:
-              categorizedMatchBettings.manualCompleteMatch = item;
-              break;
-          }
-        }
-      );
+
       // Assign the categorized match betting to the match object
       Object.assign(match, categorizedMatchBettings);
     }
     else {
-      delete match.other;
       delete match.tournament;
-      delete match.matchOdd;
-      delete match.marketCompleteMatch;
-      delete match.marketCompleteMatch1;
-      delete match.marketCompleteMatch;
-      delete match.bookmaker2;
     }
-
-    delete match.marketBookmaker;
-    delete match.marketTiedMatch;
-    delete match.marketTiedMatch2;
   } else {
     match = await getMatchDetails(matchId, null);
     if (!match) {
@@ -764,90 +636,16 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
     })
 
     const categorizedMatchBettings = {
-      [matchBettingType.matchOdd]: null,
-      [matchBettingType.bookmaker]: null,
-      [matchBettingType.bookmaker2]: null,
-      marketCompleteMatch: null,
-      quickBookmaker: [],
-      apiTideMatch: null,
-      apiTideMatch2: null,
-      manualTideMatch: null,
-      manualCompleteMatch: null,
       tournament: null,
-      other: []
     };
 
-    // Iterate through matchBettings and categorize them
-    (match?.matchBettings || []).forEach((item) => {
-      switch (item?.type) {
-        case matchBettingType.matchOdd:
-          categorizedMatchBettings[matchBettingType.matchOdd] = item;
-          break;
-        case matchBettingType.bookmaker:
-          categorizedMatchBettings[matchBettingType.bookmaker] = item;
-          break;
-        case matchBettingType.bookmaker2:
-          categorizedMatchBettings[matchBettingType.bookmaker2] = item;
-          break;
-        case matchBettingType.other:
-          categorizedMatchBettings[matchBettingType.other].push(item);
-          break;
-        case matchBettingType.quickbookmaker1:
-        case matchBettingType.quickbookmaker2:
-        case matchBettingType.quickbookmaker3:
-          categorizedMatchBettings.quickBookmaker.push(item);
-          break;
-        case matchBettingType.tiedMatch1:
-          categorizedMatchBettings.apiTideMatch = item;
-          break;
-        case matchBettingType.tiedMatch3:
-          categorizedMatchBettings.apiTideMatch2 = item;
-          break;
-        case matchBettingType.tiedMatch2:
-          categorizedMatchBettings.manualTideMatch = item;
-          break;
-        case matchBettingType.completeMatch:
-          categorizedMatchBettings.marketCompleteMatch = item;
-          break;
-        case matchBettingType.completeMatch1:
-          categorizedMatchBettings.marketCompleteMatch1 = item;
-          break;
-        case matchBettingType.completeManual:
-          categorizedMatchBettings.manualCompleteMatch = item;
-          break;
-      }
-    });
 
     let payload = {
       ...match,
-      matchOdd: categorizedMatchBettings[matchBettingType.matchOdd],
       tournament: [...match?.tournamentBettings?.sort((a, b) => a.sNo - b.sNo) || []],
-      marketBookmaker: categorizedMatchBettings[matchBettingType.bookmaker],
-      marketBookmaker2: categorizedMatchBettings[matchBettingType.bookmaker2],
-      marketTiedMatch: categorizedMatchBettings.apiTideMatch,
-      marketTiedMatch2: categorizedMatchBettings.apiTideMatch2,
-      marketCompleteMatch: categorizedMatchBettings.marketCompleteMatch,
-      marketCompleteMatch1: categorizedMatchBettings.marketCompleteMatch1,
-      other: categorizedMatchBettings[matchBettingType.other],
     };
     delete match.tournamentBettings;
     await addMatchInCache(match.id, payload);
-
-    // Create an empty object to store manual betting Redis data
-    const manualBettingRedisData = {};
-
-    // Iterate through each item in manualMatchBettingType
-    match?.matchBettings?.forEach((item) => {
-      // Check if the item exists in the convertedData object
-      if (manualMatchBettingType.includes(item?.type)) {
-        // If the item exists, add it to the manualBettingRedisData object
-        // with its value stringified using JSON.stringify
-        manualBettingRedisData[item?.type] = JSON.stringify(item);
-      }
-    });
-
-    // Update Redis with the manual betting data for the current match
-    settingAllBettingMatchRedis(matchId, manualBettingRedisData);
 
     let sessions = match?.sessionBettings;
     let result = {};
@@ -906,13 +704,8 @@ exports.commonGetMatchDetails = async (matchId, userId, isSessionAllowed = true,
       }
     }
     if (!(match.stopAt) && isMarketAllowed) {
-      let qBookId = match.quickBookmaker?.filter(book => book.type == matchBettingType.quickbookmaker1);
-      let matchResult = expertResults.find((result) => result.betId == qBookId[0]?.id);
-      if (matchResult) {
-        match.resultStatus = matchResult.status;
-      }
 
-      for (let items of [...(match?.other || []), ...(match?.tournament || [])]) {
+      for (let items of (match?.tournament || [])) {
         let matchResult = expertResults.find((result) => result.betId == items?.id);
         if (matchResult) {
           match.otherBettings = match.otherBettings || {};
@@ -971,181 +764,6 @@ exports.commonGetRaceDetails = async (raceId, userId) => {
     }
   }
   return race
-}
-
-exports.commonGetMatchDetailsForFootball = async (matchId, userId) => {
-  let match = await getMatchFromCache(matchId);
-  let expertResults = await getExpertResultBetWise({ matchId: matchId });
-  expertResults = [...(expertResults || []), ...(await getExpertResultTournamentBetWise({ matchId: matchId }))]
-  // Check if the match exists
-  if (match) {
-    // Retrieve all betting data from Redis for the given match
-    let betting = await getAllBettingRedis(matchId);
-
-    // If betting data is found in Redis, update its expiry time
-    if (!betting) {
-
-      // If no betting data is found in Redis, fetch it from the database
-      const matchBetting = await getMatchBattingByMatchId(matchId);
-      betting = {};
-      // Iterate through each item in manualMatchBettingType
-      matchBetting?.forEach((item) => {
-        // Check if the item exists in the convertedData object
-        if (manualMatchBettingType.includes(item?.type)) {
-          betting[item?.type] = JSON.stringify(item);
-        }
-      });
-
-      // Update Redis with the manual betting data for the current match
-      settingAllBettingMatchRedis(match.id, betting);
-    }
-
-
-    const categorizedMatchBettings = { quickBookmaker: [], other: [] };
-    Object.keys(marketBettingTypeByBettingType).forEach((bettingType) => {
-      if (match[marketBettingTypeByBettingType[bettingType]]) {
-        let records = Object.keys(multiMatchBettingRecord)?.find((bettingItem) => bettingType?.includes(multiMatchBettingRecord[bettingItem]));
-        if (records) {
-          if (!categorizedMatchBettings[multiMatchBettingRecord[records]]) {
-            categorizedMatchBettings[multiMatchBettingRecord[records]] = [];
-          }
-
-          categorizedMatchBettings[multiMatchBettingRecord[records]].push(match[marketBettingTypeByBettingType[bettingType]]);
-          delete match[marketBettingTypeByBettingType[bettingType]];
-        }
-        else {
-          categorizedMatchBettings[matchBettingKeysForMatchDetails[bettingType]] = match[marketBettingTypeByBettingType[bettingType]];
-        }
-      }
-    }
-    );
-
-    // Iterate through matchBettings and categorize them
-    (Object.values(betting) || []).forEach(
-      (item) => {
-        item = JSON.parse(item);
-
-
-        if (quickBookmakers.includes(item?.type)) {
-          categorizedMatchBettings.quickBookmaker.push(item);
-
-        }
-        else if (manualMatchBettingType?.includes(item?.type)) {
-          categorizedMatchBettings[matchBettingKeysForMatchDetails[item?.type]] = item;
-        }
-
-
-      }
-    );
-    // Assign the categorized match betting to the match object
-    Object.assign(match, categorizedMatchBettings);
-
-    delete match.marketBookmaker;
-    delete match.marketTiedMatch;
-    delete match.marketTiedMatch2;
-
-  } else {
-    match = await getMatchDetails(matchId, null);
-    if (!match) {
-      throw {
-        statusCode: 400,
-        message: {
-          msg: "notFound",
-          keys: {
-            name: "Match",
-          },
-        },
-      }
-    }
-
-    const categorizedMatchBettings = {
-      quickBookmaker: []
-    };
-
-    // Iterate through matchBettings and categorize them
-    (match?.matchBettings || []).forEach((item) => {
-
-      if (quickBookmakers.includes(item?.type)) {
-        categorizedMatchBettings.quickBookmaker.push(item);
-      }
-      else {
-        categorizedMatchBettings[matchBettingKeysForMatchDetails[item?.type]] = item;
-      }
-
-    });
-    match.tournament = [...(match.tournamentBettings?.sort((a, b) => a.sNo - b.sNo) || [])];
-    delete match.tournamentBettings;
-    let payload = {
-      ...match,
-    };
-
-    Object.keys(marketMatchBettingType)?.forEach((item) => {
-
-      payload[marketBettingTypeByBettingType[item]] = categorizedMatchBettings[matchBettingKeysForMatchDetails[item]];
-
-      if (categorizedMatchBettings[matchBettingKeysForMatchDetails[item]]) {
-        let records = Object.keys(multiMatchBettingRecord)?.find((bettingItem) => item?.includes(multiMatchBettingRecord[bettingItem]));
-        if (records) {
-          if (!categorizedMatchBettings[multiMatchBettingRecord[records]]) {
-            categorizedMatchBettings[multiMatchBettingRecord[records]] = [];
-          }
-
-          categorizedMatchBettings[multiMatchBettingRecord[records]].push(categorizedMatchBettings[matchBettingKeysForMatchDetails[item]]);
-          delete categorizedMatchBettings[matchBettingKeysForMatchDetails[item]]
-        }
-      }
-    });
-    payload.tournament = [...match?.tournament || []],
-
-      await addMatchInCache(match.id, payload);
-
-    // Create an empty object to store manual betting Redis data
-    const manualBettingRedisData = {};
-
-    // Iterate through each item in manualMatchBettingType
-    match?.matchBettings?.forEach((item) => {
-      // Check if the item exists in the convertedData object
-      if (manualMatchBettingType.includes(item?.type)) {
-        // If the item exists, add it to the manualBettingRedisData object
-        // with its value stringified using JSON.stringify
-        manualBettingRedisData[item?.type] = JSON.stringify(item);
-      }
-    });
-
-    // Update Redis with the manual betting data for the current match
-    settingAllBettingMatchRedis(matchId, manualBettingRedisData);
-
-
-    // Assign the categorized match betting to the match object
-    Object.assign(match, categorizedMatchBettings);
-
-    delete match.matchBettings;
-  }
-
-  let teamRates = await getExpertsRedisMatchData(matchId);
-
-  match.teamRates = teamRates;
-  if (userId) {
-
-    if (!(match.stopAt)) {
-      let qBookId = match.quickBookmaker.filter(book => book.type == matchBettingType.quickbookmaker1);
-      let matchResult = expertResults.find((result) => result.betId == qBookId[0]?.id);
-      if (matchResult) {
-        match.resultStatus = matchResult.status;
-      }
-
-      for (let items of [...(match?.other || []), ...(match?.tournament || [])]) {
-        let matchResult = expertResults.find((result) => result.betId == items?.id);
-        if (matchResult) {
-          match.otherBettings = match.otherBettings || {};
-          match.otherBettings[items?.id] = matchResult.status;
-
-        }
-      }
-
-    }
-  }
-  return match;
 }
 
 exports.extractNumbersFromString = (str) => {

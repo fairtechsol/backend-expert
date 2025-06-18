@@ -174,7 +174,7 @@ exports.declareSessionResult = async (req, res) => {
       selectionId: resultDeclare.selectionId,
     })
 
-    if (resultValidate && false) {
+    if (resultValidate) {
       await deleteRedisKey(`${betId}${redisKeys.declare}`);
       updateSessionBetting({ id: betId }, { activeStatus: betStatus.save, result: null });
       return SuccessResponse(

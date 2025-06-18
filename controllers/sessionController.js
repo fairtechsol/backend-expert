@@ -4,7 +4,7 @@ const { getUserById } = require("../services/userService");
 const { sessionBettingType, teamStatus, socketData, betStatusType, bettingType, resultStatus, betStatus, gameType, gameTypeMatchBetting, walletDomain } = require("../config/contants");
 const { getMatchById, updateMatch } = require("../services/matchService");
 const { logger } = require("../config/logger");
-const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, getExpertsRedisSessionData,  updateMultipleMarketSessionIdRedis, updateMatchInCache, updateMatchKeyInCache } = require("../services/redis/commonfunction");
+const { getAllSessionRedis, getSessionFromRedis, settingAllSessionMatchRedis, updateSessionMatchRedis, hasSessionInCache, addAllsessionInRedis, hasMatchInCache, getMultipleMatchKey, updateMarketSessionIdRedis, getUserRedisData, deleteKeyFromMarketSessionId, updateMultipleMarketSessionIdRedis, updateMatchInCache, updateMatchKeyInCache, getUserSessionAllPL } = require("../services/redis/commonfunction");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getSpecificResultsSession } = require("../services/betService");
 const { getExpertResult } = require("../services/expertResultService");
@@ -26,7 +26,7 @@ exports.addSession = async (req, res) => {
     if (!match) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
     }
-    if(match?.stopAt){
+    if (match?.stopAt) {
       return ErrorResponse({ statusCode: 400, message: { msg: "bet.matchDeclare" } }, req, res);
     }
     if (match.createBy != loginId) {
@@ -36,8 +36,8 @@ exports.addSession = async (req, res) => {
         }
       }
     }
-    if(match.matchType==gameType.football){
-      return ErrorResponse({ statusCode: 400, message: { msg: "notCreated", keys: { name: "Session" } } }, req, res); 
+    if (match.matchType == gameType.football) {
+      return ErrorResponse({ statusCode: 400, message: { msg: "notCreated", keys: { name: "Session" } } }, req, res);
     }
     let isManual = true;
     if (!minBet) {
@@ -360,7 +360,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
 
     if (stopAllSessions) {
       let conditionObj = { matchId: matchId, isManual: false, activeStatus: betStatusType.live };
-      if(type) {
+      if (type) {
         if (type == sessionBettingType.manualSession) {
           conditionObj.isManual = true;
         }
@@ -412,7 +412,7 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
       if (!sessionData) {
         return ErrorResponse({ statusCode: 404, message: { msg: "NotFound", keys: "Session" } });
       }
-      if(sessionData.activeStatus == betStatus.result || sessionData == betStatus.close){
+      if (sessionData.activeStatus == betStatus.result || sessionData == betStatus.close) {
         return ErrorResponse({ statusCode: 403, message: { msg: "bet.resultDeclareOrProgress" } });
       }
       if (sessionData.createBy != reqUser.id) {
@@ -448,11 +448,10 @@ exports.updateMarketSessionActiveStatus = async (req, res) => {
 exports.getSessionProfitLoss = async (req, res, next) => {
   try {
     const { sessionId } = req.params;
+    const { matchId } = req.query;
 
-    let sessionProfitLoss = await getExpertsRedisSessionData(sessionId);
-    if (sessionProfitLoss) {
-      sessionProfitLoss = JSON.parse(sessionProfitLoss);
-    }
+    const sessionProfitLoss = await getUserSessionAllPL(matchId, sessionId);
+
     return SuccessResponse(
       {
         statusCode: 200,
@@ -601,7 +600,7 @@ exports.sessionProfitLossUserWise = async (req, res) => {
   try {
     const { betId } = req.query;
 
-    const response = await sessionProfitLossUserWiseData({betId: betId})
+    const response = await sessionProfitLossUserWiseData({ betId: betId })
       .catch(async (err) => {
         logger.error({
           error: `Error at get sessions users`,
@@ -628,13 +627,13 @@ exports.sessionProfitLossBets = async (req, res) => {
     const { betId, matchId, url, userId } = req.query;
 
     const response = await sessionProfitLossBetsData({
-        betId: betId,
-        matchId:matchId,
-        isSession:true,
-        url:url,
-        userId:userId,
-        roleName: "user"
-      })
+      betId: betId,
+      matchId: matchId,
+      isSession: true,
+      url: url,
+      userId: userId,
+      roleName: "user"
+    })
       .catch(async (err) => {
         logger.error({
           error: `Error at get sessions users`,

@@ -112,6 +112,9 @@ module.exports.sessionBettingType = {
   meter: "meter",
   manualSession: "manualSession"
 };
+
+module.exports.oddsSessionBetType = [this.sessionBettingType.session, this.sessionBettingType.overByOver, this.sessionBettingType.ballByBall, this.sessionBettingType.khado, this.sessionBettingType.meter];
+
 module.exports.teamStatus = {
   suspended: "suspended",
   active: "active",
@@ -178,7 +181,6 @@ module.exports.redisKeys = {
   profitLoss: "_profitLoss",
   card: "_card",
   declare: "_declare",
-  profitLoss: "_profitLoss",
   notification:"notification",
   banner:"banner",
   blinkingTabs:"blinkingTabs"

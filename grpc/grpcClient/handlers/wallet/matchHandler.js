@@ -13,6 +13,19 @@ exports.addMatchHandler = async (requestData) => {
     }
 };
 
+exports.updateMatchHandler = async (requestData) => {
+    try {
+        await grpcReq.wallet.callMethod(
+            "MatchProvider",
+            "UpdateMatch",
+            requestData
+        );
+
+    } catch (error) {
+        throw error;
+    }
+};
+
 exports.addRaceMatchHandler = async (requestData) => {
     try {
         await grpcReq.wallet.callMethod(

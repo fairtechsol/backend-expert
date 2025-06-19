@@ -25,7 +25,7 @@ const { commonGetMatchDetails, commonGetRaceDetails } = require("../services/com
 const { getRacingMatchCountryList, getRacingMatchDateList, getRacingMatch } = require("../services/racingMatchService");
 const { getCardMatch } = require("../services/cardMatchService");
 const { updateTournamentBetting } = require("../services/tournamentBettingService");
-const { addMatchHandler, addRaceMatchHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
+const { addMatchHandler, addRaceMatchHandler, updateMatchHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
 /**
  * Create or update a match.
  *
@@ -219,7 +219,7 @@ exports.updateMatch = async (req, res) => {
     }
 
     await updateMatch(id, { betFairSessionMaxBet, betFairSessionMinBet: minBet, rateThan100: rateThan100, ...(startAt ? { startAt } : {}) });
-
+    await updateMatchHandler({ id: id, data: JSON.stringify({ startAt: startAt }) })
     const isExistInRedis = await hasMatchInCache(id);
     if (isExistInRedis) {
       updateMatchDataAndBettingInRedis(id);

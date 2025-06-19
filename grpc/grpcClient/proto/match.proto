@@ -43,8 +43,18 @@ message AddRaceMatchRequest {
 
 message AddRaceMatchResponse {}
 
+// Request to update a match
+message UpdateMatchRequest {
+  string id = 1;
+  string data = 2;
+}
+
+// Response after adding a match
+message UpdateMatchResponse {}
+
 // Service for managing matches
 service MatchProvider {
   rpc AddMatch(AddMatchRequest) returns (AddMatchResponse);
+  rpc UpdateMatch(UpdateMatchRequest) returns (UpdateMatchResponse);
   rpc AddRaceMatch(AddRaceMatchRequest) returns (AddRaceMatchResponse);
 }

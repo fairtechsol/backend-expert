@@ -1007,7 +1007,7 @@ exports.deleteProfitLossData = async (matchId, betId) => {
   const keysToUnlink = [];
 
   do {
-    const [newCursor, keys] = await internalRedis.scan(cursor, 'MATCH', `session:expert:${matchId}:${betId}`, 'COUNT', 10000);
+    const [newCursor, keys] = await internalRedis.scan(cursor, 'MATCH', `session:expert:${matchId}:${betId}:*`, 'COUNT', 10000);
     cursor = newCursor;
     keysToUnlink.push(...keys);
   } while (cursor !== '0');
